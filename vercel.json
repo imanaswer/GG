@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/complete-games",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/send-reminders",
+      "schedule": "0 18 * * *"
+    }
+  ]
+}

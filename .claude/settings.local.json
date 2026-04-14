@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:21st.dev)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.champions4good.club)",
+      "Bash(python3 -c \"import sys, json; lines = sys.stdin.readlines\\(\\); [print\\(json.loads\\(l\\).get\\('message', {}\\).get\\('content', ''\\)\\) for l in lines[-20:] if json.loads\\(l\\).get\\('type'\\) in ['user', 'assistant']]\")",
+      "Bash(npx tsc:*)",
+      "Bash(npx --version)"
+    ]
+  }
+}

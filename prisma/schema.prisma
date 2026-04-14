@@ -1,0 +1,269 @@
+// Prisma schema for Grid Game — Production Database (Supabase / PostgreSQL)
+// Setup: npm install prisma @prisma/client
+// Migrate: npx prisma migrate dev --name init
+// Maps directly to TypeScript interfaces in src/lib/db.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String
+  username             String    @unique
+  passwordHash         String
+  role                 String    @default("player")
+  location             String?
+  bio                  String?
+  avatarUrl            String?
+  phone                String?
+  sports               String[]  @default([])
+  reliabilityScore     Float     @default(5.0)
+  gamesPlayed          Int       @default(0)
+  gamesOrganized       Int       @default(0)
+  attendanceRate       Float     @default(100)
+  passwordResetToken   String?
+  passwordResetExpiry  DateTime?
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  bookings           Booking[]
+  reviews            Review[]
+  organizedGames     Game[]
+  gamePlayers        GamePlayer[]
+  campRegistrations  CampRegistration[]
+  eventRegistrations EventRegistration[]
+  payments           Payment[]
+  coachProfile       Coach?
+}
+
+model Coach {
+  id             String   @id @default(cuid())
+  userId         String?  @unique
+  name           String
+  sport          String
+  type           String
+  skillLevel     String
+  price          String
+  priceMin       Int
+  priceMax       Int
+  timing         String
+  location       String
+  address        String
+  phone          String
+  email          String
+  description    String
+  features       String[]
+  certifications String[] @default([])
+  imageUrl       String
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0)
+  totalSeats     Int
+  seatsLeft      Int
+  status         String   @default("active")
+  lat            Float?
+  lng            Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user     User?     @relation(fields: [userId], references: [id])
+  batches  Batch[]
+  bookings Booking[]
+  reviews  Review[]
+}
+
+model Batch {
+  id      String @id @default(cuid())
+  coachId String
+  day     String
+  time    String
+  level   String
+  seats   Int
+  coach   Coach    @relation(fields: [coachId], references: [id])
+  bookings Booking[]
+}
+
+model Game {
+  id            String   @id @default(cuid())
+  sport         String
+  title         String
+  location      String
+  address       String
+  scheduledAt   DateTime
+  duration      Int
+  slots         Int
+  slotsLeft     Int
+  skillLevel    String
+  organizerId   String
+  cost          String
+  costAmount    Int      @default(0)
+  description   String   @default("")
+  rules         String[] @default([])
+  imageUrl      String
+  status        String   @default("open")
+  lat           Float?
+  lng           Float?
+  attendanceRecorded Boolean @default(false)
+  createdAt     DateTime @default(now())
+  organizer   User            @relation(fields: [organizerId], references: [id])
+  players     GamePlayer[]
+  waitlist    WaitlistEntry[]
+}
+
+model GamePlayer {
+  id       String   @id @default(cuid())
+  gameId   String
+  userId   String
+  attended Boolean?
+  joinedAt DateTime @default(now())
+  game Game @relation(fields: [gameId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  @@unique([gameId, userId])
+}
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  gameId    String
+  userId    String
+  position  Int
+  createdAt DateTime @default(now())
+  game Game @relation(fields: [gameId], references: [id])
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  coachId   String
+  batchId   String?
+  status    String   @default("pending")
+  note      String?
+  coachNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user  User   @relation(fields: [userId], references: [id])
+  coach Coach  @relation(fields: [coachId], references: [id])
+  batch Batch? @relation(fields: [batchId], references: [id])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  userId       String
+  coachId      String
+  rating       Int
+  text         String
+  reviewerName String
+  createdAt    DateTime @default(now())
+  user  User  @relation(fields: [userId], references: [id])
+  coach Coach @relation(fields: [coachId], references: [id])
+  @@unique([userId, coachId])
+}
+
+model Camp {
+  id                   String   @id @default(cuid())
+  title                String
+  sport                String
+  duration             String
+  dates                String
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime
+  location             String
+  address              String
+  distance             String   @default("")
+  price                Int
+  priceDisplay         String
+  ageGroup             String
+  skillLevel           String
+  rating               Float    @default(0)
+  reviewCount          Int      @default(0)
+  participants         Int      @default(0)
+  maxParticipants      Int
+  description          String
+  highlights           String[] @default([])
+  included             String[] @default([])
+  whatToBring          String[] @default([])
+  imageUrl             String
+  featured             Boolean  @default(false)
+  status               String   @default("open")
+  tags                 String[] @default([])
+  organizer            String
+  organizerContact     String
+  createdAt            DateTime @default(now())
+  registrations CampRegistration[]
+}
+
+model CampRegistration {
+  id            String   @id @default(cuid())
+  campId        String
+  userId        String
+  childName     String
+  childAge      Int
+  paymentStatus String   @default("unpaid")
+  registeredAt  DateTime @default(now())
+  camp Camp @relation(fields: [campId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SportEvent {
+  id                   String   @id @default(cuid())
+  title                String
+  sport                String
+  type                 String
+  date                 String
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime
+  location             String
+  address              String
+  distance             String   @default("")
+  participants         Int      @default(0)
+  maxParticipants      Int
+  prizePool            String
+  entryFee             String
+  entryFeeAmount       Int      @default(0)
+  difficulty           String
+  imageUrl             String
+  featured             Boolean  @default(false)
+  status               String   @default("Registration Open")
+  description          String
+  format               String[] @default([])
+  prizes               String[] @default([])
+  requirements         String[] @default([])
+  organizer            String
+  organizerContact     String
+  tags                 String[] @default([])
+  createdAt            DateTime @default(now())
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id            String   @id @default(cuid())
+  eventId       String
+  userId        String
+  teamName      String?
+  paymentStatus String   @default("unpaid")
+  registeredAt  DateTime @default(now())
+  event SportEvent @relation(fields: [eventId], references: [id])
+  user  User       @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  userId            String
+  entityType        String
+  entityId          String
+  razorpayOrderId   String
+  razorpayPaymentId String?
+  amount            Int
+  currency          String    @default("INR")
+  status            String    @default("created")
+  createdAt         DateTime  @default(now())
+  paidAt            DateTime?
+  user User @relation(fields: [userId], references: [id])
+}
