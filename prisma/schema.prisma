@@ -7,9 +7,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Connection URLs are configured in ./prisma.config.ts (Prisma 7 requirement).
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -194,6 +194,9 @@ model Camp {
   tags                 String[] @default([])
   organizer            String
   organizerContact     String
+  coaches              Json     @default("[]")
+  dailySchedule        Json     @default("[]")
+  testimonials         Json     @default("[]")
   createdAt            DateTime @default(now())
   registrations CampRegistration[]
 }
@@ -238,6 +241,7 @@ model SportEvent {
   organizer            String
   organizerContact     String
   tags                 String[] @default([])
+  schedule             Json     @default("[]")
   createdAt            DateTime @default(now())
   registrations EventRegistration[]
 }

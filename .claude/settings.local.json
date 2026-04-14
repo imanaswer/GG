@@ -6,7 +6,10 @@
       "WebFetch(domain:www.champions4good.club)",
       "Bash(python3 -c \"import sys, json; lines = sys.stdin.readlines\\(\\); [print\\(json.loads\\(l\\).get\\('message', {}\\).get\\('content', ''\\)\\) for l in lines[-20:] if json.loads\\(l\\).get\\('type'\\) in ['user', 'assistant']]\")",
       "Bash(npx tsc:*)",
-      "Bash(npx --version)"
+      "Bash(npx --version)",
+      "Bash(node:*)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://fake:fake@localhost:5432/fake\" npx next build)"
     ]
   }
 }
