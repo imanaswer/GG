@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/context/Providers";
+import { PWARegister } from "@/components/PWARegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           {children}
+          <PWARegister />
           <Toaster
             theme="dark"
             position="bottom-right"

@@ -2,10 +2,15 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, handleErr } from "@/lib/api";
+import { aiLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
+    const limitKey = session?.id ?? `ip:${clientIp(req)}`;
+    const rl = await aiLimit(limitKey);
+    if (!rl.success) return tooManyRequests(rl);
+
     const { type = "games", context = "" } = await req.json().catch(() => ({}));
 
     const [openGames, coaches] = await Promise.all([

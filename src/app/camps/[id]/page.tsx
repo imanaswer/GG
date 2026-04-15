@@ -5,9 +5,11 @@ import { ArrowLeft, Share2, Star, MapPin, Calendar, Users, Target, DollarSign, C
 import { NavBar } from "@/components/NavBar";
 import { Img } from "@/components/Shared";
 import { Skeleton } from "@/components/ui";
-import { useCamp, useRegisterCamp } from "@/hooks/useData";
+import { useCamp } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Tab = "overview" | "schedule" | "coaches" | "reviews";
 
@@ -21,11 +23,12 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const { data: camp, isLoading, error } = useCamp(id);
   const { user } = useAuth();
-  const reg = useRegisterCamp();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [showModal, setShowModal] = useState(false);
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge]   = useState("");
+  const [paying, setPaying] = useState(false);
 
   if (isLoading) return <div style={{ minHeight: "100vh", background: "#080808" }}><NavBar /><Skeleton style={{ height: 380, borderRadius: 0 }} /></div>;
   if (error || !camp) return <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column" }}><NavBar /><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}><p style={{ color: "#fff", fontSize: 20 }}>Camp not found</p><Link href="/camps" style={{ padding: "10px 22px", borderRadius: 9, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 600 }}>Back to Camps</Link></div></div>;
@@ -43,10 +46,32 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
   const handleShare = () => { navigator.clipboard?.writeText(window.location.href); toast.success("Camp link copied! Share with friends to join together."); };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!camp || !user) return;
     if (!childName.trim()) return;
-    await reg.mutateAsync({ campId: id, childName: childName.trim(), childAge: parseInt(childAge) || 10 });
-    setShowModal(false); setChildName(""); setChildAge("");
-    toast.success("Registration submitted! We'll contact you within 24 hours with payment details.");
+    const age = parseInt(childAge) || 10;
+    const name = childName.trim();
+    setPaying(true);
+    try {
+      const order = await createPaymentOrder({ amount: camp.price, entityType: "camp", entityId: id });
+      const success = await openRazorpayCheckout({
+        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
+        name: "Game Ground", description: `Camp registration · ${camp.title}`,
+        prefill: { name: user.name, email: user.email },
+      });
+      await verifyPayment({
+        success, entityType: "camp", entityId: id, amount: order.amount,
+        registration: { entityType: "camp", childName: name, childAge: age },
+        devMode: order.devMode,
+      });
+      qc.invalidateQueries({ queryKey: ["camps"] });
+      qc.invalidateQueries({ queryKey: ["camp", id] });
+      setShowModal(false); setChildName(""); setChildAge("");
+      toast.success("Payment successful! Your child is registered. 🎉");
+    } catch (err) {
+      toast.error((err as Error).message ?? "Payment failed");
+    } finally {
+      setPaying(false);
+    }
   };
 
   const sideInfo = [
@@ -251,8 +276,8 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
               )}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                <button onClick={handleRegister} disabled={spotsLeft <= 0 || regClosed || reg.isPending} style={{ width: "100%", height: 50, borderRadius: 11, fontSize: 15, fontWeight: 800, background: (spotsLeft <= 0 || regClosed) ? "rgba(255,255,255,0.06)" : "#e63946", color: (spotsLeft <= 0 || regClosed) ? "#6b7280" : "#fff", border: "none", cursor: (spotsLeft <= 0 || regClosed || reg.isPending) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: (spotsLeft > 0 && !regClosed) ? "0 4px 18px rgba(230,57,70,0.3)" : "none" }}>
-                  {reg.isPending ? "Registering…" : spotsLeft <= 0 ? "Camp Full" : regClosed ? "Registration Closed" : <>Register Now <ChevronRight size={17} /></>}
+                <button onClick={handleRegister} disabled={spotsLeft <= 0 || regClosed || paying} style={{ width: "100%", height: 50, borderRadius: 11, fontSize: 15, fontWeight: 800, background: (spotsLeft <= 0 || regClosed) ? "rgba(255,255,255,0.06)" : "#e63946", color: (spotsLeft <= 0 || regClosed) ? "#6b7280" : "#fff", border: "none", cursor: (spotsLeft <= 0 || regClosed || paying) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: (spotsLeft > 0 && !regClosed) ? "0 4px 18px rgba(230,57,70,0.3)" : "none" }}>
+                  {paying ? "Registering…" : spotsLeft <= 0 ? "Camp Full" : regClosed ? "Registration Closed" : <>Register Now <ChevronRight size={17} /></>}
                 </button>
                 <button onClick={handleShare} style={{ width: "100%", height: 44, borderRadius: 10, fontSize: 14, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
                   <Share2 size={15} />Share Camp
@@ -284,12 +309,12 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
               </div>
               <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(230,57,70,0.08)", border: "1px solid rgba(230,57,70,0.2)" }}>
                 <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>Fee: {camp.priceDisplay}</p>
-                <p style={{ fontSize: 12, color: "#9ca3af" }}>Payment collected at venue on Day 1. Bring printed confirmation.</p>
+                <p style={{ fontSize: 12, color: "#9ca3af" }}>Pay securely via Razorpay. Slot is reserved after successful payment.</p>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-                <button type="submit" disabled={reg.isPending} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: reg.isPending ? "not-allowed" : "pointer", opacity: reg.isPending ? 0.7 : 1, fontFamily: "inherit" }}>
-                  {reg.isPending ? "Submitting…" : "Confirm Registration"}
+                <button type="submit" disabled={paying} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: paying ? "not-allowed" : "pointer", opacity: paying ? 0.7 : 1, fontFamily: "inherit" }}>
+                  {paying ? "Processing…" : `Pay ${camp.priceDisplay}`}
                 </button>
               </div>
             </form>

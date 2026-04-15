@@ -14,6 +14,36 @@ type SearchData = { coaches: SearchResult[]; games: SearchResult[]; camps: Searc
 const TYPE_COLOR: Record<string, string> = { coach: "#60a5fa", game: "#4ade80", camp: "#f59e0b", event: "#e63946" };
 const TYPE_LABEL: Record<string, string> = { coach: "Coach", game: "Game", camp: "Camp", event: "Event" };
 
+function Section({ items, title }: { items: SearchResult[]; title: string }) {
+  if (items.length === 0) return null;
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h2 style={{ fontSize: 13, fontWeight: 800, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>{title}</h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map(r => (
+          <Link key={r.id} href={r.href} style={{ textDecoration: "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 12, background: "#141414", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", transition: "border-color 0.15s" }}
+              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(230,57,70,0.35)"}
+              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)"}
+            >
+              <div style={{ width: 52, height: 52, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+                <Img src={r.image} alt={r.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 100, background: `${TYPE_COLOR[r.type]}22`, color: TYPE_COLOR[r.type] }}>{TYPE_LABEL[r.type]}</span>
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</p>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.subtitle}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SearchResults() {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
@@ -32,34 +62,6 @@ function SearchResults() {
 
   const allResults = data ? [...(data.coaches ?? []), ...(data.games ?? []), ...(data.camps ?? []), ...(data.events ?? [])] : [];
   const hasResults = allResults.length > 0;
-
-  const Section = ({ items, title }: { items: SearchResult[]; title: string }) =>
-    items.length === 0 ? null : (
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 13, fontWeight: 800, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>{title}</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {items.map(r => (
-            <Link key={r.id} href={r.href} style={{ textDecoration: "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 12, background: "#141414", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", transition: "border-color 0.15s" }}
-                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(230,57,70,0.35)"}
-                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)"}
-              >
-                <div style={{ width: 52, height: 52, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-                  <Img src={r.image} alt={r.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 100, background: `${TYPE_COLOR[r.type]}22`, color: TYPE_COLOR[r.type] }}>{TYPE_LABEL[r.type]}</span>
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.subtitle}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    );
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>

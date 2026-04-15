@@ -63,9 +63,9 @@ export default function AdminOverview() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
                 <AlertTriangle size={16} color="#eab308" />
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Alerts</h2>
-                {data?.alerts.length ? <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>{data.alerts.length}</span> : null}
+                {data?.alerts?.length ? <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>{data.alerts.length}</span> : null}
               </div>
-              {!data?.alerts.length ? (
+              {!data?.alerts?.length ? (
                 <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "32px", textAlign: "center" }}>
                   <p style={{ color: "#4ade80", fontWeight: 700 }}>✓ No alerts — everything looks healthy</p>
                 </div>
@@ -103,7 +103,7 @@ export default function AdminOverview() {
                 <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>LIVE</span>
               </div>
               <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, maxHeight: 520, overflowY: "auto" }}>
-                {!feedData?.feed.length ? (
+                {!feedData?.feed?.length ? (
                   <div style={{ padding: "28px", textAlign: "center", color: "#6b7280", fontSize: 13 }}>No activity yet</div>
                 ) : feedData.feed.map((item, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: i < feedData.feed.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>

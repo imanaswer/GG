@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui";
 import { useEvent, useRegisterEvent } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Tab = "overview" | "format" | "prizes" | "schedule";
 
@@ -32,9 +34,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const { data: event, isLoading, error } = useEvent(id);
   const { user } = useAuth();
   const reg = useRegisterEvent();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [showModal, setShowModal] = useState(false);
   const [teamName, setTeamName]   = useState("");
+  const [paying, setPaying] = useState(false);
 
   if (isLoading) return <div style={{ minHeight: "100vh", background: "#080808" }}><NavBar /><Skeleton style={{ height: 400, borderRadius: 0 }} /></div>;
   if (error || !event) return <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column" }}><NavBar /><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}><p style={{ color: "#fff", fontSize: 20 }}>Event not found</p><Link href="/events" style={{ padding: "10px 22px", borderRadius: 9, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 600 }}>Back to Events</Link></div></div>;
@@ -45,19 +49,47 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const isLive = event.status === "Live";
   const isTeam = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
 
+  const payAndRegister = async (team?: string) => {
+    if (!event || !user) return;
+    setPaying(true);
+    try {
+      if (event.entryFeeAmount > 0) {
+        const order = await createPaymentOrder({ amount: event.entryFeeAmount, entityType: "event", entityId: id });
+        const success = await openRazorpayCheckout({
+          keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
+          name: "Game Ground", description: `Event entry · ${event.title}`,
+          prefill: { name: user.name, email: user.email },
+        });
+        await verifyPayment({
+          success, entityType: "event", entityId: id, amount: order.amount,
+          registration: { entityType: "event", teamName: team },
+          devMode: order.devMode,
+        });
+        qc.invalidateQueries({ queryKey: ["events"] });
+        qc.invalidateQueries({ queryKey: ["event", id] });
+        toast.success("Payment successful! You're registered. 🏆");
+      } else {
+        await reg.mutateAsync({ eventId: id, teamName: team });
+      }
+      setShowModal(false); setTeamName("");
+    } catch (err) {
+      toast.error((err as Error).message ?? "Payment failed");
+    } finally {
+      setPaying(false);
+    }
+  };
+
   const handleRegister = () => {
     if (!user)      { toast.error("Please sign in to register"); return; }
     if (regClosed)  { toast.error("Registration deadline has passed"); return; }
     if (spotsLeft <= 0) { toast.error("Event is full"); return; }
     if (isTeam) { setShowModal(true); return; }
-    reg.mutate({ eventId: id });
+    payAndRegister();
   };
   const handleShare = () => { navigator.clipboard?.writeText(window.location.href); toast.success("Event link copied! Share with your team to register together."); };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await reg.mutateAsync({ eventId: id, teamName: teamName.trim() || undefined });
-    setShowModal(false); setTeamName("");
-    toast.success("Registration submitted! We'll send confirmation details shortly.");
+    await payAndRegister(teamName.trim() || undefined);
   };
 
   const sideInfo = [
@@ -238,8 +270,8 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
                 {!isLive ? (
-                  <button onClick={handleRegister} disabled={regClosed || spotsLeft <= 0 || reg.isPending} style={{ width: "100%", height: 50, borderRadius: 11, fontSize: 15, fontWeight: 800, background: (regClosed || spotsLeft <= 0) ? "rgba(255,255,255,0.06)" : "#e63946", color: (regClosed || spotsLeft <= 0) ? "#6b7280" : "#fff", border: "none", cursor: (regClosed || spotsLeft <= 0 || reg.isPending) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: (!regClosed && spotsLeft > 0) ? "0 4px 18px rgba(230,57,70,0.3)" : "none" }}>
-                    {reg.isPending ? "Registering…" : regClosed ? "Registration Closed" : spotsLeft <= 0 ? "Event Full" : <>Register Your Team <ChevronRight size={17} /></>}
+                  <button onClick={handleRegister} disabled={regClosed || spotsLeft <= 0 || reg.isPending || paying} style={{ width: "100%", height: 50, borderRadius: 11, fontSize: 15, fontWeight: 800, background: (regClosed || spotsLeft <= 0) ? "rgba(255,255,255,0.06)" : "#e63946", color: (regClosed || spotsLeft <= 0) ? "#6b7280" : "#fff", border: "none", cursor: (regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: (!regClosed && spotsLeft > 0) ? "0 4px 18px rgba(230,57,70,0.3)" : "none" }}>
+                    {(reg.isPending || paying) ? "Processing…" : regClosed ? "Registration Closed" : spotsLeft <= 0 ? "Event Full" : <>{isTeam ? "Register Your Team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={17} /></>}
                   </button>
                 ) : (
                   <div style={{ padding: "14px", borderRadius: 11, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", textAlign: "center" }}>
@@ -270,13 +302,13 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
               {event.entryFeeAmount > 0 && (
                 <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(230,57,70,0.08)", border: "1px solid rgba(230,57,70,0.2)" }}>
                   <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>Entry Fee: {event.entryFee}</p>
-                  <p style={{ fontSize: 12, color: "#9ca3af" }}>Fee is payable at the venue on event day.</p>
+                  <p style={{ fontSize: 12, color: "#9ca3af" }}>Pay securely via Razorpay. Your team slot is reserved after payment.</p>
                 </div>
               )}
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-                <button type="submit" disabled={reg.isPending} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: reg.isPending ? "not-allowed" : "pointer", opacity: reg.isPending ? 0.7 : 1, fontFamily: "inherit" }}>
-                  {reg.isPending ? "Registering…" : "Confirm Registration"}
+                <button type="submit" disabled={reg.isPending || paying} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: (reg.isPending || paying) ? "not-allowed" : "pointer", opacity: (reg.isPending || paying) ? 0.7 : 1, fontFamily: "inherit" }}>
+                  {(reg.isPending || paying) ? "Processing…" : event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Confirm Registration"}
                 </button>
               </div>
             </form>

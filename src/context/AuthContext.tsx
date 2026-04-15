@@ -17,14 +17,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.user) setUser(d.user); }).finally(() => setLoading(false));
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.data?.user) setUser(d.data.user); }).finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
     const d = await r.json();
     if (!r.ok) return d.error ?? "Login failed";
-    setUser(d.user);
+    setUser(d.data.user);
     return null;
   }, []);
 
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const r = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     const d = await r.json();
     if (!r.ok) return d.error ?? "Registration failed";
-    setUser(d.user);
+    setUser(d.data.user);
     return null;
   }, []);
 

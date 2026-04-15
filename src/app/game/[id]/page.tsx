@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui";
 import { useGame, useJoinGame, useLeaveGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function GameDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = use(params);
@@ -15,8 +17,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const { user } = useAuth();
   const join  = useJoinGame();
   const leave = useLeaveGame();
+  const qc = useQueryClient();
   const [completing, setCompleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   if (isLoading) return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
@@ -71,6 +75,32 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
     toast.success("Link copied!");
+  };
+
+  const handleJoin = async () => {
+    if (!game || !user) return;
+    if (game.costAmount <= 0) { join.mutate(game.id); return; }
+    setPaying(true);
+    try {
+      const order = await createPaymentOrder({ amount: game.costAmount, entityType: "game", entityId: game.id });
+      const success = await openRazorpayCheckout({
+        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
+        name: "Game Ground", description: `Pickup game · ${game.title}`,
+        prefill: { name: user.name, email: user.email },
+      });
+      await verifyPayment({
+        success, entityType: "game", entityId: game.id, amount: order.amount,
+        registration: { entityType: "game" },
+        devMode: order.devMode,
+      });
+      qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["game", game.id] });
+      toast.success("Payment successful! You've joined the game. 🎉");
+    } catch (err) {
+      toast.error((err as Error).message ?? "Payment failed");
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleWhatsApp = () => {
@@ -230,8 +260,8 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                   </a>
                 </div>
               ) : (
-                <button disabled={join.isPending} onClick={() => join.mutate(game.id)} style={{ width: "100%", height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: isFull ? "transparent" : "#e63946", color: isFull ? "#9ca3af" : "#fff", border: isFull ? "1px solid rgba(255,255,255,0.12)" : "none", cursor: join.isPending ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: join.isPending ? 0.7 : 1, boxShadow: isFull ? "none" : "0 3px 14px rgba(230,57,70,0.25)" }}>
-                  {join.isPending ? "Joining…" : isFull ? "Join Waitlist" : `Join Game · ${game.cost}`}
+                <button disabled={join.isPending || paying} onClick={isFull ? () => join.mutate(game.id) : handleJoin} style={{ width: "100%", height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: isFull ? "transparent" : "#e63946", color: isFull ? "#9ca3af" : "#fff", border: isFull ? "1px solid rgba(255,255,255,0.12)" : "none", cursor: (join.isPending || paying) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (join.isPending || paying) ? 0.7 : 1, boxShadow: isFull ? "none" : "0 3px 14px rgba(230,57,70,0.25)" }}>
+                  {(join.isPending || paying) ? (paying ? "Processing payment…" : "Joining…") : isFull ? "Join Waitlist" : game.costAmount > 0 ? `Pay ${game.cost} · Join` : "Join Game · Free"}
                 </button>
               )
             )}
