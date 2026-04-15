@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getDB, saveDB, uid } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { ok, fail, handleErr } from "@/lib/api";
 import crypto from "crypto";
 
@@ -16,14 +16,18 @@ export async function POST(req: NextRequest) {
       if (expectedSig !== razorpay_signature) return fail("Invalid payment signature", 400);
     }
 
-    const db = getDB();
-    db.payments.push({
-      id: uid("pay_"), userId, entityType, entityId,
-      razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-      amount: amount ?? 0, currency: "INR", status: "paid",
-      createdAt: new Date().toISOString(), paidAt: new Date().toISOString(),
+    await prisma.payment.create({
+      data: {
+        userId, entityType, entityId,
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+        amount: amount ?? 0,
+        currency: "INR",
+        status: "paid",
+        paidAt: new Date(),
+      },
     });
-    saveDB(db);
+
     return ok({ verified: true });
   } catch (e) { return handleErr(e); }
 }

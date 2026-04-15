@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getDB } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { ok, handleErr } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
@@ -10,14 +11,21 @@ export async function GET(req: NextRequest) {
     const skill    = p.get("skillLevel");
     const duration = p.get("duration");
     const age      = p.get("ageGroup");
-    const db       = getDB();
 
-    let camps = db.camps.filter(c => c.status !== "completed");
+    const where: Prisma.CampWhereInput = { status: { not: "completed" } };
+    if (sport && sport !== "all") where.sport = sport;
+    if (skill && skill !== "all") where.OR = [{ skillLevel: skill }, { skillLevel: "All Levels" }];
+    if (age   && age   !== "all") where.ageGroup = age;
 
-    if (q)    camps = camps.filter(c => c.title.toLowerCase().includes(q) || c.sport.toLowerCase().includes(q));
-    if (sport && sport !== "all") camps = camps.filter(c => c.sport === sport);
-    if (skill && skill !== "all") camps = camps.filter(c => c.skillLevel === skill || c.skillLevel === "All Levels");
-    if (age   && age   !== "all") camps = camps.filter(c => c.ageGroup === age);
+    let camps = await prisma.camp.findMany({
+      where,
+      orderBy: [{ featured: "desc" }, { startDate: "asc" }],
+    });
+
+    if (q) camps = camps.filter(c =>
+      c.title.toLowerCase().includes(q) || c.sport.toLowerCase().includes(q)
+    );
+
     if (duration && duration !== "all") {
       camps = camps.filter(c => {
         const days = parseInt(c.duration);
@@ -28,6 +36,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return ok(camps.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || a.startDate.localeCompare(b.startDate)));
+    return ok(camps);
   } catch (e) { return handleErr(e); }
 }

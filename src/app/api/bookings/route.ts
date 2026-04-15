@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getDB, saveDB, uid } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 
@@ -7,27 +7,40 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
-
-    const db = getDB();
     const role = new URL(req.url).searchParams.get("role");
 
     if (role === "coach") {
-      // Coach sees bookings for their own coach record
-      const coach = db.coaches.find(c => c.userId === session.id || c.email === session.email);
-      if (!coach) return ok({ pending: 0, confirmed: 0, list: [] });
-      const coachBookings = db.bookings.filter(b => b.coachId === coach.id).map(b => {
-        const user = db.users.find(u => u.id === b.userId);
-        return { ...b, playerName: user?.name };
+      const coach = await prisma.coach.findFirst({
+        where: { OR: [{ userId: session.id }, { email: session.email }] },
+        select: { id: true },
       });
-      return ok({ pending: coachBookings.filter(b => b.status === "pending").length, confirmed: coachBookings.filter(b => b.status === "confirmed").length, list: coachBookings });
+      if (!coach) return ok({ pending: 0, confirmed: 0, list: [] });
+
+      const coachBookings = await prisma.booking.findMany({
+        where: { coachId: coach.id },
+        include: { user: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      const list = coachBookings.map(b => ({ ...b, playerName: b.user?.name }));
+      return ok({
+        pending:   list.filter(b => b.status === "pending").length,
+        confirmed: list.filter(b => b.status === "confirmed").length,
+        list,
+      });
     }
 
-    // Player sees their own bookings
-    const bookings = db.bookings.filter(b => b.userId === session.id).map(b => {
-      const coach = db.coaches.find(c => c.id === b.coachId);
-      return { ...b, coachName: coach?.name, sport: coach?.sport, location: coach?.location, imageUrl: coach?.imageUrl };
+    const bookings = await prisma.booking.findMany({
+      where: { userId: session.id },
+      include: { coach: { select: { name: true, sport: true, location: true, imageUrl: true } } },
+      orderBy: { createdAt: "desc" },
     });
-    return ok(bookings);
+    return ok(bookings.map(b => ({
+      ...b,
+      coachName: b.coach?.name,
+      sport: b.coach?.sport,
+      location: b.coach?.location,
+      imageUrl: b.coach?.imageUrl,
+    })));
   } catch (e) { return handleErr(e); }
 }
 
@@ -37,24 +50,25 @@ export async function POST(req: NextRequest) {
     if (!session) return fail("Authentication required", 401);
 
     const { coachId, batchId, note } = await req.json();
-    const db    = getDB();
-    const coach = db.coaches.find(c => c.id === coachId);
+
+    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true } });
     if (!coach) return fail("Coach not found", 404);
     if (coach.seatsLeft <= 0) return fail("No seats available", 400);
 
-    const booking = {
-      id: uid("bk_"), userId: session.id, coachId, batchId,
-      status: "pending" as const, note,
-      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    };
-    db.bookings.push(booking);
-    if (batchId) {
-      const batch = coach.batches.find(b => b.id === batchId);
-      if (batch && batch.seats > 0) { batch.seats--; coach.seatsLeft--; }
-    } else {
-      coach.seatsLeft--;
-    }
-    saveDB(db);
+    const booking = await prisma.$transaction(async tx => {
+      if (batchId) {
+        const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+        if (batch && batch.coachId === coachId && batch.seats > 0) {
+          await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+          await tx.coach.update({ where: { id: coachId }, data: { seatsLeft: { decrement: 1 } } });
+        }
+      } else {
+        await tx.coach.update({ where: { id: coachId }, data: { seatsLeft: { decrement: 1 } } });
+      }
+      return tx.booking.create({
+        data: { userId: session.id, coachId, batchId: batchId ?? null, status: "pending", note },
+      });
+    });
 
     return ok(booking);
   } catch (e) { return handleErr(e); }
@@ -66,27 +80,33 @@ export async function PATCH(req: NextRequest) {
     if (!session) return fail("Authentication required", 401);
 
     const { id, status, coachNote } = await req.json();
-    const db = getDB();
-    const booking = db.bookings.find(b => b.id === id);
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { coach: { select: { id: true, userId: true, email: true } } },
+    });
     if (!booking) return fail("Booking not found", 404);
 
-    // Coach can confirm/reject, player can cancel their own
-    const coach = db.coaches.find(c => c.id === booking.coachId);
+    const coach = booking.coach;
     const isCoach  = coach?.userId === session.id || coach?.email === session.email;
     const isPlayer = booking.userId === session.id;
     if (!isCoach && !isPlayer) return fail("Unauthorized", 403);
 
     const prev = booking.status;
-    booking.status    = status;
-    booking.updatedAt = new Date().toISOString();
-    if (coachNote) booking.coachNote = coachNote;
+    const updated = await prisma.$transaction(async tx => {
+      const u = await tx.booking.update({
+        where: { id },
+        data: { status, coachNote: coachNote ?? undefined },
+      });
 
-    // Restore seat if cancelling
-    if (prev !== "cancelled" && status === "cancelled" && coach) {
-      coach.seatsLeft++;
-      if (booking.batchId) { const b = coach.batches.find(b => b.id === booking.batchId); if (b) b.seats++; }
-    }
-    saveDB(db);
-    return ok(booking);
+      if (prev !== "cancelled" && status === "cancelled" && coach) {
+        await tx.coach.update({ where: { id: coach.id }, data: { seatsLeft: { increment: 1 } } });
+        if (booking.batchId) {
+          await tx.batch.update({ where: { id: booking.batchId }, data: { seats: { increment: 1 } } });
+        }
+      }
+      return u;
+    });
+
+    return ok(updated);
   } catch (e) { return handleErr(e); }
 }

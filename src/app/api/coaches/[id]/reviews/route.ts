@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getDB, saveDB, uid } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 
@@ -16,30 +16,37 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!text || text.trim().length < 10) return fail("Review must be at least 10 characters", 400);
     if (text.trim().length > 500)         return fail("Review must be under 500 characters", 400);
 
-    const db    = getDB();
-    const coach = db.coaches.find(c => c.id === coachId);
+    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true } });
     if (!coach) return fail("Coach not found", 404);
 
-    // Check player has a confirmed booking with this coach
-    const hasBooking = db.bookings.some(b => b.coachId === coachId && b.userId === session.id && b.status === "confirmed");
+    const hasBooking = await prisma.booking.findFirst({
+      where: { coachId, userId: session.id, status: "confirmed" },
+      select: { id: true },
+    });
     if (!hasBooking) return fail("You can only review coaches you've had a confirmed booking with", 403);
 
-    // One review per player per coach
-    if (db.reviews.some(r => r.coachId === coachId && r.userId === session.id))
-      return fail("You've already submitted a review for this coach", 409);
+    const existing = await prisma.review.findUnique({ where: { userId_coachId: { userId: session.id, coachId } }, select: { id: true } });
+    if (existing) return fail("You've already submitted a review for this coach", 409);
 
-    const user = db.users.find(u => u.id === session.id);
-    db.reviews.push({
-      id: uid("rv_"), userId: session.id, coachId,
-      rating, text: text.trim(), reviewerName: user?.name ?? "Player",
-      createdAt: new Date().toISOString(),
+    const user = await prisma.user.findUnique({ where: { id: session.id }, select: { name: true } });
+
+    await prisma.$transaction(async tx => {
+      await tx.review.create({
+        data: {
+          userId: session.id, coachId,
+          rating: Math.trunc(rating), text: text.trim(),
+          reviewerName: user?.name ?? "Player",
+        },
+      });
+      const agg = await tx.review.aggregate({ where: { coachId }, _avg: { rating: true }, _count: true });
+      await tx.coach.update({
+        where: { id: coachId },
+        data: {
+          rating: Math.round((agg._avg.rating ?? 0) * 10) / 10,
+          reviewCount: agg._count,
+        },
+      });
     });
-
-    // Update coach average rating
-    const coachReviews = db.reviews.filter(r => r.coachId === coachId);
-    coach.rating      = Math.round((coachReviews.reduce((a, r) => a + r.rating, 0) / coachReviews.length) * 10) / 10;
-    coach.reviewCount = coachReviews.length;
-    saveDB(db);
 
     return ok({ submitted: true });
   } catch (e) { return handleErr(e); }

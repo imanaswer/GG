@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getDB, saveDB, uid, type Game } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
 
@@ -21,22 +22,37 @@ export async function GET(req: NextRequest) {
     const level = p.get("skillLevel");
     const cost = p.get("cost");
     const status = p.get("status") || "open";
-    const db = getDB();
 
-    let games = db.games;
-    if (status !== "all") games = games.filter(g => status === "open" ? g.status !== "cancelled" && g.status !== "completed" : g.status === status);
-    if (q) games = games.filter(g => g.title.toLowerCase().includes(q) || g.sport.toLowerCase().includes(q) || g.location.toLowerCase().includes(q));
-    if (sport && sport !== "all") games = games.filter(g => g.sport === sport);
-    if (level && level !== "all") games = games.filter(g => g.skillLevel === level || g.skillLevel === "All Levels");
-    if (cost === "free") games = games.filter(g => g.costAmount === 0);
-    if (cost === "paid") games = games.filter(g => g.costAmount > 0);
+    const where: Prisma.GameWhereInput = {};
+    if (status === "open")      where.status = { notIn: ["cancelled", "completed"] };
+    else if (status !== "all")  where.status = status;
+    if (sport && sport !== "all") where.sport = sport;
+    if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];
+    if (cost === "free") where.costAmount = 0;
+    if (cost === "paid") where.costAmount = { gt: 0 };
 
-    // Enrich with organizer info
-    const enriched = games.map(g => {
-      const org = db.users.find(u => u.id === g.organizerId);
-      const playerCount = db.gamePlayers.filter(gp => gp.gameId === g.id).length;
-      return { ...g, organizerName: org?.name, organizerRating: org?.reliabilityScore, organizerGames: org?.gamesOrganized, playerCount };
-    }).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    let games = await prisma.game.findMany({
+      where,
+      orderBy: { scheduledAt: "asc" },
+      include: {
+        organizer: { select: { name: true, reliabilityScore: true, gamesOrganized: true } },
+        _count:    { select: { players: true } },
+      },
+    });
+
+    if (q) games = games.filter(g =>
+      g.title.toLowerCase().includes(q) ||
+      g.sport.toLowerCase().includes(q) ||
+      g.location.toLowerCase().includes(q)
+    );
+
+    const enriched = games.map(g => ({
+      ...g,
+      organizerName: g.organizer?.name,
+      organizerRating: g.organizer?.reliabilityScore,
+      organizerGames: g.organizer?.gamesOrganized,
+      playerCount: g._count.players,
+    }));
 
     return ok(enriched);
   } catch (e) { return handleErr(e); }
@@ -49,25 +65,25 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const input = CreateGameSchema.parse(body);
-    const db = getDB();
 
-    const game: Game = {
-      id: uid("g_"), sport: input.sport, title: input.title,
-      location: input.location, address: input.address ?? input.location,
-      scheduledAt: input.scheduledAt, duration: input.duration,
-      slots: input.slots, slotsLeft: input.slots,
-      skillLevel: input.skillLevel, organizerId: session.id,
-      cost: input.cost, costAmount: input.costAmount,
-      description: input.description ?? "",
-      rules: input.rules ?? [],
-      imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
-      status: "open", createdAt: new Date().toISOString(),
-    };
-
-    db.games.push(game);
-    const user = db.users.find(u => u.id === session.id);
-    if (user) user.gamesOrganized++;
-    saveDB(db);
+    const [game] = await prisma.$transaction([
+      prisma.game.create({
+        data: {
+          sport: input.sport, title: input.title,
+          location: input.location, address: input.address ?? input.location,
+          scheduledAt: new Date(input.scheduledAt),
+          duration: input.duration,
+          slots: input.slots, slotsLeft: input.slots,
+          skillLevel: input.skillLevel, organizerId: session.id,
+          cost: input.cost, costAmount: input.costAmount,
+          description: input.description ?? "",
+          rules: input.rules ?? [],
+          imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
+          status: "open",
+        },
+      }),
+      prisma.user.update({ where: { id: session.id }, data: { gamesOrganized: { increment: 1 } } }),
+    ]);
 
     return ok(game, 201);
   } catch (e) { return handleErr(e); }

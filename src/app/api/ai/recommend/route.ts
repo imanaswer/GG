@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, handleErr } from "@/lib/api";
 
@@ -7,25 +7,27 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     const { type = "games", context = "" } = await req.json().catch(() => ({}));
-    const db = getDB();
 
-    const openGames = db.games
-      .filter(g => g.status === "open" && g.slotsLeft > 0)
-      .map(({ description: _, rules: __, ...g }) => g)
-      .slice(0, 15);
-
-    const coaches = db.coaches
-      .filter(c => c.seatsLeft > 0)
-      .map(({ description: _, features: __, batches: _b, ...c }) => c)
-      .slice(0, 15);
+    const [openGames, coaches] = await Promise.all([
+      prisma.game.findMany({
+        where: { status: "open", slotsLeft: { gt: 0 } },
+        take: 15,
+      }).then(rows => rows.map(({ description: _d, rules: _r, ...g }) => g)),
+      prisma.coach.findMany({
+        where: { seatsLeft: { gt: 0 } },
+        take: 15,
+      }).then(rows => rows.map(({ description: _d, features: _f, ...c }) => c)),
+    ]);
 
     let userCtx = "New user, no history.";
     if (session) {
-      const user = db.users.find(u => u.id === session.id);
+      const [user, playedGames] = await Promise.all([
+        prisma.user.findUnique({ where: { id: session.id }, select: { name: true, location: true, gamesPlayed: true } }),
+        prisma.gamePlayer.findMany({ where: { userId: session.id }, include: { game: { select: { sport: true } } } }),
+      ]);
       const sportMap: Record<string, number> = {};
-      db.gamePlayers.filter(gp => gp.userId === session.id).forEach(gp => {
-        const g = db.games.find(x => x.id === gp.gameId);
-        if (g) sportMap[g.sport] = (sportMap[g.sport] ?? 0) + 1;
+      playedGames.forEach(gp => {
+        if (gp.game) sportMap[gp.game.sport] = (sportMap[gp.game.sport] ?? 0) + 1;
       });
       const favSports = Object.entries(sportMap).sort((a, b) => b[1] - a[1]).map(([s]) => s);
       userCtx = `Player: ${user?.name}. Location: ${user?.location ?? "Kozhikode"}. Games played: ${user?.gamesPlayed}. Favourite sports: ${favSports.join(", ") || "none yet"}.`;

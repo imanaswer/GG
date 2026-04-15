@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { sendEmail, emails } from "@/lib/email";
 import { ok } from "@/lib/api";
 
@@ -9,28 +9,35 @@ export async function GET(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const db      = getDB();
   const now     = new Date();
   const tmrwMin = new Date(now.getTime() + 20 * 3600_000);
   const tmrwMax = new Date(now.getTime() + 28 * 3600_000);
-  let sent = 0;
 
-  for (const game of db.games.filter(g => g.status === "open" || g.status === "full")) {
-    const gameTime = new Date(game.scheduledAt);
-    if (gameTime >= tmrwMin && gameTime <= tmrwMax) {
-      const players = db.gamePlayers.filter(gp => gp.gameId === game.id);
-      const organiser = db.users.find(u => u.id === game.organizerId);
-      for (const gp of players) {
-        const user = db.users.find(u => u.id === gp.userId);
-        if (user) {
-          await sendEmail({
-            to: user.email,
-            ...emails.gameJoined(user.name, game.title, game.location, new Date(game.scheduledAt).toLocaleString("en-IN"), organiser?.name ?? "Organiser"),
-          });
-          sent++;
-        }
-      }
+  const games = await prisma.game.findMany({
+    where: { status: { in: ["open", "full"] }, scheduledAt: { gte: tmrwMin, lte: tmrwMax } },
+    include: {
+      organizer: { select: { name: true } },
+      players:   { include: { user: { select: { email: true, name: true } } } },
+    },
+  });
+
+  let sent = 0;
+  for (const game of games) {
+    for (const gp of game.players) {
+      if (!gp.user) continue;
+      await sendEmail({
+        to: gp.user.email,
+        ...emails.gameJoined(
+          gp.user.name,
+          game.title,
+          game.location,
+          game.scheduledAt.toLocaleString("en-IN"),
+          game.organizer?.name ?? "Organiser",
+        ),
+      });
+      sent++;
     }
   }
+
   return ok({ reminders: sent });
 }

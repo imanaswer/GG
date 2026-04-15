@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getDB } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { ok, handleErr } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
@@ -11,14 +12,18 @@ export async function GET(req: NextRequest) {
     const type = p.get("type");
     const available = p.get("available") === "true";
 
-    let coaches = getDB().coaches;
-    if (q) coaches = coaches.filter(c => c.name.toLowerCase().includes(q) || c.sport.toLowerCase().includes(q) || c.location.toLowerCase().includes(q));
-    if (sport && sport !== "all") coaches = coaches.filter(c => c.sport === sport);
-    if (level && level !== "all") coaches = coaches.filter(c => c.skillLevel === level || c.skillLevel === "All Levels");
-    if (type && type !== "all") coaches = coaches.filter(c => c.type === type);
-    if (available) coaches = coaches.filter(c => c.seatsLeft > 0);
+    const where: Prisma.CoachWhereInput = {};
+    if (sport && sport !== "all") where.sport = sport;
+    if (type  && type  !== "all") where.type  = type;
+    if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];
+    if (available) where.seatsLeft = { gt: 0 };
 
-    // Strip internal fields, strip batches from list view
-    return ok(coaches.map(({ batches: _b, ...c }) => c));
+    let coaches = await prisma.coach.findMany({ where });
+    if (q) coaches = coaches.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.sport.toLowerCase().includes(q) ||
+      c.location.toLowerCase().includes(q)
+    );
+    return ok(coaches);
   } catch (e) { return handleErr(e); }
 }
