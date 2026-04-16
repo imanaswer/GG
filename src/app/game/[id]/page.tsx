@@ -37,7 +37,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
             <div className="skeleton" style={{ height: 360, borderRadius: 28, marginBottom: 40 }} />
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 32 }} className="game-grid">
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {[160, 160, 200].map(h => <div key={h} className="skeleton" style={{ height: h, borderRadius: 20 }} />)}
+                {[160, 160, 200].map((h, i) => <div key={i} className="skeleton" style={{ height: h, borderRadius: 20 }} />)}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {[120, 100, 80].map(h => <div key={h} className="skeleton" style={{ height: h, borderRadius: 20 }} />)}
