@@ -5,10 +5,10 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
 
 const SPORT_IMAGES: Record<string, string> = {
-  Basketball: "https://images.unsplash.com/photo-1546519638399-1274d96f2a0a?w=800&q=80",
+  Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
   Football: "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=800&q=80",
   Cricket: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80",
-  Badminton: "https://images.unsplash.com/photo-1613918431703-aa50889e3be8?w=800&q=80",
+  Badminton: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80",
   Tennis: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80",
   Volleyball: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80",
   Fitness: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80",

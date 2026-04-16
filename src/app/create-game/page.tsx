@@ -1,57 +1,18 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Lock } from "lucide-react";
+import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
+import { STORY } from "@/lib/premium-images";
 
 const SPORTS = ["Basketball","Football","Cricket","Badminton","Tennis","Volleyball","Other"];
 const LEVELS = ["Beginner","Intermediate","Advanced","All Levels"];
 const DURATIONS = [{ l:"30 min",v:30},{l:"1 hour",v:60},{l:"90 min",v:90},{l:"2 hours",v:120},{l:"3 hours",v:180},{l:"4 hours",v:240}];
-
-const SectionTitle = ({ emoji, label }: { emoji: string; label: string }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, paddingBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-    <span style={{ fontSize: 18 }}>{emoji}</span>
-    <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</span>
-  </div>
-);
-
-const FormCard = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "20px 22px" }}>
-    {children}
-  </div>
-);
-
-const Row2 = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-    {children}
-  </div>
-);
-
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-    <Label>{label}</Label>
-    {children}
-  </div>
-);
-
-const PillSelect = ({ options, value, onChange }: { options: { l: string; v: string | number }[]; value: string; onChange: (v: string) => void }) => (
-  <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-    {options.map(o => (
-      <button key={String(o.v)} type="button" onClick={() => onChange(String(o.v))} style={{
-        padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
-        cursor: "pointer", border: "1px solid", fontFamily: "inherit",
-        background: value === String(o.v) ? "#e63946" : "transparent",
-        color: value === String(o.v) ? "#fff" : "#9ca3af",
-        borderColor: value === String(o.v) ? "#e63946" : "rgba(255,255,255,0.1)",
-        transition: "all 0.15s",
-      }}>{o.l}</button>
-    ))}
-  </div>
-);
 
 export default function CreateGamePage() {
   const router = useRouter();
@@ -79,140 +40,339 @@ export default function CreateGamePage() {
     router.push("/play");
   };
 
-  if (!loading && !user) return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column" }}>
-      <NavBar />
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20, padding: "24px", textAlign: "center" }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(230,57,70,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Lock size={28} color="#e63946" />
-        </div>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Sign in required</h2>
-          <p style={{ color: "#6b7280", fontSize: 14 }}>You need an account to create a game</p>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/login" style={{ padding: "11px 24px", borderRadius: 9, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>Sign In</Link>
-          <Link href="/register" style={{ padding: "11px 24px", borderRadius: 9, background: "transparent", color: "#d1d5db", border: "1px solid rgba(255,255,255,0.12)", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>Create Account</Link>
-        </div>
-      </div>
-    </div>
-  );
+  if (!loading && !user) return <AuthGate />;
+
+  const canSubmit = form.sport && form.skillLevel && form.title && form.location && form.date && form.time && form.slots;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808" }}>
+    <div style={{ minHeight: "100vh", background: "#050505" }}>
       <NavBar />
-      <main style={{ maxWidth: 780, margin: "0 auto", padding: "40px 24px 60px" }}>
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>Create a Game</h1>
-          <p style={{ fontSize: 14, color: "#6b7280" }}>Set up a game and find players near you</p>
+
+      {/* Hero */}
+      <section style={{ position: "relative", paddingTop: 96, paddingBottom: 48, overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          <Image
+            src={STORY.play.src}
+            alt={STORY.play.alt}
+            fill
+            priority
+            quality={80}
+            sizes="100vw"
+            style={{ objectFit: "cover", opacity: 0.3 }}
+          />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.85) 70%, #050505 100%)",
+          }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(ellipse 60% 50% at 15% 30%, rgba(230,57,70,0.18) 0%, transparent 60%)",
+          }} />
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Game info */}
-          <FormCard>
-            <SectionTitle emoji="🏀" label="Game Info" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <Field label="Sport *">
-                <PillSelect
-                  options={SPORTS.map(s => ({ l: s, v: s }))}
-                  value={form.sport}
-                  onChange={v => set("sport", v)}
-                />
-              </Field>
-              <Field label="Skill Level *">
-                <PillSelect
-                  options={LEVELS.map(l => ({ l, v: l }))}
-                  value={form.skillLevel}
-                  onChange={v => set("skillLevel", v)}
-                />
-              </Field>
-              <Field label="Game Title *">
-                <Input placeholder="e.g. 5v5 Pickup Basketball at SM Street" value={form.title} onChange={e => set("title", e.target.value)} required />
-              </Field>
-            </div>
-          </FormCard>
+        <div className="container-lg" style={{ position: "relative", zIndex: 1, maxWidth: 820, margin: "0 auto", padding: "40px 24px 0" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "7px 14px", borderRadius: 100,
+            background: "rgba(230,57,70,0.12)",
+            border: "1px solid rgba(230,57,70,0.3)",
+            fontSize: 11.5, fontWeight: 600, color: "#ff6b7a",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            marginBottom: 20,
+          }}>
+            <Sparkles size={12} /> Host a game
+          </div>
+          <h1 style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: "clamp(36px, 5vw, 60px)",
+            lineHeight: 1.04,
+            fontWeight: 400,
+            color: "#fff",
+            letterSpacing: "-0.035em",
+            marginBottom: 16,
+          }}>
+            Set the game. <em style={{ fontStyle: "italic", color: "#ff6b7a" }}>Find the people.</em>
+          </h1>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, maxWidth: 560 }}>
+            Pick a sport, set a time, invite the neighbourhood. A well-hosted pickup game fills up in under an hour on Game Ground.
+          </p>
+        </div>
+      </section>
+
+      <main style={{ maxWidth: 820, margin: "0 auto", padding: "0 24px 80px" }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {/* Sport & Skill */}
+          <SectionCard Icon={Trophy} title="Sport & skill" hint="Pick the sport first — we'll tune the rest to match.">
+            <FieldRow label="Sport" required>
+              <PillSelect
+                options={SPORTS.map(s => ({ l: s, v: s }))}
+                value={form.sport}
+                onChange={v => set("sport", v)}
+              />
+            </FieldRow>
+            <FieldRow label="Skill level" required>
+              <PillSelect
+                options={LEVELS.map(l => ({ l, v: l }))}
+                value={form.skillLevel}
+                onChange={v => set("skillLevel", v)}
+              />
+            </FieldRow>
+            <FieldRow label="Game title" required>
+              <Input placeholder="e.g. 5v5 pickup basketball, SM Street" value={form.title} onChange={e => set("title", e.target.value)} required />
+            </FieldRow>
+          </SectionCard>
 
           {/* Location */}
-          <FormCard>
-            <SectionTitle emoji="📍" label="Location" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Field label="Venue Name *">
-                <Input placeholder="e.g. SM Street Court, EMS Stadium" value={form.location} onChange={e => set("location", e.target.value)} required />
-              </Field>
-              <Field label="Full Address">
-                <Input placeholder="e.g. SM Street, Kozhikode 673001" value={form.address} onChange={e => set("address", e.target.value)} />
-              </Field>
-            </div>
-          </FormCard>
+          <SectionCard Icon={MapPin} title="Where you&rsquo;re playing">
+            <FieldRow label="Venue name" required>
+              <Input placeholder="e.g. SM Street Court, EMS Stadium" value={form.location} onChange={e => set("location", e.target.value)} required />
+            </FieldRow>
+            <FieldRow label="Full address" hint="Helps first-timers find the gate.">
+              <Input placeholder="e.g. SM Street, Kozhikode 673001" value={form.address} onChange={e => set("address", e.target.value)} />
+            </FieldRow>
+          </SectionCard>
 
           {/* Schedule */}
-          <FormCard>
-            <SectionTitle emoji="🕐" label="Schedule" />
-            <Row2>
-              <Field label="Date *">
+          <SectionCard Icon={CalendarClock} title="When">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col">
+              <FieldRow label="Date" required>
                 <Input type="date" value={form.date} min={new Date().toISOString().split("T")[0]} onChange={e => set("date", e.target.value)} required />
-              </Field>
-              <Field label="Start Time *">
+              </FieldRow>
+              <FieldRow label="Start time" required>
                 <Input type="time" value={form.time} onChange={e => set("time", e.target.value)} required />
-              </Field>
-            </Row2>
-            <div style={{ marginTop: 14 }}>
-              <Field label="Duration">
-                <PillSelect
-                  options={DURATIONS.map(d => ({ l: d.l, v: d.v }))}
-                  value={form.duration}
-                  onChange={v => set("duration", v)}
-                />
-              </Field>
+              </FieldRow>
             </div>
-          </FormCard>
+            <FieldRow label="Duration">
+              <PillSelect
+                options={DURATIONS.map(d => ({ l: d.l, v: d.v }))}
+                value={form.duration}
+                onChange={v => set("duration", v)}
+              />
+            </FieldRow>
+          </SectionCard>
 
           {/* Players & Cost */}
-          <FormCard>
-            <SectionTitle emoji="👥" label="Players & Cost" />
-            <Row2>
-              <Field label="Max Players *">
+          <SectionCard Icon={Users} title="Players & cost">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col">
+              <FieldRow label="Max players" required>
                 <Input type="number" min="2" max="100" placeholder="e.g. 10" value={form.slots} onChange={e => set("slots", e.target.value)} required />
-              </Field>
-              <Field label="Cost per Player">
+              </FieldRow>
+              <FieldRow label="Cost per player" hint="Free, or a number — we&rsquo;ll format it.">
                 <Input placeholder="Free or ₹100" value={form.cost} onChange={e => {
                   const v = e.target.value;
                   set("cost", v);
                   const n = parseInt(v.replace(/\D/g, ""));
                   set("costAmount", isNaN(n) ? "0" : String(n));
                 }} />
-              </Field>
-            </Row2>
-          </FormCard>
+              </FieldRow>
+            </div>
+          </SectionCard>
 
           {/* Description */}
-          <FormCard>
-            <SectionTitle emoji="📝" label="Description" />
-            <Field label="Game Description">
-              <Textarea
-                placeholder="Skill level expectations, house rules, what to bring…"
-                rows={4}
-                value={form.description}
-                onChange={e => set("description", e.target.value)}
-              />
-            </Field>
-          </FormCard>
+          <SectionCard Icon={FileText} title="Anything else?" hint="House rules, who it&rsquo;s for, what to bring.">
+            <Textarea
+              placeholder="e.g. Friendly 5v5, bring light and dark shirts. Parking available. Skill level: solid beginners welcome."
+              rows={4}
+              value={form.description}
+              onChange={e => set("description", e.target.value)}
+            />
+          </SectionCard>
 
-          <button
-            type="submit"
-            disabled={createGame.isPending || !form.sport || !form.skillLevel || !form.title || !form.location || !form.date || !form.time || !form.slots}
-            style={{
-              width: "100%", height: 50, borderRadius: 12, fontSize: 15, fontWeight: 800,
-              background: "#e63946", color: "#fff", border: "none",
-              cursor: createGame.isPending ? "not-allowed" : "pointer",
-              opacity: (createGame.isPending || !form.sport || !form.skillLevel) ? 0.6 : 1,
-              fontFamily: "inherit", boxShadow: "0 4px 20px rgba(230,57,70,0.3)",
-              letterSpacing: "-0.01em",
+          {/* Submit bar */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "18px 22px",
+            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 100%)",
+            border: "1px solid rgba(230,57,70,0.2)",
+            borderRadius: 18,
+            marginTop: 8,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>
+                {canSubmit ? "Ready to publish?" : "A few more fields to fill"}
+              </div>
+              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>
+                Your game will appear instantly in the /play feed.
+              </div>
+            </div>
+            <Link href="/play" style={{
+              height: 44, padding: "0 18px", borderRadius: 12,
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.75)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              textDecoration: "none",
+              fontSize: 13, fontWeight: 600,
+              display: "inline-flex", alignItems: "center",
             }}>
-            {createGame.isPending ? "Creating your game…" : "Publish Game 🎉"}
-          </button>
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={createGame.isPending || !canSubmit}
+              style={{
+                height: 44, padding: "0 22px", borderRadius: 12,
+                fontSize: 13.5, fontWeight: 700,
+                background: canSubmit ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                color: canSubmit ? "#fff" : "rgba(255,255,255,0.4)",
+                border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.06)",
+                cursor: (createGame.isPending || !canSubmit) ? "not-allowed" : "pointer",
+                opacity: createGame.isPending ? 0.6 : 1,
+                fontFamily: "inherit",
+                display: "inline-flex", alignItems: "center", gap: 8,
+                boxShadow: canSubmit ? "0 6px 24px rgba(230,57,70,0.35)" : "none",
+              }}
+            >
+              {createGame.isPending ? "Publishing…" : (<>Publish game <ArrowRight size={14} /></>)}
+            </button>
+          </div>
         </form>
       </main>
+
+      <style>{`
+        @media (max-width: 780px) {
+          .two-col { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function AuthGate() {
+  return (
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", flexDirection: "column" }}>
+      <NavBar />
+      <main style={{
+        flex: 1,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "96px 24px 48px",
+      }}>
+        <div style={{
+          maxWidth: 480,
+          width: "100%",
+          padding: "40px 36px",
+          background: "#0b0b0b",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 24,
+          textAlign: "center",
+        }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            margin: "0 auto 24px",
+            background: "rgba(230,57,70,0.1)",
+            border: "1px solid rgba(230,57,70,0.25)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Lock size={26} color="#e63946" />
+          </div>
+          <h2 style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: 30, fontWeight: 400,
+            color: "#fff", letterSpacing: "-0.03em",
+            marginBottom: 10,
+          }}>
+            Sign in to host a game.
+          </h2>
+          <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.58)", lineHeight: 1.65, marginBottom: 28 }}>
+            You need an account so players can message you and confirm their spot. It takes under a minute.
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/login" style={{
+              height: 44, padding: "0 22px", borderRadius: 12,
+              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+              color: "#fff", textDecoration: "none",
+              fontSize: 13.5, fontWeight: 700,
+              display: "inline-flex", alignItems: "center", gap: 7,
+              boxShadow: "0 6px 24px rgba(230,57,70,0.3)",
+            }}>
+              Sign in <ArrowRight size={14} />
+            </Link>
+            <Link href="/register" style={{
+              height: 44, padding: "0 22px", borderRadius: 12,
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.85)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              textDecoration: "none",
+              fontSize: 13.5, fontWeight: 600,
+              display: "inline-flex", alignItems: "center",
+            }}>
+              Create account
+            </Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function SectionCard({
+  Icon, title, hint, children,
+}: {
+  Icon: typeof Trophy;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{
+      padding: "24px 26px",
+      background: "#0b0b0b",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 18,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hint ? 6 : 20 }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 10,
+          background: "rgba(230,57,70,0.1)",
+          border: "1px solid rgba(230,57,70,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon size={15} color="#e63946" />
+        </div>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h2>
+      </div>
+      {hint && <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 18, paddingLeft: 46 }}>{hint}</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+    </div>
+  );
+}
+
+function FieldRow({ label, children, hint, required }: { label: string; children: React.ReactNode; hint?: string; required?: boolean }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      <Label>
+        {label}
+        {required && <span style={{ color: "#e63946", marginLeft: 4 }}>*</span>}
+      </Label>
+      {children}
+      {hint && <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{hint}</p>}
+    </div>
+  );
+}
+
+function PillSelect({ options, value, onChange }: { options: { l: string; v: string | number }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {options.map(o => {
+        const active = value === String(o.v);
+        return (
+          <button key={String(o.v)} type="button" onClick={() => onChange(String(o.v))} style={{
+            padding: "8px 16px", borderRadius: 100,
+            fontSize: 13, fontWeight: 600,
+            cursor: "pointer",
+            border: "1px solid",
+            fontFamily: "inherit",
+            background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
+            color: active ? "#fff" : "rgba(255,255,255,0.6)",
+            borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
+            boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
+            transition: "all 160ms ease",
+          }}>
+            {o.l}
+          </button>
+        );
+      })}
     </div>
   );
 }

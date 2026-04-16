@@ -1,29 +1,67 @@
 "use client";
 import { use, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Share2, Trophy, MapPin, Calendar, Users, DollarSign, Target, Award, ChevronRight } from "lucide-react";
-import { NavBar } from "@/components/NavBar";
-import { Img } from "@/components/Shared";
-import { Skeleton } from "@/components/ui";
+import Image from "next/image";
+import { ArrowLeft, Share2, Trophy, MapPin, Calendar, Users, DollarSign, Target, Award, ChevronRight, X as XIcon } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { PremiumNav } from "@/components/premium/PremiumNav";
+import { SmoothScroll } from "@/components/premium/SmoothScroll";
+import { Reveal } from "@/components/premium/Reveal";
+import { Magnetic } from "@/components/premium/Magnetic";
 import { useEvent, useRegisterEvent } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
-import { useQueryClient } from "@tanstack/react-query";
+import { EVENT_IMAGE } from "@/lib/premium-images";
 
 type Tab = "overview" | "format" | "prizes" | "schedule";
 
-function T({ id, active, onClick, label }: { id: Tab; active: Tab; onClick: (t: Tab) => void; label: string }) {
-  return <button onClick={() => onClick(id)} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit", background: active === id ? "#1c1c1c" : "transparent", color: active === id ? "#fff" : "#6b7280", transition: "all 0.15s", whiteSpace: "nowrap" }}>{label}</button>;
+function TabButton({ id, active, onClick, label, count }: { id: Tab; active: Tab; onClick: (t: Tab) => void; label: string; count?: number }) {
+  const isActive = active === id;
+  return (
+    <button
+      onClick={() => onClick(id)}
+      style={{
+        padding: "10px 18px", borderRadius: 100,
+        fontSize: 13, fontWeight: 600,
+        border: "1px solid",
+        background: isActive ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
+        color: isActive ? "#ff6b74" : "rgba(255,255,255,0.55)",
+        borderColor: isActive ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.06)",
+        cursor: "pointer", fontFamily: "inherit",
+        transition: "all 180ms",
+      }}
+    >
+      {label}{count !== undefined && <span style={{ opacity: 0.5 }}> ({count})</span>}
+    </button>
+  );
 }
-function Divider() { return <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "14px 0" }} />; }
 
 function StatusBadge({ status }: { status: string }) {
   const isLive = status === "Live";
   const isOpen = status === "Registration Open";
+  const isFull = status === "Full";
+  const bg = isLive ? "rgba(239,68,68,0.92)"
+           : isOpen ? "rgba(34,197,94,0.9)"
+           : isFull ? "rgba(107,114,128,0.75)"
+           : "rgba(96,165,250,0.88)";
+
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 13px", borderRadius: 100, fontSize: 12, fontWeight: 700, background: isLive ? "rgba(239,68,68,0.9)" : isOpen ? "rgba(34,197,94,0.9)" : "rgba(107,114,128,0.8)", color: "#fff" }}>
-      {isLive && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block", animation: "pulse 1s infinite" }} />}
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "4px 12px", borderRadius: 100,
+      fontSize: 11, fontWeight: 700, color: "#fff",
+      background: bg, backdropFilter: "blur(8px)",
+    }}>
+      {isLive && (
+        <motion.span
+          animate={{ opacity: [1, 0.3, 1] }}
+          transition={{ duration: 1.2, repeat: Infinity }}
+          style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }}
+        />
+      )}
       {status}
     </span>
   );
@@ -40,14 +78,59 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const [teamName, setTeamName]   = useState("");
   const [paying, setPaying] = useState(false);
 
-  if (isLoading) return <div style={{ minHeight: "100vh", background: "#080808" }}><NavBar /><Skeleton style={{ height: 400, borderRadius: 0 }} /></div>;
-  if (error || !event) return <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column" }}><NavBar /><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}><p style={{ color: "#fff", fontSize: 20 }}>Event not found</p><Link href="/events" style={{ padding: "10px 22px", borderRadius: 9, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 600 }}>Back to Events</Link></div></div>;
+  if (isLoading) {
+    return (
+      <>
+        <PremiumNav variant="solid" />
+        <main style={{ background: "#050505", minHeight: "100vh", paddingTop: 120 }}>
+          <div className="container-lg">
+            <div className="skeleton" style={{ height: 420, borderRadius: 28, marginBottom: 32 }} />
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 32 }} className="event-grid">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {[120, 200, 160].map(h => <div key={h} className="skeleton" style={{ height: h, borderRadius: 20 }} />)}
+              </div>
+              <div className="skeleton" style={{ height: 400, borderRadius: 20 }} />
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <>
+        <PremiumNav variant="solid" />
+        <main style={{
+          background: "#050505", minHeight: "100vh",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 24,
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <h1 className="display" style={{ fontSize: 42, color: "#fff", marginBottom: 12 }}>
+              Event not found.
+            </h1>
+            <Link href="/events" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "12px 22px", borderRadius: 100,
+              background: "#e63946", color: "#fff",
+              textDecoration: "none", fontWeight: 700, fontSize: 14,
+            }}>
+              <ArrowLeft size={14} /> Back to events
+            </Link>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   const spotsLeft = event.maxParticipants - event.participants;
-  const pct = Math.round((event.participants / event.maxParticipants) * 100);
+  const pct       = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
   const regClosed = new Date(event.registrationDeadline) < new Date();
-  const isLive = event.status === "Live";
-  const isTeam = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
+  const isLive    = event.status === "Live";
+  const isTeam    = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
+  const hasPrize  = event.prizePool && event.prizePool !== "Prizes & Trophies";
+  const img       = event.imageUrl || EVENT_IMAGE.src;
 
   const payAndRegister = async (team?: string) => {
     if (!event || !user) return;
@@ -67,7 +150,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         });
         qc.invalidateQueries({ queryKey: ["events"] });
         qc.invalidateQueries({ queryKey: ["event", id] });
-        toast.success("Payment successful! You're registered. 🏆");
+        toast.success("Payment successful. You're registered.");
       } else {
         await reg.mutateAsync({ eventId: id, teamName: team });
       }
@@ -86,236 +169,613 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
     if (isTeam) { setShowModal(true); return; }
     payAndRegister();
   };
-  const handleShare = () => { navigator.clipboard?.writeText(window.location.href); toast.success("Event link copied! Share with your team to register together."); };
+
+  const handleShare = () => {
+    navigator.clipboard?.writeText(window.location.href);
+    toast.success("Event link copied to clipboard");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await payAndRegister(teamName.trim() || undefined);
   };
 
-  const sideInfo = [
-    { Icon: DollarSign, label: "Entry Fee",     value: event.entryFee, big: true },
-    { Icon: Trophy,     label: "Prize Pool",    value: event.prizePool, big: true, accent: true },
-    { Icon: Users,      label: "Participants",  value: `${event.participants}/${event.maxParticipants}` },
-    { Icon: MapPin,     label: "Location",      value: event.address, sub: `${event.distance} away` },
+  const sideInfo: { Icon: typeof DollarSign; label: string; value: string; sub?: string; emphasis?: "red" | "gold" }[] = [
+    { Icon: DollarSign, label: "Entry fee",   value: event.entryFee,   emphasis: event.entryFeeAmount === 0 ? undefined : "red" },
+    { Icon: Trophy,     label: "Prize pool",  value: event.prizePool,  emphasis: hasPrize ? "gold" : undefined },
+    { Icon: Users,      label: "Participants", value: `${event.participants}/${event.maxParticipants}` },
+    { Icon: MapPin,     label: "Location",    value: event.address,    sub: `${event.distance} away` },
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808" }}>
-      <NavBar />
-      {isLive && (
-        <div style={{ background: "rgba(239,68,68,0.1)", borderBottom: "1px solid rgba(239,68,68,0.25)", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1s infinite" }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#f87171" }}>🔴 This event is happening LIVE right now at {event.location}</span>
-        </div>
-      )}
-      {/* Sub-header */}
-      <div style={{ position: "sticky", top: 60, zIndex: 40, borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(8,8,8,0.95)", backdropFilter: "blur(12px)", padding: "0 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/events" style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", textDecoration: "none", fontSize: 13 }}><ArrowLeft size={16} />Event Details</Link>
-          <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "inherit" }}><Share2 size={15} />Share</button>
-        </div>
-      </div>
+    <>
+      <SmoothScroll />
+      <PremiumNav variant="solid" />
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 60px" }}>
-        {/* Hero Card */}
-        <div style={{ margin: "28px 0", background: "#141414", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 16, overflow: "hidden" }}>
-          <div style={{ position: "relative", height: 400, overflow: "hidden" }}>
-            <Img src={event.imageUrl} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 45%, transparent 100%)" }} />
-            {/* Prize pool badge top-right */}
-            <div style={{ position: "absolute", top: 20, right: 20, display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 12, background: "linear-gradient(135deg,#f59e0b,#d97706)", fontWeight: 900, fontSize: 16, color: "#000", boxShadow: "0 6px 24px rgba(245,158,11,0.4)" }}>
-              <Trophy size={18} />{event.prizePool}
-            </div>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 28px 28px" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 100, background: "rgba(230,57,70,0.9)", color: "#fff" }}>{event.sport}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 100, background: "rgba(255,255,255,0.07)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", textTransform: "capitalize" }}>{event.type}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 100, background: "rgba(255,255,255,0.07)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)" }}>{event.difficulty}</span>
+      <main style={{ background: "#050505", color: "#fff", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+        {/* Live banner */}
+        {isLive && (
+          <div style={{
+            background: "rgba(239,68,68,0.1)",
+            borderBottom: "1px solid rgba(239,68,68,0.25)",
+            padding: "10px 24px",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            position: "relative", zIndex: 20,
+          }}>
+            <motion.span
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+              style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: "#ef4444",
+                boxShadow: "0 0 12px #ef4444",
+              }}
+            />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fca5a5", letterSpacing: "0.04em" }}>
+              LIVE NOW · {event.location}
+            </span>
+          </div>
+        )}
+
+        {/* Hero */}
+        <section style={{ position: "relative", paddingTop: 120, paddingBottom: 48, overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, opacity: 0.38 }}>
+            <Image
+              src={img} alt={event.title}
+              fill priority quality={80} sizes="100vw"
+              style={{ objectFit: "cover", filter: "saturate(0.55) brightness(0.55)" }}
+            />
+          </div>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.3) 20%, #050505 100%)",
+          }} />
+
+          <div className="container-lg" style={{ position: "relative" }}>
+            <Reveal>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
+                <Link href="/events" style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  padding: "7px 14px", borderRadius: 100,
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  fontSize: 12, color: "rgba(255,255,255,0.7)",
+                  textDecoration: "none", backdropFilter: "blur(10px)",
+                }}>
+                  <ArrowLeft size={12} /> All events
+                </Link>
+                <button
+                  onClick={handleShare}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "7px 14px", borderRadius: 100,
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    fontSize: 12, color: "rgba(255,255,255,0.7)",
+                    cursor: "pointer", fontFamily: "inherit",
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <Share2 size={12} /> Share
+                </button>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.06}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
+                  background: "rgba(230,57,70,0.95)", color: "#fff",
+                }}>{event.sport}</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
+                  background: "rgba(0,0,0,0.5)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(8px)",
+                }}>{event.type}</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
+                  background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.8)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}>{event.difficulty}</span>
                 <StatusBadge status={event.status} />
               </div>
-              <h1 style={{ fontSize: "clamp(22px, 4vw, 40px)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 14 }}>{event.title}</h1>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-                <span style={{ fontSize: 13, color: "#9ca3af", display: "flex", gap: 6 }}><Calendar size={14} color="#e63946" />{event.date}</span>
-                <span style={{ fontSize: 13, color: "#9ca3af", display: "flex", gap: 6 }}><MapPin size={14} color="#e63946" />{event.location}</span>
+            </Reveal>
+
+            <Reveal delay={0.12}>
+              <h1 className="display" style={{
+                fontSize: "clamp(40px, 6vw, 88px)",
+                color: "#fff", marginBottom: 24, maxWidth: 1100,
+              }}>
+                {event.title}
+              </h1>
+            </Reveal>
+
+            <Reveal delay={0.18}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 20, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <Calendar size={14} color="#e63946" /> {event.date}
+                </div>
+                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <MapPin size={14} color="#e63946" /> {event.location}
+                </div>
+                {hasPrize && (
+                  <>
+                    <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#eab308", fontWeight: 700 }}>
+                      <Trophy size={14} /> {event.prizePool}
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
+            </Reveal>
           </div>
-        </div>
+        </section>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 28 }} className="detail-grid">
-          {/* Left */}
-          <div>
-            {/* Registration progress */}
-            <div style={{ background: "#141414", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 12, padding: "20px 22px", marginBottom: 22 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <div>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Registration Status</h3>
-                  <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 2 }}>{event.participants} registered · {spotsLeft} spots left</p>
-                </div>
-                <div style={{ padding: "6px 14px", borderRadius: 100, background: pct >= 80 ? "rgba(230,57,70,0.18)" : "rgba(255,255,255,0.06)", color: pct >= 80 ? "#e63946" : "#9ca3af", fontWeight: 800, fontSize: 13 }}>
-                  {pct}% Full
-                </div>
+        {/* Body */}
+        <section style={{ paddingBottom: 120 }}>
+          <div className="container-lg">
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 32 }} className="event-grid">
+              {/* Left */}
+              <div>
+                {/* Registration status */}
+                <Reveal>
+                  <div style={{
+                    background: "rgba(13,13,13,0.7)",
+                    backdropFilter: "blur(18px)",
+                    border: "1px solid rgba(230,57,70,0.18)",
+                    borderRadius: 20, padding: "22px 24px", marginBottom: 24,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                      <div>
+                        <h3 className="eyebrow" style={{ marginBottom: 4 }}>Registration status</h3>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
+                          <strong style={{ color: "#fff", fontWeight: 700 }}>{event.participants}</strong> registered · {spotsLeft} spots left
+                        </p>
+                      </div>
+                      <div style={{
+                        padding: "6px 14px", borderRadius: 100,
+                        background: pct >= 80 ? "rgba(230,57,70,0.18)" : "rgba(255,255,255,0.04)",
+                        color: pct >= 80 ? "#ff6b74" : "rgba(255,255,255,0.7)",
+                        fontWeight: 800, fontSize: 13,
+                      }}>
+                        {pct}% full
+                      </div>
+                    </div>
+                    <div style={{
+                      height: 6, background: "rgba(255,255,255,0.05)",
+                      borderRadius: 100, overflow: "hidden",
+                    }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                        style={{
+                          height: "100%",
+                          background: "linear-gradient(90deg, #e63946 0%, #f87171 100%)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Tabs */}
+                <Reveal>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                    <TabButton id="overview" active={tab} onClick={setTab} label="Overview" />
+                    <TabButton id="format"   active={tab} onClick={setTab} label="Format"   count={event.format.length} />
+                    <TabButton id="prizes"   active={tab} onClick={setTab} label="Prizes"   count={event.prizes.length} />
+                    <TabButton id="schedule" active={tab} onClick={setTab} label="Schedule" count={event.schedule.length} />
+                  </div>
+                </Reveal>
+
+                {/* Overview */}
+                {tab === "overview" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <Reveal>
+                      <div style={{
+                        background: "rgba(13,13,13,0.7)",
+                        backdropFilter: "blur(18px)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 20, padding: "24px 28px",
+                      }}>
+                        <h3 className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                          <Award size={14} color="#e63946" /> About this event
+                        </h3>
+                        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.72)", lineHeight: 1.75 }}>
+                          {event.description}
+                        </p>
+                      </div>
+                    </Reveal>
+                    <Reveal>
+                      <div style={{
+                        background: "rgba(13,13,13,0.7)",
+                        backdropFilter: "blur(18px)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 20, padding: "24px 28px",
+                      }}>
+                        <h3 className="eyebrow" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                          <Target size={14} color="#e63946" /> Requirements
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {event.requirements.map((r, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                              <span style={{
+                                width: 6, height: 6, borderRadius: "50%",
+                                background: "#e63946", flexShrink: 0, marginTop: 7,
+                              }} />
+                              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{r}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Reveal>
+                  </div>
+                )}
+
+                {/* Format */}
+                {tab === "format" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {event.format.map((item, i) => (
+                      <Reveal key={i}>
+                        <div style={{
+                          background: "rgba(13,13,13,0.7)",
+                          backdropFilter: "blur(18px)",
+                          border: "1px solid rgba(230,57,70,0.18)",
+                          borderRadius: 18, padding: "18px 20px",
+                          display: "flex", alignItems: "flex-start", gap: 14,
+                        }}>
+                          <div style={{
+                            width: 34, height: 34, borderRadius: "50%",
+                            background: "rgba(230,57,70,0.15)",
+                            border: "1px solid rgba(230,57,70,0.3)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                          }}>
+                            <span style={{ fontWeight: 800, color: "#ff6b74", fontSize: 13 }}>{i + 1}</span>
+                          </div>
+                          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.78)", paddingTop: 6 }}>{item}</p>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
+
+                {/* Prizes */}
+                {tab === "prizes" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {event.prizes.map((prize, i) => (
+                      <Reveal key={i}>
+                        <div
+                          className="prize-card"
+                          style={{
+                            background: "rgba(13,13,13,0.7)",
+                            backdropFilter: "blur(18px)",
+                            border: "1px solid rgba(234,179,8,0.2)",
+                            borderRadius: 20, padding: "20px 22px",
+                            display: "flex", alignItems: "center", gap: 16,
+                            transition: "border-color 220ms, box-shadow 220ms",
+                          }}
+                        >
+                          <div style={{
+                            width: 52, height: 52, borderRadius: "50%",
+                            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 4px 20px rgba(245,158,11,0.4)",
+                          }}>
+                            <Trophy size={22} color="#000" />
+                          </div>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{prize}</p>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
+
+                {/* Schedule */}
+                {tab === "schedule" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {event.schedule.map((item, i) => (
+                      <Reveal key={i}>
+                        <div style={{
+                          background: "rgba(13,13,13,0.7)",
+                          backdropFilter: "blur(18px)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                          borderRadius: 18, padding: "18px 22px",
+                          display: "flex", alignItems: "flex-start", gap: 16,
+                        }}>
+                          <div style={{
+                            padding: "6px 14px", borderRadius: 100,
+                            background: "rgba(230,57,70,0.12)",
+                            border: "1px solid rgba(230,57,70,0.25)",
+                            flexShrink: 0,
+                          }}>
+                            <p style={{ fontWeight: 800, color: "#ff6b74", fontSize: 12, letterSpacing: "0.04em" }}>
+                              {item.day}
+                            </p>
+                          </div>
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
+                              <Calendar size={13} color="#e63946" />
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{item.time}</span>
+                            </div>
+                            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{item.event}</p>
+                          </div>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ height: 10, background: "#1c1c1c", borderRadius: 99, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#e63946,#f87171)", borderRadius: 99, transition: "width 1s ease" }} />
-              </div>
-            </div>
 
-            {/* Tab bar */}
-            <div style={{ display: "flex", gap: 2, background: "#111", borderRadius: 10, padding: 4, width: "fit-content", marginBottom: 20, flexWrap: "wrap" }}>
-              <T id="overview" active={tab} onClick={setTab} label="Overview" />
-              <T id="format"   active={tab} onClick={setTab} label="Format" />
-              <T id="prizes"   active={tab} onClick={setTab} label="Prizes" />
-              <T id="schedule" active={tab} onClick={setTab} label="Schedule" />
-            </div>
-
-            {/* Overview */}
-            {tab === "overview" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "20px 22px" }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 9 }}><Award size={18} color="#e63946" />About This Event</h3>
-                  <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.8 }}>{event.description}</p>
-                </div>
-                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "20px 22px" }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 9 }}><Target size={17} color="#e63946" />Requirements</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {event.requirements.map((r, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#e63946", flexShrink: 0, marginTop: 6, display: "inline-block" }} />
-                        <span style={{ fontSize: 14, color: "#9ca3af" }}>{r}</span>
+              {/* Sidebar */}
+              <aside>
+                <div style={{
+                  position: "sticky", top: 100,
+                  background: "rgba(13,13,13,0.75)",
+                  backdropFilter: "blur(18px)",
+                  border: "1px solid rgba(230,57,70,0.2)",
+                  borderRadius: 24, padding: "24px 22px",
+                }}>
+                  <h3 className="eyebrow" style={{ marginBottom: 20 }}>Event information</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {sideInfo.map(({ Icon, label, value, sub, emphasis }, i) => (
+                      <div key={label} style={{
+                        display: "flex", alignItems: "flex-start", gap: 12,
+                        paddingBottom: i < sideInfo.length - 1 ? 16 : 0,
+                        borderBottom: i < sideInfo.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                      }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: 10,
+                          background: emphasis === "gold" ? "rgba(234,179,8,0.1)" : "rgba(230,57,70,0.1)",
+                          border: emphasis === "gold" ? "1px solid rgba(234,179,8,0.22)" : "1px solid rgba(230,57,70,0.18)",
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                          <Icon size={13} color={emphasis === "gold" ? "#fbbf24" : "#ff6b74"} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{
+                            fontSize: 10, color: "rgba(255,255,255,0.4)",
+                            letterSpacing: "0.08em", textTransform: "uppercase",
+                            marginBottom: 3,
+                          }}>
+                            {label}
+                          </p>
+                          {emphasis ? (
+                            <p style={{
+                              fontSize: 24, fontWeight: 800,
+                              color: emphasis === "gold" ? "#fbbf24" : "#ff6b74",
+                              letterSpacing: "-0.03em",
+                            }}>
+                              {value}
+                            </p>
+                          ) : (
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{value}</p>
+                          )}
+                          {sub && (
+                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                              {sub}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* Format */}
-            {tab === "format" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {event.format.map((item, i) => (
-                  <div key={i} style={{ background: "#141414", border: "1px solid rgba(230,57,70,0.18)", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "flex-start", gap: 14 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(230,57,70,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontWeight: 900, color: "#e63946", fontSize: 13 }}>{i + 1}</span>
+                  {!regClosed && spotsLeft > 0 && (
+                    <div style={{
+                      margin: "18px 0",
+                      padding: "10px 14px", borderRadius: 14,
+                      background: "rgba(234,179,8,0.08)",
+                      border: "1px solid rgba(234,179,8,0.2)",
+                    }}>
+                      <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 700 }}>
+                        Deadline: {new Date(event.registrationDeadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
                     </div>
-                    <p style={{ fontSize: 14, color: "#e5e7eb", paddingTop: 5 }}>{item}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
 
-            {/* Prizes */}
-            {tab === "prizes" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {event.prizes.map((prize, i) => (
-                  <div key={i} style={{ background: "#141414", border: "1px solid rgba(230,57,70,0.18)", borderRadius: 12, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14, transition: "border-color 0.2s" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(230,57,70,0.45)"}
-                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(230,57,70,0.18)"}
-                  >
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Trophy size={22} color="#fff" />
-                    </div>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{prize}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Schedule */}
-            {tab === "schedule" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {event.schedule.map((item, i) => (
-                  <div key={i} style={{ background: "#141414", border: "1px solid rgba(230,57,70,0.18)", borderRadius: 12, padding: "18px 20px", display: "flex", alignItems: "flex-start", gap: 16 }}>
-                    <div style={{ padding: "5px 12px", borderRadius: 8, background: "rgba(230,57,70,0.15)", flexShrink: 0 }}>
-                      <p style={{ fontWeight: 800, color: "#e63946", fontSize: 13 }}>{item.day}</p>
-                    </div>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-                        <Calendar size={13} color="#e63946" />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{item.time}</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
+                    {isLive ? (
+                      <div style={{
+                        padding: "16px", borderRadius: 16,
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                        textAlign: "center",
+                      }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>
+                          Event is live now
+                        </p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                          Come watch at {event.location}
+                        </p>
                       </div>
-                      <p style={{ fontSize: 14, color: "#9ca3af" }}>{item.event}</p>
-                    </div>
+                    ) : (
+                      <Magnetic strength={6}>
+                        <button
+                          onClick={handleRegister}
+                          disabled={regClosed || spotsLeft <= 0 || reg.isPending || paying}
+                          style={{
+                            width: "100%", height: 52, borderRadius: 100,
+                            fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                            background: (regClosed || spotsLeft <= 0)
+                              ? "rgba(255,255,255,0.04)"
+                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            color: (regClosed || spotsLeft <= 0) ? "rgba(255,255,255,0.45)" : "#fff",
+                            border: (regClosed || spotsLeft <= 0) ? "1px solid rgba(255,255,255,0.08)" : "none",
+                            cursor: (regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                            boxShadow: (!regClosed && spotsLeft > 0) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                          }}
+                        >
+                          {(reg.isPending || paying)
+                            ? "Processing…"
+                            : regClosed
+                              ? "Registration closed"
+                              : spotsLeft <= 0
+                                ? "Event full"
+                                : <>{isTeam ? "Register your team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={16} /></>}
+                        </button>
+                      </Magnetic>
+                    )}
+                    <button
+                      onClick={handleShare}
+                      style={{
+                        width: "100%", height: 44, borderRadius: 100,
+                        fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                        background: "rgba(255,255,255,0.03)",
+                        color: "rgba(255,255,255,0.75)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                      }}
+                    >
+                      <Share2 size={13} /> Share event
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div>
-            <div style={{ background: "#141414", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 14, padding: "22px 20px", position: "sticky", top: 120 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 20 }}>Event Information</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {sideInfo.map(({ Icon, label, value, big, accent, sub }, i) => (
-                  <div key={label}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingBottom: i < sideInfo.length - 1 ? 14 : 0 }}>
-                      <Icon size={18} color="#e63946" style={{ marginTop: 3, flexShrink: 0 }} />
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{label}</p>
-                        {big ? <p style={{ fontSize: 24, fontWeight: 900, color: accent ? "#eab308" : "#e63946", letterSpacing: "-0.03em" }}>{value}</p> : <p style={{ fontSize: 14, color: "#9ca3af" }}>{value}</p>}
-                        {sub && <p style={{ fontSize: 12, color: "#e63946", marginTop: 2 }}>{sub}</p>}
-                      </div>
-                    </div>
-                    {i < sideInfo.length - 1 && <Divider />}
-                  </div>
-                ))}
-              </div>
-
-              {!regClosed && spotsLeft > 0 && (
-                <div style={{ margin: "16px 0", padding: "10px 14px", borderRadius: 9, background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)" }}>
-                  <p style={{ fontSize: 12, color: "#eab308", fontWeight: 700 }}>⏰ Deadline: {new Date(event.registrationDeadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                 </div>
-              )}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                {!isLive ? (
-                  <button onClick={handleRegister} disabled={regClosed || spotsLeft <= 0 || reg.isPending || paying} style={{ width: "100%", height: 50, borderRadius: 11, fontSize: 15, fontWeight: 800, background: (regClosed || spotsLeft <= 0) ? "rgba(255,255,255,0.06)" : "#e63946", color: (regClosed || spotsLeft <= 0) ? "#6b7280" : "#fff", border: "none", cursor: (regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: (!regClosed && spotsLeft > 0) ? "0 4px 18px rgba(230,57,70,0.3)" : "none" }}>
-                    {(reg.isPending || paying) ? "Processing…" : regClosed ? "Registration Closed" : spotsLeft <= 0 ? "Event Full" : <>{isTeam ? "Register Your Team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={17} /></>}
-                  </button>
-                ) : (
-                  <div style={{ padding: "14px", borderRadius: 11, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", textAlign: "center" }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>🔴 Event is Live Now!</p>
-                    <p style={{ fontSize: 12, color: "#9ca3af" }}>Come watch at {event.location}</p>
-                  </div>
-                )}
-                <button onClick={handleShare} style={{ width: "100%", height: 44, borderRadius: 10, fontSize: 14, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-                  <Share2 size={15} />Share Event
-                </button>
-              </div>
+              </aside>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      {/* Team registration modal */}
-      {showModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setShowModal(false)}>
-          <div style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18, padding: "28px", width: "100%", maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 6, letterSpacing: "-0.02em" }}>Register for Event</h2>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>{event.title}</p>
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Team Name (optional)</label>
-                <input placeholder="e.g. Thunder Hawks" value={teamName} onChange={e => setTeamName(e.target.value)} style={{ height: 42, padding: "0 14px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.1)", background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }} onFocus={e => e.target.style.borderColor="#e63946"} onBlur={e => e.target.style.borderColor="rgba(255,255,255,0.1)"} />
-              </div>
-              {event.entryFeeAmount > 0 && (
-                <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(230,57,70,0.08)", border: "1px solid rgba(230,57,70,0.2)" }}>
-                  <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>Entry Fee: {event.entryFee}</p>
-                  <p style={{ fontSize: 12, color: "#9ca3af" }}>Pay securely via Razorpay. Your team slot is reserved after payment.</p>
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-                <button type="submit" disabled={reg.isPending || paying} style={{ flex: 1, height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: (reg.isPending || paying) ? "not-allowed" : "pointer", opacity: (reg.isPending || paying) ? 0.7 : 1, fontFamily: "inherit" }}>
-                  {(reg.isPending || paying) ? "Processing…" : event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Confirm Registration"}
+      {/* Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowModal(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 100,
+              background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: "#0d0d0d",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 24, padding: 32,
+                width: "100%", maxWidth: 440,
+                boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
+                <h2 className="display" style={{ fontSize: 26, color: "#fff", letterSpacing: "-0.02em" }}>
+                  Register for event
+                </h2>
+                <button
+                  onClick={() => setShowModal(false)}
+                  style={{
+                    width: 30, height: 30, borderRadius: 100,
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.6)",
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <XIcon size={14} />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-      <style jsx global>{`.detail-grid{@media(max-width:768px){grid-template-columns:1fr!important}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-    </div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
+                {event.title}
+              </p>
+
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  <label className="eyebrow" style={{ margin: 0 }}>Team name (optional)</label>
+                  <input
+                    placeholder="e.g. Thunder Hawks"
+                    value={teamName}
+                    onChange={e => setTeamName(e.target.value)}
+                    style={{
+                      height: 44, padding: "0 14px", borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.02)",
+                      color: "#fff", fontSize: 14, fontFamily: "inherit",
+                      outline: "none",
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                  />
+                </div>
+                {event.entryFeeAmount > 0 && (
+                  <div style={{
+                    padding: "14px 16px", borderRadius: 14,
+                    background: "rgba(230,57,70,0.06)",
+                    border: "1px solid rgba(230,57,70,0.2)",
+                  }}>
+                    <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>
+                      Entry fee: <span style={{ color: "#ff6b74" }}>{event.entryFee}</span>
+                    </p>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                      Secure payment via Razorpay. Team slot reserved after payment.
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    style={{
+                      flex: 1, height: 48, borderRadius: 100,
+                      fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                      background: "rgba(255,255,255,0.03)",
+                      color: "rgba(255,255,255,0.7)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reg.isPending || paying}
+                    style={{
+                      flex: 1, height: 48, borderRadius: 100,
+                      fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      color: "#fff", border: "none",
+                      cursor: (reg.isPending || paying) ? "not-allowed" : "pointer",
+                      opacity: (reg.isPending || paying) ? 0.7 : 1,
+                      boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
+                    }}
+                  >
+                    {(reg.isPending || paying)
+                      ? "Processing…"
+                      : event.entryFeeAmount > 0
+                        ? `Pay ${event.entryFee}`
+                        : "Confirm registration"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .event-grid { grid-template-columns: 1fr !important; }
+        }
+        .prize-card:hover {
+          border-color: rgba(234,179,8,0.4) !important;
+          box-shadow: 0 20px 48px rgba(234,179,8,0.1);
+        }
+      `}</style>
+    </>
   );
 }
