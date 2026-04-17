@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Share2, Star, MapPin, Calendar, Users, Target, DollarSign, Clock, ChevronRight, Check, Award, Phone, X as XIcon } from "lucide-react";
+import { ArrowLeft, Share2, Star, MapPin, Calendar, Users, Target, DollarSign, Clock, ChevronRight, Check, CheckCircle, Award, Phone, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +11,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { useCamp } from "@/hooks/useData";
+import { useCamp, useCancelCamp } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { CAMP_IMAGE } from "@/lib/premium-images";
@@ -43,12 +43,14 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const { data: camp, isLoading, error } = useCamp(id);
   const { user } = useAuth();
+  const cancel = useCancelCamp();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [showModal, setShowModal] = useState(false);
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge]   = useState("");
   const [paying, setPaying] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   if (isLoading) {
     return (
@@ -98,11 +100,14 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const spotsLeft = camp.maxParticipants - camp.participants;
-  const pct       = Math.min(100, Math.round((camp.participants / camp.maxParticipants) * 100));
-  const daysLeft  = Math.max(0, Math.floor((new Date(camp.registrationDeadline).getTime() - Date.now()) / 86400000));
-  const regClosed = daysLeft === 0;
-  const img       = camp.imageUrl || CAMP_IMAGE.src;
+  const spotsLeft    = camp.maxParticipants - camp.participants;
+  const pct          = Math.min(100, Math.round((camp.participants / camp.maxParticipants) * 100));
+  const daysLeft     = Math.max(0, Math.floor((new Date(camp.registrationDeadline).getTime() - Date.now()) / 86400000));
+  const regClosed    = daysLeft === 0;
+  const img          = camp.imageUrl || CAMP_IMAGE.src;
+  const isRegistered = !!camp.userRegistration;
+  const regPaid      = camp.userRegistration?.paymentStatus === "paid";
+  const canCancel    = new Date(camp.startDate).getTime() - Date.now() >= 90 * 60000;
 
   const handleRegister = () => {
     if (!user) { toast.error("Please sign in to register"); return; }
@@ -618,32 +623,117 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
                   )}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                    <Magnetic strength={6}>
-                      <button
-                        onClick={handleRegister}
-                        disabled={spotsLeft <= 0 || regClosed || paying}
-                        style={{
-                          width: "100%", height: 52, borderRadius: 100,
-                          fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-                          background: (spotsLeft <= 0 || regClosed)
-                            ? "rgba(255,255,255,0.04)"
-                            : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                          color: (spotsLeft <= 0 || regClosed) ? "rgba(255,255,255,0.45)" : "#fff",
-                          border: (spotsLeft <= 0 || regClosed) ? "1px solid rgba(255,255,255,0.08)" : "none",
-                          cursor: (spotsLeft <= 0 || regClosed || paying) ? "not-allowed" : "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                          boxShadow: (spotsLeft > 0 && !regClosed) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
-                        }}
-                      >
-                        {paying
-                          ? "Registering…"
-                          : spotsLeft <= 0
-                            ? "Camp full"
-                            : regClosed
-                              ? "Registration closed"
-                              : <>Register now <ChevronRight size={16} /></>}
-                      </button>
-                    </Magnetic>
+                    {isRegistered && regPaid ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{
+                          padding: "16px", borderRadius: 16,
+                          background: "rgba(74,222,128,0.08)",
+                          border: "1px solid rgba(74,222,128,0.25)",
+                          textAlign: "center",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                            <CheckCircle size={18} color="#4ade80" />
+                            <p style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>
+                              Registered
+                            </p>
+                          </div>
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                            {camp.userRegistration?.childName} is enrolled for this camp
+                          </p>
+                        </div>
+                        {canCancel ? (
+                          <button
+                            disabled={cancel.isPending}
+                            onClick={() => { if (confirm("Cancel your registration for this camp?")) cancel.mutate(id); }}
+                            style={{
+                              width: "100%", height: 44, borderRadius: 100,
+                              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                              background: "transparent",
+                              color: "#f87171",
+                              border: "1px solid rgba(239,68,68,0.3)",
+                              cursor: cancel.isPending ? "not-allowed" : "pointer",
+                              opacity: cancel.isPending ? 0.7 : 1,
+                            }}
+                          >
+                            {cancel.isPending ? "Cancelling…" : "Cancel registration"}
+                          </button>
+                        ) : (
+                          <div style={{
+                            padding: "10px 14px", borderRadius: 14,
+                            background: "rgba(234,179,8,0.08)",
+                            border: "1px solid rgba(234,179,8,0.2)",
+                            textAlign: "center",
+                          }}>
+                            <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>
+                              Cancellation is not allowed within 90 minutes of the start time
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : isRegistered && !regPaid ? (
+                      <div style={{
+                        padding: "16px", borderRadius: 16,
+                        background: "rgba(234,179,8,0.08)",
+                        border: "1px solid rgba(234,179,8,0.25)",
+                        textAlign: "center",
+                      }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", marginBottom: 4 }}>
+                          Payment pending
+                        </p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                          Complete payment to confirm registration
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {spotsLeft > 0 && !regClosed && (
+                          <label style={{
+                            display: "flex", alignItems: "flex-start", gap: 10,
+                            padding: "12px 14px", borderRadius: 14,
+                            background: "rgba(255,255,255,0.02)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            cursor: "pointer",
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={agreed}
+                              onChange={e => setAgreed(e.target.checked)}
+                              style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                            />
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
+                              I agree that cancellations are only allowed up to 90 minutes before the start time
+                            </span>
+                          </label>
+                        )}
+                        <Magnetic strength={6}>
+                          <button
+                            onClick={handleRegister}
+                            disabled={(!agreed && spotsLeft > 0 && !regClosed) || spotsLeft <= 0 || regClosed || paying}
+                            style={{
+                              width: "100%", height: 52, borderRadius: 100,
+                              fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                              background: (spotsLeft <= 0 || regClosed || !agreed)
+                                ? "rgba(255,255,255,0.04)"
+                                : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                              color: (spotsLeft <= 0 || regClosed || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
+                              border: (spotsLeft <= 0 || regClosed || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
+                              cursor: (!agreed || spotsLeft <= 0 || regClosed || paying) ? "not-allowed" : "pointer",
+                              opacity: (!agreed && spotsLeft > 0 && !regClosed) ? 0.5 : 1,
+                              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                              boxShadow: (agreed && spotsLeft > 0 && !regClosed) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                            }}
+                          >
+                            {paying
+                              ? "Registering…"
+                              : spotsLeft <= 0
+                                ? "Camp full"
+                                : regClosed
+                                  ? "Registration closed"
+                                  : <>Register now <ChevronRight size={16} /></>}
+                          </button>
+                        </Magnetic>
+                      </div>
+                    )}
                     <button
                       onClick={handleShare}
                       style={{

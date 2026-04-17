@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const status = p.get("status") || "open";
 
     const where: Prisma.GameWhereInput = {};
-    if (status === "open")      where.status = { notIn: ["cancelled", "completed"] };
+    if (status === "open")      where.status = { notIn: ["cancelled", "completed", "archived"] };
     else if (status !== "all")  where.status = status;
     if (sport && sport !== "all") where.sport = sport;
     if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];

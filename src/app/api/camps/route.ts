@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const duration = p.get("duration");
     const age      = p.get("ageGroup");
 
-    const where: Prisma.CampWhereInput = { status: { not: "completed" } };
+    const where: Prisma.CampWhereInput = { status: { notIn: ["completed", "archived"] } };
     if (sport && sport !== "all") where.sport = sport;
     if (skill && skill !== "all") where.OR = [{ skillLevel: skill }, { skillLevel: "All Levels" }];
     if (age   && age   !== "all") where.ageGroup = age;

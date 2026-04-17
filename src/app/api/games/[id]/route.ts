@@ -5,6 +5,8 @@ import { ok, fail, handleErr } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+const CANCEL_CUTOFF_MS = 90 * 60_000;
+
 export async function GET(_req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
@@ -81,12 +83,20 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const gp = await prisma.gamePlayer.findUnique({ where: { gameId_userId: { gameId: id, userId: session.id } }, select: { id: true } });
     if (!gp) return fail("Not in this game", 400);
 
-    const game = await prisma.game.findUnique({ where: { id }, select: { status: true } });
+    const game = await prisma.game.findUnique({ where: { id }, select: { scheduledAt: true, status: true } });
+    if (!game) return fail("Game not found", 404);
+
+    const now = Date.now();
+    const startTime = new Date(game.scheduledAt).getTime();
+    if (startTime - now < CANCEL_CUTOFF_MS) {
+      return fail("Cancellation is not allowed within 90 minutes of the start time", 403);
+    }
+
     await prisma.$transaction([
       prisma.gamePlayer.delete({ where: { id: gp.id } }),
       prisma.game.update({
         where: { id },
-        data: { slotsLeft: { increment: 1 }, status: game?.status === "full" ? "open" : undefined },
+        data: { slotsLeft: { increment: 1 }, status: game.status === "full" ? "open" : undefined },
       }),
     ]);
 

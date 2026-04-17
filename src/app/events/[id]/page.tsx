@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Share2, Trophy, MapPin, Calendar, Users, DollarSign, Target, Award, ChevronRight, X as XIcon } from "lucide-react";
+import { ArrowLeft, Share2, Trophy, MapPin, Calendar, Users, DollarSign, Target, Award, ChevronRight, CheckCircle, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +11,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { useEvent, useRegisterEvent } from "@/hooks/useData";
+import { useEvent, useRegisterEvent, useCancelEvent } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { EVENT_IMAGE } from "@/lib/premium-images";
@@ -72,11 +72,13 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const { data: event, isLoading, error } = useEvent(id);
   const { user } = useAuth();
   const reg = useRegisterEvent();
+  const cancel = useCancelEvent();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [showModal, setShowModal] = useState(false);
   const [teamName, setTeamName]   = useState("");
   const [paying, setPaying] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   if (isLoading) {
     return (
@@ -124,13 +126,16 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
     );
   }
 
-  const spotsLeft = event.maxParticipants - event.participants;
-  const pct       = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
-  const regClosed = new Date(event.registrationDeadline) < new Date();
-  const isLive    = event.status === "Live";
-  const isTeam    = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
-  const hasPrize  = event.prizePool && event.prizePool !== "Prizes & Trophies";
-  const img       = event.imageUrl || EVENT_IMAGE.src;
+  const spotsLeft    = event.maxParticipants - event.participants;
+  const pct          = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
+  const regClosed    = new Date(event.registrationDeadline) < new Date();
+  const isLive       = event.status === "Live";
+  const isTeam       = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
+  const hasPrize     = event.prizePool && event.prizePool !== "Prizes & Trophies";
+  const img          = event.imageUrl || EVENT_IMAGE.src;
+  const isRegistered = !!event.userRegistration;
+  const regPaid      = event.userRegistration?.paymentStatus === "paid" || event.userRegistration?.paymentStatus === "free";
+  const canCancel    = new Date(event.startDate).getTime() - Date.now() >= 90 * 60000;
 
   const payAndRegister = async (team?: string) => {
     if (!event || !user) return;
@@ -579,7 +584,70 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   )}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                    {isLive ? (
+                    {isRegistered && regPaid ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{
+                          padding: "16px", borderRadius: 16,
+                          background: "rgba(74,222,128,0.08)",
+                          border: "1px solid rgba(74,222,128,0.25)",
+                          textAlign: "center",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                            <CheckCircle size={18} color="#4ade80" />
+                            <p style={{ fontSize: 15, fontWeight: 700, color: "#4ade80" }}>
+                              Registered
+                            </p>
+                          </div>
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                            {event.userRegistration?.teamName
+                              ? `Team: ${event.userRegistration.teamName}`
+                              : "You're all set for this event"}
+                          </p>
+                        </div>
+                        {canCancel ? (
+                          <button
+                            disabled={cancel.isPending}
+                            onClick={() => { if (confirm("Cancel your registration for this event?")) cancel.mutate(id); }}
+                            style={{
+                              width: "100%", height: 44, borderRadius: 100,
+                              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                              background: "transparent",
+                              color: "#f87171",
+                              border: "1px solid rgba(239,68,68,0.3)",
+                              cursor: cancel.isPending ? "not-allowed" : "pointer",
+                              opacity: cancel.isPending ? 0.7 : 1,
+                            }}
+                          >
+                            {cancel.isPending ? "Cancelling…" : "Cancel registration"}
+                          </button>
+                        ) : (
+                          <div style={{
+                            padding: "10px 14px", borderRadius: 14,
+                            background: "rgba(234,179,8,0.08)",
+                            border: "1px solid rgba(234,179,8,0.2)",
+                            textAlign: "center",
+                          }}>
+                            <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>
+                              Cancellation is not allowed within 90 minutes of the start time
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : isRegistered && !regPaid ? (
+                      <div style={{
+                        padding: "16px", borderRadius: 16,
+                        background: "rgba(234,179,8,0.08)",
+                        border: "1px solid rgba(234,179,8,0.25)",
+                        textAlign: "center",
+                      }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", marginBottom: 4 }}>
+                          Payment pending
+                        </p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                          Complete payment to confirm registration
+                        </p>
+                      </div>
+                    ) : isLive ? (
                       <div style={{
                         padding: "16px", borderRadius: 16,
                         background: "rgba(239,68,68,0.08)",
@@ -594,32 +662,54 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         </p>
                       </div>
                     ) : (
-                      <Magnetic strength={6}>
-                        <button
-                          onClick={handleRegister}
-                          disabled={regClosed || spotsLeft <= 0 || reg.isPending || paying}
-                          style={{
-                            width: "100%", height: 52, borderRadius: 100,
-                            fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-                            background: (regClosed || spotsLeft <= 0)
-                              ? "rgba(255,255,255,0.04)"
-                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                            color: (regClosed || spotsLeft <= 0) ? "rgba(255,255,255,0.45)" : "#fff",
-                            border: (regClosed || spotsLeft <= 0) ? "1px solid rgba(255,255,255,0.08)" : "none",
-                            cursor: (regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                            boxShadow: (!regClosed && spotsLeft > 0) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
-                          }}
-                        >
-                          {(reg.isPending || paying)
-                            ? "Processing…"
-                            : regClosed
-                              ? "Registration closed"
-                              : spotsLeft <= 0
-                                ? "Event full"
-                                : <>{isTeam ? "Register your team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={16} /></>}
-                        </button>
-                      </Magnetic>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {!regClosed && spotsLeft > 0 && (
+                          <label style={{
+                            display: "flex", alignItems: "flex-start", gap: 10,
+                            padding: "12px 14px", borderRadius: 14,
+                            background: "rgba(255,255,255,0.02)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            cursor: "pointer",
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={agreed}
+                              onChange={e => setAgreed(e.target.checked)}
+                              style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                            />
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
+                              I agree that cancellations are only allowed up to 90 minutes before the start time
+                            </span>
+                          </label>
+                        )}
+                        <Magnetic strength={6}>
+                          <button
+                            onClick={handleRegister}
+                            disabled={(!agreed && !regClosed && spotsLeft > 0) || regClosed || spotsLeft <= 0 || reg.isPending || paying}
+                            style={{
+                              width: "100%", height: 52, borderRadius: 100,
+                              fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                              background: (regClosed || spotsLeft <= 0 || !agreed)
+                                ? "rgba(255,255,255,0.04)"
+                                : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                              color: (regClosed || spotsLeft <= 0 || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
+                              border: (regClosed || spotsLeft <= 0 || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
+                              cursor: (!agreed || regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer",
+                              opacity: (!agreed && !regClosed && spotsLeft > 0) ? 0.5 : 1,
+                              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                              boxShadow: (agreed && !regClosed && spotsLeft > 0) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                            }}
+                          >
+                            {(reg.isPending || paying)
+                              ? "Processing…"
+                              : regClosed
+                                ? "Registration closed"
+                                : spotsLeft <= 0
+                                  ? "Event full"
+                                  : <>{isTeam ? "Register your team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={16} /></>}
+                          </button>
+                        </Magnetic>
+                      </div>
                     )}
                     <button
                       onClick={handleShare}

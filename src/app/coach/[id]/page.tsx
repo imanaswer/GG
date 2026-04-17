@@ -42,6 +42,11 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const book = useCreateBooking();
   const [tab, setTab] = useState<"overview" | "batches" | "reviews">("overview");
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
+
+  const hasExistingBooking = !!coach?.userBooking;
+  const bookingStatus = coach?.userBooking?.status ?? null;
+  const [justBooked, setJustBooked] = useState(false);
+  const booked = hasExistingBooking || justBooked;
   const [review, setReview] = useState({ rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -61,7 +66,10 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
 
   const handleBook = (batchId?: string) => {
     if (!user) { toast.error("Please sign in to book a session"); return; }
-    book.mutate({ coachId: id, batchId: batchId ?? selectedBatch ?? undefined });
+    book.mutate(
+      { coachId: id, batchId: batchId ?? selectedBatch ?? undefined },
+      { onSuccess: () => setJustBooked(true) },
+    );
   };
 
   if (isLoading) {
@@ -580,30 +588,74 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                 {/* CTAs */}
                 <Reveal>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <Magnetic strength={6}>
-                      <button
-                        onClick={() => handleBook()}
-                        disabled={book.isPending || coach.seatsLeft === 0}
-                        style={{
-                          width: "100%", height: 52, borderRadius: 100,
-                          fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-                          border: coach.seatsLeft === 0 ? "1px solid rgba(255,255,255,0.1)" : "none",
-                          background: coach.seatsLeft === 0
-                            ? "transparent"
-                            : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                          color: coach.seatsLeft === 0 ? "rgba(255,255,255,0.55)" : "#fff",
-                          cursor: (book.isPending || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
-                          opacity: book.isPending ? 0.7 : 1,
-                          boxShadow: coach.seatsLeft === 0 ? "none" : "0 0 28px rgba(230,57,70,0.35)",
-                        }}
-                      >
-                        {book.isPending
-                          ? "Booking…"
-                          : coach.seatsLeft === 0
-                            ? "Join waitlist"
-                            : selectedBatch ? "Book selected batch" : "Book a session"}
-                      </button>
-                    </Magnetic>
+                    {booked ? (
+                      <div style={{
+                        background: bookingStatus === "confirmed"
+                          ? "rgba(34,197,94,0.06)" : "rgba(234,179,8,0.06)",
+                        border: `1px solid ${bookingStatus === "confirmed"
+                          ? "rgba(34,197,94,0.2)" : "rgba(234,179,8,0.2)"}`,
+                        borderRadius: 20, padding: "22px 20px",
+                        textAlign: "center",
+                      }}>
+                        <div style={{
+                          width: 44, height: 44, borderRadius: "50%",
+                          background: bookingStatus === "confirmed"
+                            ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          margin: "0 auto 14px",
+                        }}>
+                          {bookingStatus === "confirmed"
+                            ? <CheckCircle size={22} color="#22c55e" />
+                            : <Clock size={22} color="#eab308" />
+                          }
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+                          {bookingStatus === "confirmed" ? "Session confirmed!" : "Session booked!"}
+                        </p>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
+                          {bookingStatus === "confirmed"
+                            ? "Your session has been confirmed by the coach. See you on the court!"
+                            : "Waiting for confirmation from the team. A person will get back to you within 24 hours."
+                          }
+                        </p>
+                        {bookingStatus !== "confirmed" && (
+                          <div style={{
+                            marginTop: 14, padding: "8px 14px", borderRadius: 10,
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            fontSize: 12, color: "rgba(255,255,255,0.45)",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          }}>
+                            <Clock size={12} /> You&apos;ll be notified once confirmed
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Magnetic strength={6}>
+                        <button
+                          onClick={() => handleBook()}
+                          disabled={book.isPending || coach.seatsLeft === 0}
+                          style={{
+                            width: "100%", height: 52, borderRadius: 100,
+                            fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                            border: coach.seatsLeft === 0 ? "1px solid rgba(255,255,255,0.1)" : "none",
+                            background: coach.seatsLeft === 0
+                              ? "transparent"
+                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            color: coach.seatsLeft === 0 ? "rgba(255,255,255,0.55)" : "#fff",
+                            cursor: (book.isPending || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
+                            opacity: book.isPending ? 0.7 : 1,
+                            boxShadow: coach.seatsLeft === 0 ? "none" : "0 0 28px rgba(230,57,70,0.35)",
+                          }}
+                        >
+                          {book.isPending
+                            ? "Booking…"
+                            : coach.seatsLeft === 0
+                              ? "Join waitlist"
+                              : selectedBatch ? "Book selected batch" : "Book a session"}
+                        </button>
+                      </Magnetic>
+                    )}
 
                     <button
                       onClick={() => {

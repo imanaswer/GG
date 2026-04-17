@@ -18,6 +18,7 @@ export type Coach = {
   description: string; features: string[]; imageUrl: string;
   rating: number; reviewCount: number; totalSeats: number; seatsLeft: number;
   batches?: Batch[]; reviews?: CoachReview[];
+  userBooking?: { id: string; status: string } | null;
 };
 export type Batch = { id: string; coachId: string; day: string; time: string; level: string; seats: number };
 export type CoachReview = { id: string; rating: number; text: string; reviewerName: string; createdAt: string };
@@ -164,6 +165,7 @@ export type Camp = {
   tags: string[]; organizer: string; organizerContact: string;
   registrations?: { id: string; childName: string; childAge: number }[];
   registeredCount?: number;
+  userRegistration?: { id: string; paymentStatus: string; childName: string; childAge: number } | null;
 };
 
 export type CampFilters = { q?: string; sport?: string; skillLevel?: string; duration?: string; ageGroup?: string };
@@ -183,6 +185,18 @@ export function useRegisterCamp() {
     onError: (e) => toast.error(e.message),
   });
 }
+export function useCancelCamp() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, string>({
+    mutationFn: campId => f(`/api/camps/${campId}`, { method: "DELETE" }),
+    onSuccess: (_, campId) => {
+      qc.invalidateQueries({ queryKey: ["camps"] });
+      qc.invalidateQueries({ queryKey: ["camp", campId] });
+      toast.success("Registration cancelled.");
+    },
+    onError: e => toast.error(e.message),
+  });
+}
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 export type SportEvent = {
@@ -197,6 +211,7 @@ export type SportEvent = {
   organizer: string; organizerContact: string; tags: string[];
   registrations?: { id: string; teamName?: string }[];
   registeredCount?: number;
+  userRegistration?: { id: string; paymentStatus: string; teamName?: string | null } | null;
 };
 
 export type EventFilters = { q?: string; sport?: string; type?: string; difficulty?: string; when?: string };
@@ -214,5 +229,17 @@ export function useRegisterEvent() {
     mutationFn: ({ eventId, ...data }) => f(`/api/events/${eventId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
     onSuccess: (_, { eventId }) => { qc.invalidateQueries({ queryKey: ["events"] }); qc.invalidateQueries({ queryKey: ["event", eventId] }); toast.success("Registered for event! 🏆"); },
     onError: (e) => toast.error(e.message),
+  });
+}
+export function useCancelEvent() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, string>({
+    mutationFn: eventId => f(`/api/events/${eventId}`, { method: "DELETE" }),
+    onSuccess: (_, eventId) => {
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success("Registration cancelled.");
+    },
+    onError: e => toast.error(e.message),
   });
 }

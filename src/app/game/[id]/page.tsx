@@ -27,6 +27,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const [completing, setCompleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   if (isLoading) {
     return (
@@ -86,6 +87,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const filled      = game.slots - game.slotsLeft;
   const pct         = Math.min(100, Math.round((filled / game.slots) * 100));
   const isPast      = new Date(game.scheduledAt).getTime() + game.duration * 60000 < Date.now();
+  const canCancel   = new Date(game.scheduledAt).getTime() - Date.now() >= 90 * 60000;
   const img         = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
 
   const handleComplete = async () => {
@@ -489,21 +491,34 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                 {!isOrganizer && user && (
                   isJoined ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <button
-                        disabled={leave.isPending}
-                        onClick={() => leave.mutate(game.id)}
-                        style={{
-                          width: "100%", height: 48, borderRadius: 100,
-                          fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                          background: "rgba(255,255,255,0.03)",
-                          color: "rgba(255,255,255,0.75)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          cursor: leave.isPending ? "not-allowed" : "pointer",
-                          opacity: leave.isPending ? 0.7 : 1,
-                        }}
-                      >
-                        {leave.isPending ? "Leaving…" : "Leave game"}
-                      </button>
+                      {canCancel ? (
+                        <button
+                          disabled={leave.isPending}
+                          onClick={() => { if (confirm("Are you sure you want to leave this game?")) leave.mutate(game.id); }}
+                          style={{
+                            width: "100%", height: 48, borderRadius: 100,
+                            fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                            background: "rgba(255,255,255,0.03)",
+                            color: "rgba(255,255,255,0.75)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            cursor: leave.isPending ? "not-allowed" : "pointer",
+                            opacity: leave.isPending ? 0.7 : 1,
+                          }}
+                        >
+                          {leave.isPending ? "Leaving…" : "Leave game"}
+                        </button>
+                      ) : (
+                        <div style={{
+                          padding: "12px 16px", borderRadius: 14,
+                          background: "rgba(234,179,8,0.08)",
+                          border: "1px solid rgba(234,179,8,0.2)",
+                          textAlign: "center",
+                        }}>
+                          <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>
+                            Cancellation is not allowed within 90 minutes of the start time
+                          </p>
+                        </div>
+                      )}
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(`Hey! I joined ${game.title} — are we still on?`)}`}
                         target="_blank" rel="noopener noreferrer"
@@ -521,32 +536,51 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                       </a>
                     </div>
                   ) : (
-                    <Magnetic strength={6}>
-                      <button
-                        disabled={join.isPending || paying}
-                        onClick={isFull ? () => join.mutate(game.id) : handleJoin}
-                        style={{
-                          width: "100%", height: 52, borderRadius: 100,
-                          fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-                          border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
-                          background: isFull
-                            ? "transparent"
-                            : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                          color: isFull ? "rgba(255,255,255,0.55)" : "#fff",
-                          cursor: (join.isPending || paying) ? "not-allowed" : "pointer",
-                          opacity: (join.isPending || paying) ? 0.7 : 1,
-                          boxShadow: isFull ? "none" : "0 0 28px rgba(230,57,70,0.35)",
-                        }}
-                      >
-                        {(join.isPending || paying)
-                          ? (paying ? "Processing payment…" : "Joining…")
-                          : isFull
-                            ? "Join waitlist"
-                            : game.costAmount > 0
-                              ? `Pay ${game.cost} · Join`
-                              : "Join game · Free"}
-                      </button>
-                    </Magnetic>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <label style={{
+                        display: "flex", alignItems: "flex-start", gap: 10,
+                        padding: "12px 14px", borderRadius: 14,
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        cursor: "pointer",
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={agreed}
+                          onChange={e => setAgreed(e.target.checked)}
+                          style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                        />
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
+                          I agree that cancellations are only allowed up to 90 minutes before the start time
+                        </span>
+                      </label>
+                      <Magnetic strength={6}>
+                        <button
+                          disabled={!agreed || join.isPending || paying}
+                          onClick={isFull ? () => join.mutate(game.id) : handleJoin}
+                          style={{
+                            width: "100%", height: 52, borderRadius: 100,
+                            fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+                            border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
+                            background: (!agreed || isFull)
+                              ? "transparent"
+                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            color: (!agreed || isFull) ? "rgba(255,255,255,0.55)" : "#fff",
+                            cursor: (!agreed || join.isPending || paying) ? "not-allowed" : "pointer",
+                            opacity: (!agreed || join.isPending || paying) ? 0.5 : 1,
+                            boxShadow: (agreed && !isFull) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                          }}
+                        >
+                          {(join.isPending || paying)
+                            ? (paying ? "Processing payment…" : "Joining…")
+                            : isFull
+                              ? "Join waitlist"
+                              : game.costAmount > 0
+                                ? `Pay ${game.cost} · Join`
+                                : "Join game · Free"}
+                        </button>
+                      </Magnetic>
+                    </div>
                   )
                 )}
 

@@ -238,11 +238,11 @@ function Hero() {
 function Marquee() {
   const items = [
     "Built for Kozhikode",
-    "50+ verified coaches",
-    "200+ games each week",
-    "12 sports",
+    "verified coaches",
+    "Games each week",
+    "All kinds of sports",
     "Beachside to indoor courts",
-    "Trusted by 2,400+ players",
+    "Trusted by  players",
   ];
   return (
     <div style={{
@@ -822,10 +822,10 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
 
 function Stats() {
   const items = [
-    { value: 2400, suffix: "+", label: "Players active", icon: Users },
-    { value: 50,   suffix: "+", label: "Verified coaches", icon: Trophy },
-    { value: 180,  suffix: "+", label: "Games each week", icon: Sparkles },
-    { value: 49,   suffix: "",  label: "Rating · out of 50", icon: Star, isRating: true },
+    { value: 147, suffix: "+",      label: "Players on the waitlist",   icon: Users },
+    { value: 12,  suffix: "",       label: "Founding coaches onboard",  icon: Trophy },
+    { value: 3,   suffix: " sports", label: "Available at launch",      icon: Sparkles },
+    { value: 1,   suffix: " city",  label: "Live now · more coming",    icon: MapPin },
   ];
 
   return (
@@ -835,14 +835,14 @@ function Stats() {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
             <div style={{ maxWidth: 560 }}>
               <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
-                By the numbers
+                Early days
               </span>
               <h2 className="display" style={{ fontSize: "clamp(32px, 4vw, 56px)", color: "#fff" }}>
-                A city, on the ground.
+                Small numbers,<br />real ones.
               </h2>
             </div>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320 }}>
-              Updated live from the platform — every game booked, coach verified, camp closed-out.
+              We just launched. These are live numbers — no inflating, no rounding up.
             </p>
           </div>
         </Reveal>
@@ -855,7 +855,7 @@ function Stats() {
           borderRadius: 20, overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.06)",
         }}>
-          {items.map(({ value, suffix, label, icon: Icon, isRating }) => (
+          {items.map(({ value, suffix, label, icon: Icon }) => (
             <div
               key={label}
               data-stagger
@@ -873,7 +873,7 @@ function Stats() {
                   fontSize: "clamp(44px, 5vw, 72px)",
                   color: "#fff", letterSpacing: "-0.04em", lineHeight: 1,
                 }}>
-                  {isRating ? <>4.<Counter to={9} />/5</> : <Counter to={value} suffix={suffix} />}
+                  <Counter to={value} suffix={suffix} />
                 </div>
                 <div style={{
                   fontSize: 13, color: "rgba(255,255,255,0.5)",
