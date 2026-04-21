@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const when   = p.get("when");
     const now    = new Date();
 
-    const where: Prisma.SportEventWhereInput = { status: { notIn: ["Completed", "Archived"] } };
+    const where: Prisma.SportEventWhereInput = { status: { notIn: ["Completed", "Archived", "Cancelled"] } };
     if (sport && sport !== "all") where.sport = sport;
     if (type  && type  !== "all") where.type  = type;
     if (diff  && diff  !== "all") where.difficulty = diff;

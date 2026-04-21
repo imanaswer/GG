@@ -35,8 +35,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const { childName, childAge } = await req.json();
     if (!childName || !childAge) return fail("childName and childAge are required", 400);
 
-    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true } });
+    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, status: true } });
     if (!camp) return fail("Camp not found", 404);
+    if (["closed", "completed", "archived"].includes(camp.status)) return fail("Registrations are closed for this camp", 409);
     if (camp.participants >= camp.maxParticipants) return fail("Camp is full", 400);
 
     const existing = await prisma.campRegistration.findFirst({ where: { campId: id, userId: session.id }, select: { id: true } });

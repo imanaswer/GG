@@ -36,8 +36,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!session) return fail("Authentication required", 401);
     const { teamName } = await req.json().catch(() => ({}));
 
-    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true } });
+    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true } });
     if (!event) return fail("Event not found", 404);
+    if (["Cancelled", "Completed", "Archived", "Full"].includes(event.status)) return fail("Registrations are closed for this event", 409);
     if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
     if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
 
