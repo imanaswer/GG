@@ -243,3 +243,56 @@ export function useCancelEvent() {
     onError: e => toast.error(e.message),
   });
 }
+
+// ─── Workshops ───────────────────────────────────────────────────────────────
+export type Workshop = {
+  id: string; title: string; sport: string; description: string;
+  sessionType: string; sessionCount: number; sessionDuration: string;
+  sessions: { date: string; time: string; topic: string; description: string }[];
+  startDate: string; endDate: string; registrationDeadline: string;
+  location: string; address: string; distance: string;
+  price: number; priceDisplay: string;
+  ageGroup: string; audienceType: string; skillLevel: string;
+  rating: number; reviewCount: number;
+  participants: number; maxParticipants: number;
+  instructor: { name: string; bio: string; imageUrl: string; credentials: string };
+  testimonials: { name: string; text: string; rating: number }[];
+  imageUrl: string; featured: boolean; status: string;
+  tags: string[]; highlights: string[]; requirements: string[];
+  organizer: string; organizerContact: string;
+  registeredCount?: number;
+  userRegistration?: {
+    id: string; paymentStatus: string;
+    participantName: string; participantAge?: number; registrationType: string;
+  } | null;
+};
+
+export type WorkshopFilters = { q?: string; sport?: string; skillLevel?: string; sessionType?: string; audienceType?: string };
+
+export function useWorkshops(filters: WorkshopFilters = {}) {
+  const p = new URLSearchParams(Object.entries(filters).filter(([,v]) => v) as [string,string][]);
+  return useQuery<Workshop[]>({ queryKey: ["workshops", filters], queryFn: () => f(`/api/workshops?${p}`) });
+}
+export function useWorkshop(id: string) {
+  return useQuery<Workshop>({ queryKey: ["workshop", id], queryFn: () => f(`/api/workshops/${id}`), enabled: !!id });
+}
+export function useRegisterWorkshop() {
+  const qc = useQueryClient();
+  return useMutation<{ registered: boolean }, Error, { workshopId: string; participantName: string; participantAge?: number; registrationType: string }>({
+    mutationFn: ({ workshopId, ...data }) => f(`/api/workshops/${workshopId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
+    onSuccess: (_, { workshopId }) => { qc.invalidateQueries({ queryKey: ["workshops"] }); qc.invalidateQueries({ queryKey: ["workshop", workshopId] }); toast.success("Registered for workshop!"); },
+    onError: (e) => toast.error(e.message),
+  });
+}
+export function useCancelWorkshop() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, string>({
+    mutationFn: workshopId => f(`/api/workshops/${workshopId}`, { method: "DELETE" }),
+    onSuccess: (_, workshopId) => {
+      qc.invalidateQueries({ queryKey: ["workshops"] });
+      qc.invalidateQueries({ queryKey: ["workshop", workshopId] });
+      toast.success("Registration cancelled.");
+    },
+    onError: e => toast.error(e.message),
+  });
+}

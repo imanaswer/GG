@@ -66,6 +66,10 @@ export const EVENT_IMAGE: PremiumImage = {
   src: u("photo-1540747913346-19e32dc3e97e"),
   alt: "Tournament night",credit: "Unsplash / Elianne Dipp",
 };
+export const WORKSHOP_IMAGE: PremiumImage = {
+  src: u("photo-1571019614242-c5c5dee9f50b"),
+  alt: "Workshop training session", credit: "Unsplash / Geert Pieters",
+};
 
 export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
   let h = 0;
