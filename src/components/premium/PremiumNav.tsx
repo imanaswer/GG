@@ -7,11 +7,12 @@ import { Menu, X, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const LINKS = [
-  { href: "/learn",  label: "Coaches" },
-  { href: "/play",   label: "Games"   },
-  { href: "/camps",  label: "Camps"   },
-  { href: "/events", label: "Events"  },
-  { href: "/about",  label: "About"   },
+  { href: "/learn",      label: "Coaches"   },
+  { href: "/play",       label: "Games"     },
+  { href: "/camps",      label: "Camps"     },
+  { href: "/workshops",  label: "Workshops" },
+  { href: "/events",     label: "Events"    },
+  { href: "/about",      label: "About"     },
 ];
 
 type Props = {

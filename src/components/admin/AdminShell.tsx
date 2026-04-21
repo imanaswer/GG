@@ -2,14 +2,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CalendarCheck, Gamepad2, Tent, Trophy, Users, Star, DollarSign, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Gamepad2, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu } from "lucide-react";
 
 const NAV = [
   { href: "/admin",          label: "Overview",  icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Bookings",  icon: CalendarCheck },
   { href: "/admin/games",    label: "Games",     icon: Gamepad2 },
-  { href: "/admin/camps",    label: "Camps",     icon: Tent },
-  { href: "/admin/events",   label: "Events",    icon: Trophy },
+  { href: "/admin/camps",      label: "Camps",      icon: Tent },
+  { href: "/admin/workshops", label: "Workshops",  icon: Wrench },
+  { href: "/admin/events",    label: "Events",     icon: Trophy },
   { href: "/admin/users",    label: "Users",     icon: Users },
   { href: "/admin/coaches",  label: "Coaches",   icon: Star },
   { href: "/admin/revenue",  label: "Revenue",   icon: DollarSign },
