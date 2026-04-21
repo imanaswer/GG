@@ -39,8 +39,9 @@ model User {
   organizedGames     Game[]
   gamePlayers        GamePlayer[]
   campRegistrations  CampRegistration[]
-  eventRegistrations EventRegistration[]
-  payments           Payment[]
+  eventRegistrations    EventRegistration[]
+  workshopRegistrations WorkshopRegistration[]
+  payments              Payment[]
   coachProfile       Coach?
 }
 
@@ -255,6 +256,58 @@ model EventRegistration {
   registeredAt  DateTime @default(now())
   event SportEvent @relation(fields: [eventId], references: [id])
   user  User       @relation(fields: [userId], references: [id])
+}
+
+model Workshop {
+  id                   String   @id @default(cuid())
+  title                String
+  sport                String
+  description          String
+  sessionType          String   @default("single")
+  sessionCount         Int      @default(1)
+  sessionDuration      String   @default("")
+  sessions             Json     @default("[]")
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime
+  location             String
+  address              String
+  distance             String   @default("")
+  price                Int
+  priceDisplay         String
+  ageGroup             String
+  audienceType         String   @default("all")
+  skillLevel           String   @default("All Levels")
+  rating               Float    @default(0)
+  reviewCount          Int      @default(0)
+  participants         Int      @default(0)
+  maxParticipants      Int
+  instructor           Json     @default("{}")
+  testimonials         Json     @default("[]")
+  imageUrl             String
+  featured             Boolean  @default(false)
+  status               String   @default("open")
+  tags                 String[] @default([])
+  highlights           String[] @default([])
+  requirements         String[] @default([])
+  organizer            String
+  organizerContact     String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  registrations WorkshopRegistration[]
+}
+
+model WorkshopRegistration {
+  id               String   @id @default(cuid())
+  workshopId       String
+  userId           String
+  participantName  String
+  participantAge   Int?
+  registrationType String   @default("adult")
+  paymentStatus    String   @default("unpaid")
+  registeredAt     DateTime @default(now())
+  workshop Workshop @relation(fields: [workshopId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 }
 
 model Payment {
