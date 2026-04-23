@@ -10,6 +10,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
+import { Tilt3D } from "@/components/premium/Tilt3D";
 import { SkillBadge, SportBadge } from "@/components/Shared";
 import { useCoaches, type Coach, type CoachFilters } from "@/hooks/useData";
 import { STORY, pickFallback, COACH_FALLBACKS } from "@/lib/premium-images";
@@ -156,6 +157,7 @@ function CoachCard({ coach }: { coach: Coach }) {
       data-stagger
       style={{ textDecoration: "none", display: "block", height: "100%" }}
     >
+      <Tilt3D intensity={8} style={{ height: "100%", borderRadius: 20 }}>
       <motion.div
         whileHover="hover"
         initial="rest"
@@ -312,6 +314,7 @@ function CoachCard({ coach }: { coach: Coach }) {
           </div>
         </div>
       </motion.div>
+      </Tilt3D>
     </Link>
   );
 }

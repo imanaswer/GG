@@ -27,7 +27,6 @@ const SESSION_TYPES = [
 const AUDIENCES = [
   { v: "youth", l: "Youth" },
   { v: "adult", l: "Adults" },
-  { v: "all",   l: "All ages" },
 ] as const;
 
 const AUDIENCE_LABELS: Record<string, string> = { youth: "Youth", adult: "Adults", all: "All ages" };
@@ -42,8 +41,17 @@ function spotsLabel(p: number, max: number) {
 
 /* ── Date display helper ───────────────────────────────── */
 function formatDates(start: string, end: string) {
-  if (start === end || !end) return start;
-  return `${start} – ${end}`;
+  const s = new Date(start);
+  const e = new Date(end);
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  if (isNaN(s.getTime())) return start;
+  if (isNaN(e.getTime()) || (s.getMonth() === e.getMonth() && s.getDate() === e.getDate() && s.getFullYear() === e.getFullYear())) {
+    return s.toLocaleDateString("en-IN", { ...opts, year: "numeric" });
+  }
+  if (s.getFullYear() !== e.getFullYear()) {
+    return `${s.toLocaleDateString("en-IN", { ...opts, year: "numeric" })} – ${e.toLocaleDateString("en-IN", { ...opts, year: "numeric" })}`;
+  }
+  return `${s.toLocaleDateString("en-IN", opts)} – ${e.toLocaleDateString("en-IN", { ...opts, year: "numeric" })}`;
 }
 
 /* ── Session type badge text ───────────────────────────── */

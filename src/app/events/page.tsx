@@ -9,6 +9,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
+import { Tilt3D } from "@/components/premium/Tilt3D";
 import { useEvents, type SportEvent, type EventFilters } from "@/hooks/useData";
 import { EVENT_IMAGE } from "@/lib/premium-images";
 
@@ -209,6 +210,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
   const hasPrize = event.prizePool && event.prizePool !== "Prizes & Trophies";
 
   return (
+    <Tilt3D intensity={6} data-stagger style={{ height: "100%", borderRadius: 24 }}>
     <Link
       data-stagger
       href={`/events/${event.id}`}
@@ -351,6 +353,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
         </div>
       </div>
     </Link>
+    </Tilt3D>
   );
 }
 
@@ -363,6 +366,7 @@ function CompactCard({ event }: { event: SportEvent }) {
   const hasPrize = event.prizePool && event.prizePool !== "Prizes & Trophies";
 
   return (
+    <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>
     <Link
       data-stagger
       href={`/events/${event.id}`}
@@ -483,6 +487,7 @@ function CompactCard({ event }: { event: SportEvent }) {
         </div>
       </div>
     </Link>
+    </Tilt3D>
   );
 }
 

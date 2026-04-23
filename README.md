@@ -82,6 +82,8 @@ prisma/                # schema.prisma, migrations, seed.ts
 ### Admin (`/admin`)
 - Overview — metrics, alerts, live activity feed (15s auto-refresh)
 - Bookings · Games · Camps · Events · Users · Coaches · Revenue tabs
+- Full CRUD for coaches, camps, and events — add, edit, delete from the dashboard
+- Cover photo upload (drag-and-drop / file picker) with live preview on all entities
 - Approve / reject pending coach applications
 - CSV export on bookings, camp registrations, transactions
 
@@ -182,3 +184,54 @@ Use `admin123` unless you have set `ADMIN_PASSWORD` in `.env.local`. The admin s
 
 **Rate limited during local dev.**
 The auth bucket is 5 req/min/IP. If you hammer `/api/auth/login`, wait 60 seconds or restart the server to clear the in-memory window.
+
+---
+
+## Future roadmap
+
+Below are planned features and improvements, roughly grouped by area.
+
+### Platform & discovery
+- **Venue / turf booking** — reserve courts, turfs, and indoor facilities with time-slot calendar and payment
+- **Map-based discovery** — interactive map view for coaches, games, events, and venues with radius filters
+- **Advanced search & filters** — filter by sport, distance, price range, rating, availability, and age group
+- **Push notifications** — browser + mobile PWA push for booking confirmations, game reminders, and slot openings
+- **Multi-city expansion** — location selector and city-scoped content beyond Kozhikode
+
+### Player experience
+- **In-app chat / messaging** — direct messages between players, coaches, and organizers
+- **Team management** — create persistent teams, invite members, track win/loss record
+- **Leaderboards & achievements** — sport-specific rankings, badges, streaks, and XP system
+- **Social feed** — post match highlights, photos, and results; follow players and coaches
+- **Recurring game scheduling** — set up weekly pickup games that auto-create and notify regulars
+- **Waitlist auto-promotion** — automatically move waitlisted players into open slots with notification
+
+### Coach & organizer tools
+- **Coach availability calendar** — interactive weekly calendar for setting open slots
+- **Batch management UI** — coaches can add, edit, and remove training batches from their dashboard
+- **Earnings dashboard** — detailed payout history, pending settlements, and tax invoices
+- **Attendance tracking** — QR-code or OTP-based check-in for sessions, camps, and events
+- **Review replies** — let coaches respond publicly to player reviews
+
+### Admin & operations
+- **Role-based admin access** — multiple admin users with granular permissions (view-only, editor, super-admin)
+- **Bulk operations** — multi-select and batch-update bookings, registrations, and user statuses
+- **Audit log** — track every admin action (who changed what, when) for accountability
+- **Email / SMS campaigns** — send targeted announcements to player segments from the admin panel
+- **Automated reports** — scheduled weekly / monthly PDF summaries emailed to admins
+- **Cloud image storage** — migrate uploaded images from local disk to Cloudinary or Vercel Blob for production persistence
+
+### Payments & monetization
+- **Subscription plans** — monthly coaching packages with recurring Razorpay billing
+- **Refund management** — admin-initiated partial / full refunds with Razorpay integration
+- **Coupon & promo codes** — discount codes for camps, events, and coaching sessions
+- **Split payments** — auto-split revenue between platform and coaches / organizers
+- **GST invoice generation** — auto-generate tax-compliant invoices for all paid transactions
+
+### Technical improvements
+- **Automated testing** — unit tests for API routes, integration tests for payment flows, E2E with Playwright
+- **i18n / localization** — Malayalam and Hindi translations
+- **Offline PWA support** — cache-first strategy for game listings and profile pages
+- **Performance monitoring** — integrate Sentry or Datadog for error tracking and API latency dashboards
+- **Database optimization** — add composite indexes on high-traffic query patterns, implement connection pooling health checks
+- **CI / CD pipeline** — GitHub Actions for lint, typecheck, test, and preview deployments on every PR

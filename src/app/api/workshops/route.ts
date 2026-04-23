@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const session  = p.get("sessionType");
     const audience = p.get("audienceType");
 
-    const where: Prisma.WorkshopWhereInput = { status: { notIn: ["completed", "archived"] } };
+    const where: Prisma.WorkshopWhereInput = { status: { notIn: ["completed", "archived", "closed"] } };
     if (sport    && sport    !== "all") where.sport = sport;
     if (skill    && skill    !== "all") where.OR = [{ skillLevel: skill }, { skillLevel: "All Levels" }];
     if (session  && session  !== "all") where.sessionType = session;

@@ -8,10 +8,10 @@ type Body = {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  entityType: "camp" | "event" | "game";
+  entityType: "camp" | "event" | "game" | "workshop";
   entityId: string;
   amount: number;
-  registration: { childName?: string; childAge?: number; teamName?: string };
+  registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string };
   devMode?: boolean;
 };
 
@@ -112,6 +112,43 @@ export async function POST(req: NextRequest) {
         prisma.user.update({ where: { id: session.id }, data: { gamesPlayed: { increment: 1 } } }),
       ]);
       return ok({ verified: true, slotsLeft: newSlotsLeft });
+    }
+
+    if (entityType === "workshop") {
+      const { participantName, participantAge, registrationType } = registration ?? {};
+      if (!participantName) return fail("participantName is required", 400);
+      if (!registrationType) return fail("registrationType is required", 400);
+
+      const workshop = await prisma.workshop.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, status: true } });
+      if (!workshop) return fail("Workshop not found", 404);
+      if (["closed", "completed", "archived"].includes(workshop.status)) return fail("Registrations are closed for this workshop", 409);
+      if (workshop.participants >= workshop.maxParticipants) return fail("Workshop is full", 400);
+      if (workshop.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
+
+      const existing = await prisma.workshopRegistration.findFirst({ where: { workshopId: entityId, userId: session.id }, select: { id: true } });
+      if (existing) return fail("Already registered", 409);
+
+      const newCount = workshop.participants + 1;
+      const statusUpdate = newCount >= workshop.maxParticipants ? "full" : undefined;
+      await prisma.$transaction([
+        prisma.payment.create({
+          data: {
+            userId: session.id, entityType, entityId,
+            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+            amount: amount ?? 0, currency: "INR",
+            status: "paid", paidAt: new Date(),
+          },
+        }),
+        prisma.workshopRegistration.create({
+          data: {
+            workshopId: entityId, userId: session.id,
+            participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
+            registrationType, paymentStatus: "paid",
+          },
+        }),
+        prisma.workshop.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
+      ]);
+      return ok({ verified: true });
     }
 
     return fail("Unsupported entityType", 400);

@@ -9,6 +9,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
+import { Tilt3D } from "@/components/premium/Tilt3D";
 import { useCamps, type Camp, type CampFilters } from "@/hooks/useData";
 import { CAMP_IMAGE } from "@/lib/premium-images";
 
@@ -171,6 +172,7 @@ function FeaturedCard({ camp }: { camp: Camp }) {
   const img = camp.imageUrl || CAMP_IMAGE.src;
 
   return (
+    <Tilt3D intensity={6} data-stagger style={{ height: "100%", borderRadius: 24 }}>
     <Link
       data-stagger
       href={`/camps/${camp.id}`}
@@ -320,6 +322,7 @@ function FeaturedCard({ camp }: { camp: Camp }) {
         </div>
       </div>
     </Link>
+    </Tilt3D>
   );
 }
 
@@ -330,6 +333,7 @@ function CompactCard({ camp }: { camp: Camp }) {
   const img = camp.imageUrl || CAMP_IMAGE.src;
 
   return (
+    <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>
     <Link
       data-stagger
       href={`/camps/${camp.id}`}
@@ -434,6 +438,7 @@ function CompactCard({ camp }: { camp: Camp }) {
         </div>
       </div>
     </Link>
+    </Tilt3D>
   );
 }
 

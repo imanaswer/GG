@@ -10,6 +10,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
+import { Tilt3D } from "@/components/premium/Tilt3D";
 import { SkillBadge, SportBadge, fmtDate } from "@/components/Shared";
 import { useGames, useJoinGame, type GameFilters, type Game } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
@@ -161,6 +162,7 @@ function GameCard({ game }: { game: Game }) {
   const img = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
 
   return (
+    <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>
     <div
       data-stagger
       style={{
@@ -334,6 +336,7 @@ function GameCard({ game }: { game: Game }) {
         </div>
       </div>
     </div>
+    </Tilt3D>
   );
 }
 
