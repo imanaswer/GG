@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Star, Users, Trophy, Sparkles, GraduationCap, Target, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Star, Users, Trophy, Sparkles, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -14,7 +14,7 @@ import { SplitText } from "@/components/premium/SplitText";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { SPORT_TILES, STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE } from "@/lib/premium-images";
+import { SPORT_TILES, STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
@@ -335,6 +335,17 @@ const HUB_CARDS: HubCard[] = [
     imageAlt: CAMP_IMAGE.alt,
     accent: "#e63946",
   },
+  {
+    href: "/workshops",
+    eyebrow: "05 — Master",
+    title: "Workshops",
+    tagline: "Focused sessions that sharpen your craft.",
+    bullets: ["Expert-led classes", "Hands-on drills", "Small group format"],
+    icon: Lightbulb,
+    image: WORKSHOP_IMAGE.src,
+    imageAlt: WORKSHOP_IMAGE.alt,
+    accent: "#22d3ee",
+  },
 ];
 
 function HubCardItem({ card }: { card: HubCard }) {
@@ -515,7 +526,7 @@ function QuickHub() {
           y={32}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(5, 1fr)",
             gap: 20,
           }}
           className="hub-grid"
@@ -528,6 +539,9 @@ function QuickHub() {
         .hub-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12) !important; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
         .hub-card:hover .hub-card-img { transform: scale(1.06); filter: saturate(1) brightness(0.95) !important; }
         .hub-card:hover .hub-card-arrow { transform: translate(3px, -3px); }
+        @media (max-width: 1200px) {
+          .hub-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
         @media (max-width: 900px) {
           .hub-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
