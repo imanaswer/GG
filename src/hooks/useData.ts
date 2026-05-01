@@ -140,6 +140,38 @@ export function useUserProfile(id: string) {
   return useQuery<UserProfile>({ queryKey: ["user", id], queryFn: () => f(`/api/users/${id}`), enabled: !!id });
 }
 
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+export type LeaderboardType = "players" | "organizers";
+export type LeaderboardPeriod = "all" | "month";
+export type LeaderboardRow = {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl?: string | null;
+  location?: string | null;
+  tier: string;
+  reputationScore: number;
+  gamesPlayed: number;
+  gamesOrganized: number;
+  attendanceRate: number;
+  reliabilityScore: number;
+  rank: number;
+};
+export type LeaderboardResponse = {
+  type: LeaderboardType;
+  period: LeaderboardPeriod;
+  generatedAt: string;
+  rows: LeaderboardRow[];
+};
+
+export function useLeaderboard(type: LeaderboardType, period: LeaderboardPeriod) {
+  return useQuery<LeaderboardResponse>({
+    queryKey: ["leaderboard", type, period],
+    queryFn: () => f(`/api/leaderboard?type=${type}&period=${period}`),
+    staleTime: 60_000,
+  });
+}
+
 // ─── AI ───────────────────────────────────────────────────────────────────────
 export function useAIRecommendations(type: "games" | "coaches") {
   return useQuery<AIResult>({

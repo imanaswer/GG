@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/camps",      label: "Camps"     },
   { href: "/workshops",  label: "Workshops" },
   { href: "/events",     label: "Events"    },
+  { href: "/leaderboard",label: "Leaders"   },
   { href: "/about",      label: "About"     },
 ];
 
