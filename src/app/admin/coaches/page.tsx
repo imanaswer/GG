@@ -5,6 +5,7 @@ import { AdminShell }  from "@/components/admin/AdminShell";
 import { Badge }       from "@/components/admin/Badge";
 import { AdminModal, FormInput, FormTextarea, FormSelect, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -14,7 +15,7 @@ type Coach = {
   id: string; name: string; sport: string; type: string; skillLevel: string;
   location: string; address: string; price: string; priceMin: number; priceMax: number;
   timing: string; phone: string; email: string; description: string;
-  features: string[]; certifications: string[]; imageUrl: string;
+  features: string[]; certifications: string[]; imageUrl: string; photos: string[];
   seatsLeft: number; totalSeats: number; rating: number; reviewCount: number;
   status: string; totalBookings: number; confirmedBookings: number; revenue: number;
 };
@@ -23,7 +24,7 @@ const EMPTY: Partial<Coach> = {
   name: "", sport: "Football", type: "Personal Trainer", skillLevel: "All Levels",
   location: "", address: "", price: "", priceMin: 0, priceMax: 0,
   timing: "", phone: "", email: "", description: "",
-  features: [], certifications: [], imageUrl: "",
+  features: [], certifications: [], imageUrl: "", photos: [],
   totalSeats: 20, seatsLeft: 20, status: "active",
 };
 
@@ -201,6 +202,7 @@ export default function AdminCoaches() {
             </FormRow>
             <FormTextarea label="Description" value={form.description ?? ""} onChange={v => update("description", v)} rows={3} />
             <ImageUpload value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
+            <MultiImageUpload label="Facility Photos" value={form.photos ?? []} onChange={v => update("photos", v as never)} />
             <FormTextarea label="Features (one per line)" value={(form.features ?? []).join("\n")} onChange={v => update("features", v.split("\n").filter(Boolean) as never)} rows={3} placeholder="Professional training equipment&#10;Personalized coaching&#10;Video analysis" />
             <FormTextarea label="Certifications (one per line)" value={(form.certifications ?? []).join("\n")} onChange={v => update("certifications", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="AFC C License&#10;SAI Certified" />
             {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}

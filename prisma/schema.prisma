@@ -64,6 +64,7 @@ model Coach {
   features       String[]
   certifications String[] @default([])
   imageUrl       String
+  photos         String[] @default([])
   rating         Float    @default(0)
   reviewCount    Int      @default(0)
   totalSeats     Int

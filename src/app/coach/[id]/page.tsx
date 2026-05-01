@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, CheckCircle, Mail, Phone, MapPin, Clock, Target, DollarSign, Calendar } from "lucide-react";
+import { ArrowLeft, CheckCircle, Mail, Phone, MapPin, Clock, Target, DollarSign, Calendar, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -40,8 +40,9 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const { data: coach, isLoading, error } = useCoach(id);
   const { user } = useAuth();
   const book = useCreateBooking();
-  const [tab, setTab] = useState<"overview" | "batches" | "reviews">("overview");
+  const [tab, setTab] = useState<"overview" | "batches" | "photos" | "reviews">("overview");
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<number | null>(null);
 
   const hasExistingBooking = !!coach?.userBooking;
   const bookingStatus = coach?.userBooking?.status ?? null;
@@ -247,6 +248,9 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                     <TabButton active={tab === "batches"} onClick={() => setTab("batches")}>
                       Batches <span style={{ opacity: 0.5 }}>({coach.batches?.length ?? 0})</span>
                     </TabButton>
+                    <TabButton active={tab === "photos"} onClick={() => setTab("photos")}>
+                      Photos <span style={{ opacity: 0.5 }}>({coach.photos?.length ?? 0})</span>
+                    </TabButton>
                     <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")}>
                       Reviews <span style={{ opacity: 0.5 }}>({coach.reviewCount})</span>
                     </TabButton>
@@ -400,6 +404,58 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                         );
                       })
                     )}
+                  </div>
+                )}
+
+                {tab === "photos" && (
+                  <div>
+                    {!coach.photos?.length ? (
+                      <div style={{
+                        padding: "60px 24px", textAlign: "center",
+                        background: "rgba(13,13,13,0.7)",
+                        borderRadius: 20, border: "1px solid rgba(255,255,255,0.06)",
+                        color: "rgba(255,255,255,0.5)",
+                      }}>
+                        No photos uploaded yet.
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                        gap: 12,
+                      }}>
+                        {coach.photos.map((src, i) => (
+                          <button
+                            key={`${src}-${i}`}
+                            onClick={() => setLightbox(i)}
+                            style={{
+                              position: "relative",
+                              aspectRatio: "4/3",
+                              borderRadius: 14,
+                              overflow: "hidden",
+                              border: "1px solid rgba(255,255,255,0.06)",
+                              background: "#0d0d0d",
+                              padding: 0,
+                              cursor: "pointer",
+                              fontFamily: "inherit",
+                              transition: "transform 220ms, border-color 220ms",
+                            }}
+                            className="coach-photo-tile"
+                          >
+                            <Image
+                              src={src}
+                              alt={`${coach.name} facility photo ${i + 1}`}
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 240px"
+                              style={{ objectFit: "cover" }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <style>{`
+                      .coach-photo-tile:hover { transform: translateY(-2px); border-color: rgba(230,57,70,0.35) !important; }
+                    `}</style>
                   </div>
                 )}
 
@@ -681,6 +737,92 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
           </div>
         </section>
       </main>
+
+      {lightbox !== null && coach.photos && coach.photos[lightbox] && (
+        <div
+          onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(0,0,0,0.92)",
+            backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <button
+            onClick={e => { e.stopPropagation(); setLightbox(null); }}
+            aria-label="Close"
+            style={{
+              position: "absolute", top: 20, right: 20,
+              width: 40, height: 40, borderRadius: 100,
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+              color: "#fff", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+          {coach.photos.length > 1 && (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); setLightbox(i => i === null ? 0 : (i - 1 + coach.photos!.length) % coach.photos!.length); }}
+                aria-label="Previous photo"
+                style={{
+                  position: "absolute", left: 20, top: "50%", transform: "translateY(-50%)",
+                  width: 44, height: 44, borderRadius: 100,
+                  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+                  color: "#fff", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setLightbox(i => i === null ? 0 : (i + 1) % coach.photos!.length); }}
+                aria-label="Next photo"
+                style={{
+                  position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)",
+                  width: 44, height: 44, borderRadius: 100,
+                  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+                  color: "#fff", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: "relative",
+              maxWidth: "min(1200px, 92vw)", maxHeight: "86vh",
+              width: "100%", aspectRatio: "16/10",
+              borderRadius: 14, overflow: "hidden",
+              background: "#000",
+            }}
+          >
+            <Image
+              src={coach.photos[lightbox]}
+              alt={`${coach.name} facility photo ${lightbox + 1}`}
+              fill
+              sizes="92vw"
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          </div>
+          <div style={{
+            position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
+            padding: "6px 14px", borderRadius: 100,
+            background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)",
+            fontSize: 12, color: "rgba(255,255,255,0.7)",
+          }}>
+            {lightbox + 1} / {coach.photos.length}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @media (max-width: 900px) {
