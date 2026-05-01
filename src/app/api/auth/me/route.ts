@@ -9,7 +9,10 @@ export async function GET(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { id: true, deletedAt: true },
+    select: {
+      id: true, email: true, name: true, username: true, role: true, avatarUrl: true,
+      deletedAt: true,
+    },
   });
   if (!user || user.deletedAt) {
     const res = NextResponse.json({ ok: false, error: "Account no longer exists" }, { status: 401 });
@@ -17,7 +20,16 @@ export async function GET(req: NextRequest) {
     return res;
   }
 
-  return ok({ user: session });
+  return ok({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      avatarUrl: user.avatarUrl ?? undefined,
+    },
+  });
 }
 
 export async function POST() {

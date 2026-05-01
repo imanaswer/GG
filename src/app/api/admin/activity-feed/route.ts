@@ -5,12 +5,13 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [bookings, gamePlayers, campRegs, eventRegs, users] = await Promise.all([
+  const [bookings, gamePlayers, campRegs, eventRegs, workshopRegs, users] = await Promise.all([
     prisma.booking.findMany({ include: { user: { select: { name: true } }, coach: { select: { name: true } } } }),
     prisma.gamePlayer.findMany({ include: { user: { select: { name: true } }, game: { select: { title: true } } } }),
     prisma.campRegistration.findMany({ include: { user: { select: { name: true } }, camp: { select: { title: true } } } }),
     prisma.eventRegistration.findMany({ include: { user: { select: { name: true } }, event: { select: { title: true } } } }),
-    prisma.user.findMany({ where: { role: { not: "admin" } }, select: { name: true, createdAt: true } }),
+    prisma.workshopRegistration.findMany({ include: { user: { select: { name: true } }, workshop: { select: { title: true } } } }),
+    prisma.user.findMany({ where: { role: { not: "admin" }, deletedAt: null }, select: { name: true, createdAt: true } }),
   ]);
 
   const feed: { icon: string; actor: string; action: string; ts: Date }[] = [];
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
   gamePlayers.forEach(gp => feed.push({ icon: "🏃", actor: gp.user?.name ?? "Player", action: `Joined ${gp.game?.title ?? "game"}`, ts: gp.joinedAt }));
   campRegs.forEach(r => feed.push({ icon: "☀️", actor: r.user?.name ?? "Player", action: `Registered ${r.childName} for ${r.camp?.title ?? "camp"}`, ts: r.registeredAt }));
   eventRegs.forEach(r => feed.push({ icon: "🏆", actor: r.user?.name ?? "Player", action: `Registered for ${r.event?.title ?? "event"}${r.teamName ? ` as "${r.teamName}"` : ""}`, ts: r.registeredAt }));
+  workshopRegs.forEach(r => feed.push({ icon: "💡", actor: r.user?.name ?? "Player", action: `Signed up for ${r.workshop?.title ?? "workshop"}`, ts: r.registeredAt }));
   users.forEach(u => feed.push({ icon: "👤", actor: u.name, action: "Joined Game Ground", ts: u.createdAt }));
 
   feed.sort((a, b) => b.ts.getTime() - a.ts.getTime());
