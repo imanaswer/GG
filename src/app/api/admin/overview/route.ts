@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
-    totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations,
+    totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations, workshopRegistrations,
     revenueAgg, gameSlotsAgg, bookings, users, camps, upcomingGames, pendingBookings, lowSeatCoaches,
   ] = await Promise.all([
     prisma.user.count({ where: { role: { not: "admin" } } }),
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     prisma.booking.count({ where: { status: { not: "cancelled" } } }),
     prisma.game.count({ where: { scheduledAt: { gte: weekAgo }, status: { in: ["open", "full"] } } }),
     prisma.campRegistration.count(),
+    prisma.workshopRegistration.count(),
     prisma.payment.aggregate({ _sum: { amount: true }, where: { status: "paid", createdAt: { gte: monthStart } } }),
     prisma.game.aggregate({ _sum: { slots: true, slotsLeft: true } }),
     prisma.booking.findMany({ select: { id: true, status: true, createdAt: true, coachId: true } }),
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
   lowSeatCoaches.forEach(c => alerts.push({ type: "coach", message: `${c.name} has 0 seats — may need new batches`, severity: "info" }));
 
   return NextResponse.json({
-    metrics: { totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations, revenueMonth },
+    metrics: { totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations, workshopRegistrations, revenueMonth },
     health: { slotFillRate, confirmRate, avgReliability, cancelRate },
     alerts: alerts.slice(0, 10),
   });

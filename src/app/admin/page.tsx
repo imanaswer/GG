@@ -4,10 +4,10 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard }   from "@/components/admin/StatCard";
 import { Badge }      from "@/components/admin/Badge";
 import { useQuery }   from "@tanstack/react-query";
-import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock } from "lucide-react";
+import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock, Lightbulb } from "lucide-react";
 
 type Overview = {
-  metrics: { totalUsers:number; totalCoaches:number; activeBookings:number; gamesThisWeek:number; campRegistrations:number; revenueMonth:number };
+  metrics: { totalUsers:number; totalCoaches:number; activeBookings:number; gamesThisWeek:number; campRegistrations:number; workshopRegistrations:number; revenueMonth:number };
   health:  { slotFillRate:number; confirmRate:number; avgReliability:string; cancelRate:number };
   alerts:  { type:string; message:string; severity:string }[];
 };
@@ -38,6 +38,7 @@ export default function AdminOverview() {
             <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + confirmed"  icon={CalendarCheck}  />
             <StatCard value={m?.gamesThisWeek   ?? "—"} label="Games This Week"    sub="Open + full"          icon={Gamepad2}       />
             <StatCard value={m?.campRegistrations?? "—"} label="Camp Registrations" sub="All camps"           icon={Tent}           />
+            <StatCard value={m?.workshopRegistrations ?? "—"} label="Workshop Sign-ups" sub="All workshops"   icon={Lightbulb}      />
             <StatCard value={`₹${(m?.revenueMonth ?? 0).toLocaleString("en-IN")}`} label="Revenue (Month)" sub="Paid transactions" icon={IndianRupee} accent color="#e63946" />
           </div>
 
@@ -82,10 +83,11 @@ export default function AdminOverview() {
               {/* Quick links grid */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20 }}>
                 {[
-                  { href: "/admin/bookings", label: "📋 Manage Bookings" },
-                  { href: "/admin/coaches",  label: "🎓 Approve Coaches"  },
-                  { href: "/admin/camps",    label: "☀️ View Camps"        },
-                  { href: "/admin/revenue",  label: "💰 Revenue Report"   },
+                  { href: "/admin/bookings",  label: "📋 Manage Bookings" },
+                  { href: "/admin/coaches",   label: "🎓 Approve Coaches"  },
+                  { href: "/admin/camps",     label: "☀️ View Camps"        },
+                  { href: "/admin/workshops", label: "💡 Manage Workshops" },
+                  { href: "/admin/revenue",   label: "💰 Revenue Report"   },
                 ].map(({ href, label }) => (
                   <a key={href} href={href} style={{ display: "block", padding: "12px 14px", borderRadius: 10, background: "#141414", border: "1px solid rgba(255,255,255,0.07)", textDecoration: "none", fontSize: 13, color: "#e5e7eb", fontWeight: 600, transition: "border-color 0.15s" }}
                     onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(230,57,70,0.4)"}
