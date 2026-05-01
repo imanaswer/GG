@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2, Image as ImageIcon, Check } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +18,11 @@ type EditableProfile = {
   location: string;
   phone: string;
   sports: string[];
+  avatarUrl: string;
 };
+
+const AVATAR_SEEDS = ["ace", "rally", "striker", "dunk", "splash", "spike", "racket", "pitch", "court", "goal", "champ", "rookie"];
+const AVATAR_OPTIONS = AVATAR_SEEDS.map(seed => `https://api.dicebear.com/9.x/avataaars/png?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`);
 
 export default function EditProfile() {
   const { user, loading } = useAuth();
@@ -30,7 +35,8 @@ export default function EditProfile() {
   useEffect(() => {
     if (!loading && !user) { router.push("/login"); return; }
     if (user) {
-      fetch(`/api/users/${user.id}`).then(r => r.json()).then(d => {
+      fetch(`/api/users/${user.id}`).then(r => r.json()).then(json => {
+        const d = json.data ?? json;
         setProfile({
           name: d.name ?? "",
           username: d.username ?? "",
@@ -38,6 +44,7 @@ export default function EditProfile() {
           location: d.location ?? "",
           phone: d.phone ?? "",
           sports: d.sports ?? [],
+          avatarUrl: d.avatarUrl ?? "",
         });
       });
     }
@@ -105,6 +112,102 @@ export default function EditProfile() {
               <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Edit profile</h1>
             </div>
           </div>
+
+          {/* Avatar picker */}
+          <SectionCard Icon={ImageIcon} title="Avatar" hint="Pick a profile picture. Leave unset to show your initials.">
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%",
+                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontSize: 26, fontWeight: 800,
+                overflow: "hidden",
+                border: "2px solid rgba(255,255,255,0.08)",
+                flexShrink: 0,
+              }}>
+                {profile.avatarUrl ? (
+                  <Image src={profile.avatarUrl} alt="Current avatar" width={72} height={72} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  (profile.name?.[0] ?? "?").toUpperCase()
+                )}
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", flex: 1, minWidth: 200 }}>
+                {profile.avatarUrl
+                  ? "Tap a different option to change, or use initials."
+                  : "Showing your initials. Pick an avatar below."}
+              </div>
+              {profile.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => set("avatarUrl", "")}
+                  style={{
+                    padding: "8px 14px", borderRadius: 100,
+                    fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.7)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Use initials
+                </button>
+              )}
+            </div>
+            <div style={{
+              marginTop: 18,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
+              gap: 12,
+            }}>
+              {AVATAR_OPTIONS.map(url => {
+                const selected = profile.avatarUrl === url;
+                return (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => set("avatarUrl", url)}
+                    aria-label="Select avatar"
+                    aria-pressed={selected}
+                    style={{
+                      position: "relative",
+                      aspectRatio: "1",
+                      borderRadius: "50%",
+                      padding: 3,
+                      background: selected ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                      border: selected ? "none" : "1px solid rgba(255,255,255,0.08)",
+                      cursor: "pointer",
+                      transition: "transform 160ms",
+                      fontFamily: "inherit",
+                    }}
+                    className="avatar-option"
+                  >
+                    <div style={{
+                      width: "100%", height: "100%", borderRadius: "50%",
+                      overflow: "hidden", background: "#0d0d0d",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Image src={url} alt="Avatar option" width={72} height={72} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                    {selected && (
+                      <span style={{
+                        position: "absolute", bottom: -2, right: -2,
+                        width: 22, height: 22, borderRadius: "50%",
+                        background: "#e63946",
+                        border: "2px solid #0b0b0b",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff",
+                      }}>
+                        <Check size={11} strokeWidth={3} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <style>{`
+              .avatar-option:hover { transform: translateY(-2px); }
+            `}</style>
+          </SectionCard>
 
           {/* Basic info card */}
           <SectionCard Icon={User} title="Basic information" hint="This is what other players see on your profile.">

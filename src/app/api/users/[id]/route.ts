@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
-    const { name, bio, location, sports, phone, username } = await req.json();
+    const { name, bio, location, sports, phone, username, avatarUrl } = await req.json();
 
     if (username) {
       const taken = await prisma.user.findFirst({ where: { username, id: { not: id } }, select: { id: true } });
@@ -81,6 +81,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         sports:   sports   ?? undefined,
         phone:    phone    ?? undefined,
         username: username ?? undefined,
+        avatarUrl: avatarUrl === undefined ? undefined : (avatarUrl === "" ? null : avatarUrl),
       },
     });
 
