@@ -28,6 +28,10 @@ model User {
   gamesPlayed          Int       @default(0)
   gamesOrganized       Int       @default(0)
   attendanceRate       Float     @default(100)
+  reputationScore      Int       @default(0)
+  tier                 String    @default("bronze")
+  tierUpdatedAt        DateTime  @default(now())
+  lastActivityAt       DateTime?
   passwordResetToken   String?
   passwordResetExpiry  DateTime?
   deletedAt            DateTime?
@@ -43,6 +47,9 @@ model User {
   workshopRegistrations WorkshopRegistration[]
   payments              Payment[]
   coachProfile       Coach?
+
+  @@index([reputationScore(sort: Desc)])
+  @@index([tier])
 }
 
 model Coach {
