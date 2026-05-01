@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionFromRequest } from "@/lib/auth";
+import { getSessionFromRequest, clearCookie } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
     const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) return fail("User not found", 404);
+    if (!user || user.deletedAt) return fail("User not found", 404);
 
     const [gamesPlayed, gamesOrganized, bookingsRows, playerRows] = await Promise.all([
       prisma.gamePlayer.count({ where: { userId: id } }),
@@ -95,13 +95,28 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
+    const stamp = Date.now();
     await prisma.$transaction([
       prisma.review.updateMany({ where: { userId: id }, data: { reviewerName: "Deleted User" } }),
       prisma.gamePlayer.deleteMany({ where: { userId: id } }),
       prisma.booking.updateMany({ where: { userId: id }, data: { status: "cancelled" } }),
-      prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
+      prisma.user.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          email: `deleted-${id}-${stamp}@deleted.local`,
+          username: `deleted_${id}_${stamp}`,
+          phone: null,
+          avatarUrl: null,
+          bio: null,
+          reputationOverride: null,
+        },
+      }),
     ]);
 
-    return ok({ deleted: true });
+    const res = NextResponse.json({ ok: true, data: { deleted: true } });
+    const opts = clearCookie();
+    res.cookies.set(opts.name, opts.value, { httpOnly: opts.httpOnly, path: opts.path, maxAge: opts.maxAge });
+    return res;
   } catch (e) { return handleErr(e); }
 }
