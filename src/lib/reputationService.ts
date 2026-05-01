@@ -95,6 +95,23 @@ export async function touchActivity(userId: string): Promise<void> {
   await prisma.user.update({ where: { id: userId }, data: { lastActivityAt: new Date() } });
 }
 
+export async function recordActivityAndRecompute(userId: string): Promise<void> {
+  try {
+    await touchActivity(userId);
+    await recomputeUser(userId);
+  } catch (err) {
+    console.error(`[reputation] recordActivityAndRecompute failed for ${userId}`, err);
+  }
+}
+
+export async function safeRecompute(userId: string): Promise<void> {
+  try {
+    await recomputeUser(userId);
+  } catch (err) {
+    console.error(`[reputation] safeRecompute failed for ${userId}`, err);
+  }
+}
+
 export async function recomputeAll(opts: { batchSize?: number } = {}): Promise<{ processed: number; promoted: number }> {
   const batchSize = opts.batchSize ?? 200;
   let cursor: string | undefined;

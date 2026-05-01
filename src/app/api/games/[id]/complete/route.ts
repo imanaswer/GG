@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { recordActivityAndRecompute, safeRecompute } from "@/lib/reputationService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
     await prisma.game.update({ where: { id }, data: { status: "completed", attendanceRecorded: true } });
 
+    const touchedUserIds: string[] = [];
     if (attendance && typeof attendance === "object") {
       for (const [userId, attended] of Object.entries(attendance)) {
         await prisma.gamePlayer.updateMany({ where: { gameId: id, userId }, data: { attended } });
@@ -38,8 +40,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         const reliabilityScore = Math.round(((attendanceRate / 100) * 0.6 + (reviewAvg / 5) * 0.4) * 5 * 10) / 10;
 
         await prisma.user.update({ where: { id: userId }, data: { attendanceRate, reliabilityScore } });
+        touchedUserIds.push(userId);
       }
     }
+
+    await Promise.allSettled([
+      ...touchedUserIds.map(uid => recordActivityAndRecompute(uid)),
+      safeRecompute(session.id),
+    ]);
 
     return ok({ completed: true });
   } catch (e) { return handleErr(e); }

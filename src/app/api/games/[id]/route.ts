@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { recordActivityAndRecompute } from "@/lib/reputationService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       }),
       prisma.user.update({ where: { id: session.id }, data: { gamesPlayed: { increment: 1 } } }),
     ]);
+
+    await recordActivityAndRecompute(session.id);
 
     return ok({ joined: true, slotsLeft: newSlotsLeft, status: newSlotsLeft === 0 ? "full" : game.status });
   } catch (e) { return handleErr(e); }

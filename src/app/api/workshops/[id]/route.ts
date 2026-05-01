@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { recordActivityAndRecompute } from "@/lib/reputationService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -70,6 +71,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       }),
       prisma.workshop.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),
     ]);
+
+    await recordActivityAndRecompute(session.id);
 
     return ok({ registered: true, participants: newCount });
   } catch (e) { return handleErr(e); }

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { recordActivityAndRecompute } from "@/lib/reputationService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -47,6 +48,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         },
       });
     });
+
+    await recordActivityAndRecompute(session.id);
 
     return ok({ submitted: true });
   } catch (e) { return handleErr(e); }
