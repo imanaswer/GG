@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { AuthProvider } from "./AuthContext";
+import { TierAnnouncementToast } from "@/components/TierAnnouncementToast";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [qc] = useState(() => new QueryClient({
@@ -9,7 +10,10 @@ export function Providers({ children }: { children: ReactNode }) {
   }));
   return (
     <QueryClientProvider client={qc}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <TierAnnouncementToast />
+        {children}
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

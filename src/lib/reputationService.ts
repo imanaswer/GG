@@ -16,7 +16,7 @@ export type RecomputeResult = {
   promoted: boolean;
 };
 
-async function gatherInputs(userId: string, now: Date): Promise<{ input: ReputationInput; user: { createdAt: Date; tier: string } } | null> {
+async function gatherInputs(userId: string, now: Date): Promise<{ input: ReputationInput; user: { createdAt: Date; tier: string; override: number | null } } | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -27,6 +27,7 @@ async function gatherInputs(userId: string, now: Date): Promise<{ input: Reputat
       gamesOrganized: true,
       attendanceRate: true,
       tier: true,
+      reputationOverride: true,
     },
   });
   if (!user) return null;
@@ -60,7 +61,7 @@ async function gatherInputs(userId: string, now: Date): Promise<{ input: Reputat
     daysSinceLastActivity,
   };
 
-  return { input, user: { createdAt: user.createdAt, tier: user.tier } };
+  return { input, user: { createdAt: user.createdAt, tier: user.tier, override: user.reputationOverride } };
 }
 
 export async function recomputeUser(userId: string): Promise<RecomputeResult | null> {
@@ -68,7 +69,8 @@ export async function recomputeUser(userId: string): Promise<RecomputeResult | n
   const gathered = await gatherInputs(userId, now);
   if (!gathered) return null;
 
-  const score = computeReputation(gathered.input);
+  const computed = computeReputation(gathered.input);
+  const score = gathered.user.override ?? computed;
   const tier = getTier(score);
   const previousTier = gathered.user.tier as Tier;
   const tierChanged = tier !== previousTier;

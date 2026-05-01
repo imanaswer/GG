@@ -53,9 +53,20 @@ export async function GET(req: NextRequest) {
   });
   lowSeatCoaches.forEach(c => alerts.push({ type: "coach", message: `${c.name} has 0 seats — may need new batches`, severity: "info" }));
 
+  const tierGroups = await prisma.user.groupBy({
+    by: ["tier"],
+    where: { deletedAt: null, role: { not: "admin" } },
+    _count: { _all: true },
+  });
+  const tierDistribution: Record<string, number> = { bronze: 0, silver: 0, gold: 0, elite: 0, pro: 0 };
+  for (const g of tierGroups) {
+    if (g.tier in tierDistribution) tierDistribution[g.tier] = g._count._all;
+  }
+
   return NextResponse.json({
     metrics: { totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations, workshopRegistrations, revenueMonth },
     health: { slotFillRate, confirmRate, avgReliability, cancelRate },
+    tierDistribution,
     alerts: alerts.slice(0, 10),
   });
 }

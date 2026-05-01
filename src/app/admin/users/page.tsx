@@ -2,17 +2,42 @@
 import { useState } from "react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
-import { useQuery }    from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { AdminModal, FormInput, FormActions } from "@/components/admin/AdminModal";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Search, Pencil } from "lucide-react";
+import { TierBadge } from "@/components/TierBadge";
 
-type User = { id:string; name:string; username:string; role:string; location?:string; gamesPlayed:number; bookings:number; reliabilityScore:number; attendanceRate:number; createdAt:string; activity:number; phone?:string };
+type User = {
+  id:string; name:string; username:string; role:string; location?:string;
+  gamesPlayed:number; bookings:number; reliabilityScore:number; attendanceRate:number;
+  createdAt:string; activity:number; phone?:string;
+  tier:string; reputationScore:number; reputationOverride:number|null;
+};
 
 const SEGMENTS = [{ val: "all", label: "All Users" }, { val: "active", label: "Most Active" }, { val: "new", label: "New This Week" }, { val: "inactive", label: "Inactive" }];
 
 export default function AdminUsers() {
+  const qc = useQueryClient();
   const [segment, setSegment] = useState("all");
   const [q, setQ] = useState("");
+  const [overrideTarget, setOverrideTarget] = useState<User | null>(null);
+  const [overrideValue, setOverrideValue] = useState("");
   const { data } = useQuery<{ users: User[]; total: number }>({ queryKey: ["admin-users", segment], queryFn: () => fetch(`/api/admin/users?segment=${segment}`).then(r => r.json()) });
+
+  const setOverride = useMutation({
+    mutationFn: (payload: { id: string; reputationOverride: number | null }) =>
+      fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); setOverrideTarget(null); },
+  });
+
+  const openOverride = (u: User) => {
+    setOverrideTarget(u);
+    setOverrideValue(u.reputationOverride !== null ? String(u.reputationOverride) : "");
+  };
 
   const filtered = (data?.users ?? []).filter(u => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.username.toLowerCase().includes(q.toLowerCase()));
 
@@ -50,11 +75,11 @@ export default function AdminUsers() {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead style={{ background: "#111" }}>
-                  <tr>{["Name","Username","Role","Location","Games","Bookings","Reliability","Attendance","Joined"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
+                  <tr>{["Name","Username","Role","Tier","Rep","Games","Reliability","Attendance","Joined","Actions"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {!filtered.length ? (
-                    <tr><td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No users found</td></tr>
+                    <tr><td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No users found</td></tr>
                   ) : filtered.map(u => (
                     <tr key={u.id}>
                       <td style={td}>
@@ -65,12 +90,22 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ ...td, color: "#6b7280" }}>@{u.username}</td>
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa", textTransform: "capitalize" }}>{u.role}</span></td>
-                      <td style={{ ...td, color: "#9ca3af", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.location ?? "—"}</td>
+                      <td style={td}><TierBadge tier={u.tier} size="xs" /></td>
+                      <td style={{ ...td, fontWeight: 700, color: "#fff" }}>
+                        {u.reputationScore}
+                        {u.reputationOverride !== null && (
+                          <span title="Manually overridden" style={{ fontSize: 9, color: "#eab308", marginLeft: 5, fontWeight: 800 }}>OVR</span>
+                        )}
+                      </td>
                       <td style={{ ...td, textAlign: "center" }}>{u.gamesPlayed}</td>
-                      <td style={{ ...td, textAlign: "center" }}>{u.bookings}</td>
                       <td style={{ ...td, color: "#eab308", fontWeight: 700 }}>★ {u.reliabilityScore.toFixed(1)}</td>
                       <td style={{ ...td, color: rateColor(u.attendanceRate), fontWeight: 600 }}>{u.attendanceRate.toFixed(0)}%</td>
                       <td style={{ ...td, color: "#6b7280", whiteSpace: "nowrap" }}>{new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
+                      <td style={td}>
+                        <button onClick={() => openOverride(u)} title="Override reputation" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "inline-flex", alignItems: "center" }}>
+                          <Pencil size={13} color="#60a5fa" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -78,6 +113,37 @@ export default function AdminUsers() {
             </div>
           </div>
         </div>
+
+        <AdminModal open={!!overrideTarget} onClose={() => setOverrideTarget(null)} title="Override reputation" width={420}>
+          {overrideTarget && (
+            <form onSubmit={e => {
+              e.preventDefault();
+              const trimmed = overrideValue.trim();
+              setOverride.mutate({
+                id: overrideTarget.id,
+                reputationOverride: trimmed === "" ? null : Number(trimmed),
+              });
+            }}>
+              <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 14 }}>
+                Manually set <span style={{ color: "#fff", fontWeight: 700 }}>{overrideTarget.name}</span>&apos;s reputation score.
+                Set value sticks until cleared — recompute won&apos;t overwrite it.
+                Computed score: <span style={{ color: "#d1d5db" }}>{overrideTarget.reputationScore}</span>.
+              </p>
+              <FormInput
+                label="Override score (blank = clear, use computed)"
+                value={overrideValue}
+                onChange={v => setOverrideValue(String(v))}
+                type="number"
+                placeholder="e.g. 1500"
+              />
+              <FormActions
+                onCancel={() => setOverrideTarget(null)}
+                submitLabel={overrideValue.trim() === "" ? "Clear override" : "Save override"}
+                loading={setOverride.isPending}
+              />
+            </form>
+          )}
+        </AdminModal>
       </AdminShell>
     </AdminGuard>
   );

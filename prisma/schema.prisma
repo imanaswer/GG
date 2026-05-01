@@ -29,6 +29,7 @@ model User {
   gamesOrganized       Int       @default(0)
   attendanceRate       Float     @default(100)
   reputationScore      Int       @default(0)
+  reputationOverride   Int?
   tier                 String    @default("bronze")
   tierUpdatedAt        DateTime  @default(now())
   lastActivityAt       DateTime?

@@ -4,11 +4,13 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard }   from "@/components/admin/StatCard";
 import { Badge }      from "@/components/admin/Badge";
 import { useQuery }   from "@tanstack/react-query";
-import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock, Lightbulb } from "lucide-react";
+import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock, Lightbulb, Trophy } from "lucide-react";
+import { TIERS, TIER_META, type Tier } from "@/lib/reputation";
 
 type Overview = {
   metrics: { totalUsers:number; totalCoaches:number; activeBookings:number; gamesThisWeek:number; campRegistrations:number; workshopRegistrations:number; revenueMonth:number };
   health:  { slotFillRate:number; confirmRate:number; avgReliability:string; cancelRate:number };
+  tierDistribution: Record<string, number>;
   alerts:  { type:string; message:string; severity:string }[];
 };
 type Feed = { icon:string; actor:string; action:string; when:string }[];
@@ -56,6 +58,38 @@ export default function AdminOverview() {
                 <div style={{ fontSize: 10, color: "#4b5563", marginTop: 2 }}>{sub}</div>
               </div>
             ))}
+          </div>
+
+          {/* Tier distribution */}
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "16px 18px", marginBottom: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <Trophy size={14} color="#eab308" />
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Reputation Distribution</h2>
+              <span style={{ fontSize: 11, color: "#6b7280", marginLeft: "auto" }}>
+                {Object.values(data?.tierDistribution ?? {}).reduce((a, b) => a + b, 0)} users
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${TIERS.length}, 1fr)`, gap: 10 }}>
+              {TIERS.map(t => {
+                const count = data?.tierDistribution?.[t] ?? 0;
+                const total = Object.values(data?.tierDistribution ?? {}).reduce((a, b) => a + b, 0) || 1;
+                const pct = (count / total) * 100;
+                const meta = TIER_META[t as Tier];
+                return (
+                  <div key={t} style={{ background: "#0d0d0d", border: `1px solid ${meta.color}33`, borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <span style={{ fontSize: 13 }}>{meta.icon}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: meta.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>{meta.label}</span>
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>{count}</div>
+                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>{pct.toFixed(0)}%</div>
+                    <div style={{ height: 3, marginTop: 8, background: "#1c1c1c", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: meta.color, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
