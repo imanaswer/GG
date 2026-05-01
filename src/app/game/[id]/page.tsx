@@ -12,6 +12,7 @@ import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { SkillBadge, SportBadge, fmtDate } from "@/components/Shared";
+import { TierBadge } from "@/components/TierBadge";
 import { useGame, useJoinGame, useLeaveGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
@@ -339,11 +340,14 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                             }}>
                               {p.name}
                             </p>
-                            {p.userId === game.organizerId && (
-                              <p style={{ fontSize: 10, color: "#ff6b74", fontWeight: 600, letterSpacing: "0.04em" }}>
-                                ORGANIZER
-                              </p>
-                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                              {p.tier && <TierBadge tier={p.tier} score={p.reputationScore} size="xs" />}
+                              {p.userId === game.organizerId && (
+                                <span style={{ fontSize: 9.5, color: "#ff6b74", fontWeight: 700, letterSpacing: "0.06em" }}>
+                                  ORGANIZER
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                             <Star size={11} fill="#eab308" color="#eab308" />

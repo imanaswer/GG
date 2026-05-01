@@ -10,6 +10,7 @@ import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "
 import { NavBar } from "@/components/NavBar";
 import { Stars, SkillBadge, StatusBadge, fmtDate } from "@/components/Shared";
 import { useUserProfile, useCancelBooking, type UserProfile, type Game } from "@/hooks/useData";
+import { tierLevelInfo, type TierLevelInfo } from "@/lib/reputation";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { HERO_BACKDROPS, pickFallback, GAME_FALLBACKS } from "@/lib/premium-images";
@@ -55,9 +56,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const hero = HERO_BACKDROPS[Math.abs(profile.id.charCodeAt(0)) % HERO_BACKDROPS.length];
   const joined = new Date(profile.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
-  // Derived: member tenure, level from gamesPlayed, next upcoming game
+  // Derived: member tenure, tier from reputation score, next upcoming game
   const monthsSince = monthsBetween(new Date(profile.createdAt), new Date());
-  const level = getLevel(profile.gamesPlayed);
+  const level = tierLevelInfo(profile.reputationScore ?? 0);
   const nextGame = (profile.upcomingGames ?? [])
     .slice()
     .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt))[0];
@@ -426,7 +427,7 @@ function OverviewTab({
 }: {
   profile: UserProfile;
   nextGame?: Game;
-  level: LevelInfo;
+  level: TierLevelInfo;
 }) {
   const topSports = (profile.sports ?? []).slice(0, 3);
   const totalUpcoming = profile.upcomingGames?.length ?? 0;
@@ -543,7 +544,7 @@ function OverviewTab({
         </div>
         <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.55, marginBottom: 16 }}>
           {level.next
-            ? `${level.next.gamesRequired - profile.gamesPlayed} more games to reach ${level.next.label}.`
+            ? `${level.next.pointsToNext} more rep to reach ${level.next.label}.`
             : "Peak tier unlocked. Keep the streak alive."}
         </p>
         <div style={{ height: 8, background: "rgba(255,255,255,0.04)", borderRadius: 100, overflow: "hidden" }}>
@@ -560,8 +561,8 @@ function OverviewTab({
           />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-          <span>{level.floor} games</span>
-          <span>{level.next?.gamesRequired ?? "∞"}</span>
+          <span>{level.floor} rep</span>
+          <span>{level.next?.pointsRequired ?? "∞"}</span>
         </div>
       </motion.div>
 
@@ -739,7 +740,7 @@ function UpcomingGameCard({ game, index }: { game: Game; index: number }) {
 
 /* ── Level ring ────────────────────────────────────────────── */
 
-function LevelRing({ level, size, children }: { level: LevelInfo; size: number; children: React.ReactNode }) {
+function LevelRing({ level, size, children }: { level: TierLevelInfo; size: number; children: React.ReactNode }) {
   const stroke = 3;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -948,55 +949,13 @@ function EmptyState({ copy, cta }: { copy: string; cta: { href: string; label: s
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
-type LevelInfo = {
-  label: string;
-  icon: string;
-  color: string;
-  colorDim: string;
-  floor: number;
-  progressPct: number;
-  next: { label: string; gamesRequired: number } | null;
-};
-
-const LEVELS: { label: string; icon: string; min: number; color: string; colorDim: string }[] = [
-  { label: "Rookie",    icon: "🌱", min: 0,   color: "#6b7280", colorDim: "#374151" },
-  { label: "Regular",   icon: "🔥", min: 5,   color: "#f97316", colorDim: "#b45309" },
-  { label: "Pro",       icon: "⚡", min: 20,  color: "#eab308", colorDim: "#a16207" },
-  { label: "Elite",     icon: "💎", min: 50,  color: "#60a5fa", colorDim: "#1e40af" },
-  { label: "Legend",    icon: "👑", min: 100, color: "#e63946", colorDim: "#991b1b" },
-];
-
-function getLevel(games: number): LevelInfo {
-  let current = LEVELS[0];
-  let next: typeof LEVELS[number] | null = null;
-  for (let i = 0; i < LEVELS.length; i++) {
-    if (games >= LEVELS[i].min) {
-      current = LEVELS[i];
-      next = LEVELS[i + 1] ?? null;
-    }
-  }
-  const span = (next?.min ?? current.min + 20) - current.min;
-  const progressPct = next
-    ? Math.min(100, ((games - current.min) / span) * 100)
-    : 100;
-  return {
-    label: current.label,
-    icon: current.icon,
-    color: current.color,
-    colorDim: current.colorDim,
-    floor: current.min,
-    progressPct,
-    next: next ? { label: next.label, gamesRequired: next.min } : null,
-  };
-}
-
 function monthsBetween(a: Date, b: Date) {
   return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
 }
 
 /* ── Avatar card ───────────────────────────────────────────── */
 
-function AvatarCard({ name, url, level }: { name: string; url?: string | null; level: LevelInfo }) {
+function AvatarCard({ name, url, level }: { name: string; url?: string | null; level: TierLevelInfo }) {
   const initials = name
     .split(" ")
     .filter(Boolean)

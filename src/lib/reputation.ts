@@ -1,6 +1,14 @@
 export const TIERS = ["bronze", "silver", "gold", "elite", "pro"] as const;
 export type Tier = (typeof TIERS)[number];
 
+export const TIER_META: Record<Tier, { label: string; icon: string; color: string; colorDim: string }> = {
+  bronze: { label: "Bronze", icon: "🥉", color: "#a16207", colorDim: "#78350f" },
+  silver: { label: "Silver", icon: "🥈", color: "#94a3b8", colorDim: "#475569" },
+  gold:   { label: "Gold",   icon: "🥇", color: "#eab308", colorDim: "#a16207" },
+  elite:  { label: "Elite",  icon: "💎", color: "#60a5fa", colorDim: "#1e40af" },
+  pro:    { label: "Pro",    icon: "👑", color: "#e63946", colorDim: "#991b1b" },
+};
+
 export const TIER_THRESHOLDS: Record<Tier, number> = {
   bronze: 0,
   silver: 100,
@@ -64,6 +72,36 @@ export function progressToNextTier(score: number): { current: Tier; next: Tier |
   const span = hi - lo;
   const pct = Math.max(0, Math.min(100, Math.round(((score - lo) / span) * 100)));
   return { current, next, pct, pointsToNext: Math.max(0, hi - score) };
+}
+
+export type TierLevelInfo = {
+  tier: Tier;
+  label: string;
+  icon: string;
+  color: string;
+  colorDim: string;
+  score: number;
+  floor: number;
+  progressPct: number;
+  next: { tier: Tier; label: string; pointsRequired: number; pointsToNext: number } | null;
+};
+
+export function tierLevelInfo(score: number): TierLevelInfo {
+  const { current, next, pct, pointsToNext } = progressToNextTier(score);
+  const meta = TIER_META[current];
+  return {
+    tier: current,
+    label: meta.label,
+    icon: meta.icon,
+    color: meta.color,
+    colorDim: meta.colorDim,
+    score,
+    floor: TIER_THRESHOLDS[current],
+    progressPct: pct,
+    next: next
+      ? { tier: next, label: TIER_META[next].label, pointsRequired: TIER_THRESHOLDS[next], pointsToNext }
+      : null,
+  };
 }
 
 export function monthsBetween(from: Date, to: Date): number {

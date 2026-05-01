@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       where: { id },
       include: {
         organizer: { select: { name: true, reliabilityScore: true, gamesOrganized: true, avatarUrl: true } },
-        players:   { include: { user: { select: { name: true, username: true, avatarUrl: true, reliabilityScore: true } } } },
+        players:   { include: { user: { select: { name: true, username: true, avatarUrl: true, reliabilityScore: true, tier: true, reputationScore: true } } } },
       },
     });
     if (!game) return fail("Game not found", 404);
@@ -32,6 +32,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
         username: gp.user?.username ?? "",
         avatarUrl: gp.user?.avatarUrl,
         rating: gp.user?.reliabilityScore ?? 4.5,
+        tier: gp.user?.tier ?? "bronze",
+        reputationScore: gp.user?.reputationScore ?? 0,
         joinedAt: gp.joinedAt,
       })),
     });

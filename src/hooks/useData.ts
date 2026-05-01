@@ -30,7 +30,7 @@ export type Game = {
   organizerRating?: number; organizerGames?: number;
   cost: string; costAmount: number; description: string; rules: string[];
   imageUrl: string; status: string; createdAt: string;
-  players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; joinedAt: string }[];
+  players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; tier?: string; reputationScore?: number; joinedAt: string }[];
   playerCount?: number;
 };
 
@@ -44,6 +44,7 @@ export type UserProfile = {
   id: string; name: string; username: string; email?: string; location?: string;
   bio?: string; avatarUrl?: string; role: string;
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
+  reputationScore: number; tier: string;
   sports: { sport: string; games: number; level: string }[];
   upcomingGames: Game[];
   organizedGames: Game[];
