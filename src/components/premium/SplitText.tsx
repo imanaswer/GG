@@ -57,5 +57,8 @@ export function SplitText({
     </>
   );
 
+  // Ref attaches to the rendered DOM element so the effect can query [data-char] descendants.
+  // The dynamic-tag pattern is a deliberate false positive for react-hooks/refs.
+  // eslint-disable-next-line react-hooks/refs
   return createElement(as, { ref: rootRef, className, style }, content);
 }

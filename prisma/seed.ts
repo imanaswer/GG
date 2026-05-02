@@ -12,8 +12,14 @@ config();
 
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+
+// Every seeded player gets this password — documented in README.
+// Admin login uses ADMIN_PASSWORD env (or "admin123" fallback), so the admin
+// row's passwordHash here is a placeholder that's never used for auth.
+const SEED_PLAYER_PASSWORD = "password123";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Create .env.local from .env.example and add your Supabase connection string.");
@@ -67,6 +73,7 @@ const d = (x: any) => (x ? new Date(x) : undefined);
 
 async function seed() {
   const db = loadDb();
+  const playerHash = await bcrypt.hash(SEED_PLAYER_PASSWORD, 10);
 
   console.log(`→ Seeding ${db.users.length} users…`);
   for (const u of db.users as Record<string, unknown>[]) {
@@ -76,7 +83,7 @@ async function seed() {
         email:                u.email as string,
         name:                 u.name as string,
         username:             u.username as string,
-        passwordHash:         u.passwordHash as string,
+        passwordHash:         playerHash,
         role:                 (u.role as string) ?? "player",
         location:             (u.location as string) ?? null,
         bio:                  (u.bio as string) ?? null,

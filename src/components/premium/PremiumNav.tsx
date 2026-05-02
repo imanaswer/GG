@@ -35,7 +35,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => { setOpen(false); }, [path]);
+  const closeMenu = () => setOpen(false);
 
   const solidBg   = "rgba(5,5,5,0.72)";
   const transBg   = scrolled ? "rgba(5,5,5,0.7)" : "transparent";
@@ -198,6 +198,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={closeMenu}
                   style={{
                     padding: "14px 8px",
                     fontSize: 16, fontWeight: 500, color: "#fff",
@@ -210,19 +211,19 @@ export function PremiumNav({ variant = "solid" }: Props) {
               ))}
               <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
                 {user ? (
-                  <Link href="/profile" style={{
+                  <Link href="/profile" onClick={closeMenu} style={{
                     flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
                     background: "rgba(255,255,255,0.06)", color: "#fff", fontWeight: 600, fontSize: 14,
                     textDecoration: "none",
                   }}>{user.name.split(" ")[0]}</Link>
                 ) : (
                   <>
-                    <Link href="/login" style={{
+                    <Link href="/login" onClick={closeMenu} style={{
                       flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
                       background: "rgba(255,255,255,0.06)", color: "#fff", fontWeight: 600, fontSize: 14,
                       textDecoration: "none",
                     }}>Sign in</Link>
-                    <Link href="/register" style={{
+                    <Link href="/register" onClick={closeMenu} style={{
                       flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
                       background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
                       color: "#fff", fontWeight: 700, fontSize: 14,
