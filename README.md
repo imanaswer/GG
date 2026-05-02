@@ -72,20 +72,39 @@ prisma/                # schema.prisma, migrations, seed.ts
 
 ### Player-facing
 - Home · login / register (player + 5-step coach flow) · forgot & reset password
-- **Learn** — coach directory, coach profile, coach dashboard (bookings, edit)
-- **Play** — pickup games list & detail, create-game, join / leave, attendance
+- **Learn** — coach directory, coach profile (Overview / Batches / Photos / Reviews tabs with lightbox gallery), coach dashboard (bookings, edit)
+- **Play** — pickup games list & detail, create-game, join / leave, attendance, tier badge per player
 - **Camps** — directory, detail, registration with Razorpay checkout
+- **Workshops** — directory, detail (audience-adaptive registration), Razorpay checkout
 - **Events** — directory, detail, team registration with Razorpay checkout
-- **Profile** — view, edit, delete (GDPR), reviews, reliability score
+- **Leaderboard** — top 100 players / organizers, all-time or last-30-days, podium for top 3
+- **Profile** — view, edit (with avatar picker — 12 presets + initials fallback), delete (GDPR with cookie clear + identifier rotation), reviews, reliability score, tier + reputation
 - Global ⌘K search, WhatsApp share
 
 ### Admin (`/admin`)
-- Overview — metrics, alerts, live activity feed (15s auto-refresh)
-- Bookings · Games · Camps · Events · Users · Coaches · Revenue tabs
-- Full CRUD for coaches, camps, and events — add, edit, delete from the dashboard
+- Overview — metrics, alerts, **reputation distribution widget** (per-tier counts), live activity feed (15s auto-refresh, includes workshop sign-ups)
+- Bookings · Games · Camps · **Workshops** · Events · Users · Coaches · Revenue tabs
+- Full CRUD for coaches (with **facility photo gallery** — multi-image upload, reorder, remove), camps, events, and workshops
 - Cover photo upload (drag-and-drop / file picker) with live preview on all entities
+- Per-user **reputation override** with auto-recompute (sticky until cleared)
 - Approve / reject pending coach applications
 - CSV export on bookings, camp registrations, transactions
+
+### Reputation & tiers
+- **Bronze → Silver → Gold → Elite → Pro** ladder, driven by a composite reputation score
+- Score factors: games played, games organized, attendance rate (multiplier), reviews given (capped at 10), camps / events / workshops completed, account age, decay after 30+ idle days
+- Pure formula in `src/lib/reputation.ts`; DB-aware service in `src/lib/reputationService.ts`
+- Recompute fires on every relevant mutation (game join / complete / organize, registration, review) **and** nightly via `/api/cron/recompute-reputation` as a safety net
+- Override column on `User.reputationOverride` lets admins pin a score; recompute respects it
+
+### Cron jobs (`vercel.json`)
+| Path | Schedule | Purpose |
+| ---- | -------- | ------- |
+| `/api/cron/complete-games`        | `0 2 * * *`  | Mark past games / events / camps as completed, archive after 24h |
+| `/api/cron/recompute-reputation`  | `0 3 * * *`  | Re-rank every active user, catch any drift from event-driven updates |
+| `/api/cron/send-reminders`        | `0 18 * * *` | Player notifications for upcoming bookings / games |
+
+All three require the `Authorization: Bearer $CRON_SECRET` header in production (Vercel sends this automatically).
 
 ---
 
@@ -185,6 +204,15 @@ Use `admin123` unless you have set `ADMIN_PASSWORD` in `.env.local`. The admin s
 **Rate limited during local dev.**
 The auth bucket is 5 req/min/IP. If you hammer `/api/auth/login`, wait 60 seconds or restart the server to clear the in-memory window.
 
+**API returns 500 after a Prisma schema change in dev.**
+Turbopack caches the Prisma client module. Run `npx prisma generate` and **restart `next dev`** — production builds aren't affected.
+
+**"Delete account" looks like it didn't work.**
+Make sure you're on the latest commit. Account delete now (a) clears the `gg_token` cookie, (b) rotates `email` / `username` to free those identifiers, and (c) returns 404 from `/api/users/[id]` for the deleted row. If you have an older build, the JWT cookie can survive the row-level delete and the user still appears logged in.
+
+**Re-seed didn't restore the documented passwords.**
+The seed used to copy `passwordHash` straight from `data/db.json`. It now hashes a fixed `password123` for every player. After a fresh `npm run db:seed`, all three sample accounts (`demo`, `priya`, `rahul@gameground.com`) accept `password123`. To rehash without re-seeding, run `node --env-file=.env.local node_modules/.bin/tsx scripts/reset-seeded-passwords.ts`.
+
 ---
 
 ## Future roadmap
@@ -201,7 +229,7 @@ Below are planned features and improvements, roughly grouped by area.
 ### Player experience
 - **In-app chat / messaging** — direct messages between players, coaches, and organizers
 - **Team management** — create persistent teams, invite members, track win/loss record
-- **Leaderboards & achievements** — sport-specific rankings, badges, streaks, and XP system
+- **Achievements & badges** — streaks, milestones, sport-specific tiers (global tier ladder is shipped; per-sport rankings and badges are next)
 - **Social feed** — post match highlights, photos, and results; follow players and coaches
 - **Recurring game scheduling** — set up weekly pickup games that auto-create and notify regulars
 - **Waitlist auto-promotion** — automatically move waitlisted players into open slots with notification
