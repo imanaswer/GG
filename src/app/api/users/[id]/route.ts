@@ -52,11 +52,54 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       imageUrl: b.coach?.imageUrl,
     }));
 
+    // Streak: consecutive ISO weeks ending with the current week, in which the user
+    // joined ≥1 game. 0 if no game this week. Caps at 52 to avoid runaway loops.
+    const streakWeeks = computeStreakWeeks(playerRows.map(p => p.joinedAt));
+
+    // Leaderboard rank by reputationScore (1-indexed). Excludes admins + soft-deleted.
+    const [playerRank, playerCount] = await Promise.all([
+      user.role === "admin"
+        ? Promise.resolve(0)
+        : prisma.user.count({
+            where: {
+              deletedAt: null,
+              role: { not: "admin" },
+              reputationScore: { gt: user.reputationScore },
+            },
+          }).then(higher => higher + 1),
+      prisma.user.count({ where: { deletedAt: null, role: { not: "admin" } } }),
+    ]);
+
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
       gamesPlayed, gamesOrganized, sports, upcomingGames, bookings, achievements,
+      streakWeeks, playerRank, playerCount,
     });
   } catch (e) { return handleErr(e); }
+}
+
+function startOfIsoWeek(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay() || 7;       // Mon=1..Sun=7
+  x.setDate(x.getDate() - (day - 1));
+  return x.getTime();
+}
+
+function computeStreakWeeks(joinDates: Date[]): number {
+  if (!joinDates.length) return 0;
+  const weeksWithGame = new Set<number>();
+  for (const d of joinDates) weeksWithGame.add(startOfIsoWeek(d));
+
+  const now = new Date();
+  let cursor = startOfIsoWeek(now);
+  let streak = 0;
+  for (let i = 0; i < 52; i++) {
+    if (!weeksWithGame.has(cursor)) break;
+    streak += 1;
+    cursor -= 7 * 24 * 60 * 60 * 1000;
+  }
+  return streak;
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {

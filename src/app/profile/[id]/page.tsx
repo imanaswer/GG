@@ -3,16 +3,18 @@ import { use, useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  MapPin, Calendar, Trophy, TrendingUp, Users, Share2, Award, Loader2,
-  Pencil, Mail, ArrowRight, Flame, Zap, Target, Clock, Activity,
+  MapPin, Calendar, Award, Loader2,
+  ArrowRight, Flame, Zap, Target, Clock, Activity,
 } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
-import { Stars, SkillBadge, StatusBadge, fmtDate } from "@/components/Shared";
+import { SkillBadge, StatusBadge, fmtDate } from "@/components/Shared";
 import { useUserProfile, useCancelBooking, type UserProfile, type Game } from "@/hooks/useData";
 import { tierLevelInfo, type TierLevelInfo } from "@/lib/reputation";
+import { IdentityHero } from "@/components/profile/IdentityHero";
+import { TierUpBanner } from "@/components/profile/TierUpBanner";
+import { ProfileCTAs } from "@/components/profile/ProfileCTAs";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { HERO_BACKDROPS, pickFallback, GAME_FALLBACKS } from "@/lib/premium-images";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -194,51 +196,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
 
               {/* Actions */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end", flexShrink: 0 }} className="profile-actions">
-                {isOwn ? (
-                  <Link href="/profile/edit" style={primaryPill}>
-                    <Pencil size={13} /> Edit profile
-                  </Link>
-                ) : profile.email ? (
-                  <a href={`mailto:${profile.email}`} style={primaryPill}>
-                    <Mail size={13} /> Message
-                  </a>
-                ) : null}
-                <button
-                  onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Profile link copied"); }}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    height: 36, padding: "0 14px", borderRadius: 100,
-                    background: "rgba(255,255,255,0.04)",
-                    color: "rgba(255,255,255,0.75)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "inherit",
-                  }}
-                >
-                  <Share2 size={12} /> Share
-                </button>
+              <div style={{ flexShrink: 0 }} className="profile-actions">
+                <ProfileCTAs profile={profile} isOwn={isOwn} />
               </div>
             </div>
 
-            {/* Stats strip */}
-            <div
-              className="profile-stats"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: 14,
-                marginTop: 28,
-                paddingTop: 24,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-              }}
-            >
-              <StatTile Icon={TrendingUp} label="Reliability" value={profile.reliabilityScore} decimals={1} accent="#e63946" footer={<Stars value={profile.reliabilityScore} size={11} />} />
-              <StatTile Icon={Calendar} label="Games played" value={profile.gamesPlayed} />
-              <StatTile Icon={Users} label="Organized" value={profile.gamesOrganized} />
-              <StatTile Icon={Trophy} label="Attendance" value={profile.attendanceRate} suffix="%" />
-            </div>
+            {/* Identity hero — replaces the four-stat tile strip */}
+            <IdentityHero profile={profile} />
           </motion.div>
+
+          <TierUpBanner tier={profile.tier} tierUpdatedAt={profile.tierUpdatedAt} isOwn={isOwn} />
 
           {/* Tab nav */}
           <div className="profile-tabs-wrap">
@@ -834,39 +801,6 @@ const primaryPill: React.CSSProperties = {
   boxShadow: "0 6px 20px rgba(230,57,70,0.35)",
   border: "none", cursor: "pointer", fontFamily: "inherit",
 };
-
-function StatTile({
-  Icon, label, value, accent, footer, decimals, suffix,
-}: {
-  Icon: typeof Calendar;
-  label: string;
-  value: number;
-  accent?: string;
-  footer?: React.ReactNode;
-  decimals?: number;
-  suffix?: string;
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -2, borderColor: "rgba(255,255,255,0.1)" }}
-      style={{
-        padding: "14px 16px",
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.05)",
-        borderRadius: 14,
-        transition: "border-color 250ms ease",
-      }}
-    >
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
-        <Icon size={11} color={accent ?? "rgba(255,255,255,0.55)"} /> {label}
-      </div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: accent ?? "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
-        <CountUp to={value} decimals={decimals} suffix={suffix} />
-      </div>
-      {footer && <div style={{ marginTop: 6 }}>{footer}</div>}
-    </motion.div>
-  );
-}
 
 function SummaryChip({ Icon, label, value, hint }: { Icon: typeof Calendar; label: string; value: number; hint: string }) {
   return (

@@ -44,7 +44,8 @@ export type UserProfile = {
   id: string; name: string; username: string; email?: string; location?: string;
   bio?: string; avatarUrl?: string; role: string;
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
-  reputationScore: number; tier: string;
+  reputationScore: number; tier: string; tierUpdatedAt?: string;
+  streakWeeks?: number; playerRank?: number; playerCount?: number;
   sports: { sport: string; games: number; level: string }[];
   upcomingGames: Game[];
   organizedGames: Game[];
