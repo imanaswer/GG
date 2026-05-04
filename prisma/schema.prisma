@@ -125,6 +125,9 @@ model Game {
   organizer   User            @relation(fields: [organizerId], references: [id])
   players     GamePlayer[]
   waitlist    WaitlistEntry[]
+
+  @@index([organizerId, createdAt(sort: Desc)])
+  @@index([scheduledAt, status])
 }
 
 model GamePlayer {
@@ -136,6 +139,7 @@ model GamePlayer {
   game Game @relation(fields: [gameId], references: [id])
   user User @relation(fields: [userId], references: [id])
   @@unique([gameId, userId])
+  @@index([userId, joinedAt(sort: Desc)])
 }
 
 model WaitlistEntry {
@@ -333,4 +337,9 @@ model Payment {
   createdAt         DateTime  @default(now())
   paidAt            DateTime?
   user User @relation(fields: [userId], references: [id])
+
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([entityType, entityId])
+  @@index([status, createdAt(sort: Desc)])
 }
