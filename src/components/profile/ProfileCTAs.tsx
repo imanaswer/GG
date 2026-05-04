@@ -36,7 +36,7 @@ export function ProfileCTAs({ profile, isOwn }: { profile: UserProfile; isOwn: b
   if (isOwn) {
     return (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        <Link href="/play/create" style={primary}>
+        <Link href="/create-game" style={primary}>
           <Send size={14} /> Create a game
         </Link>
         <Link href="/leaderboard" style={ghost}>
@@ -63,7 +63,7 @@ export function ProfileCTAs({ profile, isOwn }: { profile: UserProfile; isOwn: b
     `Hey ${firstName}, want to play a game? Find one on Game Ground or create one together: ${typeof window !== "undefined" ? window.location.origin : ""}/play`,
   );
   const challengeText = encodeURIComponent(
-    `${firstName}, game on? Let's set up a match. ${typeof window !== "undefined" ? window.location.origin : ""}/play/create`,
+    `${firstName}, game on? Let's set up a match. ${typeof window !== "undefined" ? window.location.origin : ""}/create-game`,
   );
 
   return (

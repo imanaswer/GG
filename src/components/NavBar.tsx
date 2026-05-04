@@ -178,19 +178,6 @@ export function NavBar() {
                   <div style={{ width: 76, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.04)" }} className="skeleton" />
                 ) : user ? (
                   <>
-                    <Link href="/create-game" style={{ textDecoration: "none" }}>
-                      <motion.span
-                        whileHover={{ background: "rgba(255,255,255,0.07)" }}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 5,
-                          padding: "6px 12px", borderRadius: 9, fontSize: 13, fontWeight: 500,
-                          color: "#71717a", border: "1px solid rgba(255,255,255,0.07)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <Plus size={13} />Create
-                      </motion.span>
-                    </Link>
                     <Link href={`/profile/${user.id}`} style={{ textDecoration: "none" }}>
                       <motion.span
                         whileHover={{ background: "rgba(255,255,255,0.04)" }}
