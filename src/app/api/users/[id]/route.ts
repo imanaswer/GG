@@ -108,7 +108,17 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
-    const { name, bio, location, sports, phone, username, avatarUrl } = await req.json();
+    const { name, bio, location, sports, phone, username, avatarUrl, lookingFor } = await req.json();
+
+    let nextLookingFor: string | null | undefined;
+    if (lookingFor === undefined) {
+      nextLookingFor = undefined;
+    } else if (typeof lookingFor === "string") {
+      const trimmed = lookingFor.trim().replace(/[<>]/g, "").slice(0, 120);
+      nextLookingFor = trimmed.length === 0 ? null : trimmed;
+    } else if (lookingFor === null) {
+      nextLookingFor = null;
+    }
 
     if (username) {
       const taken = await prisma.user.findFirst({ where: { username, id: { not: id } }, select: { id: true } });
@@ -125,6 +135,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         phone:    phone    ?? undefined,
         username: username ?? undefined,
         avatarUrl: avatarUrl === undefined ? undefined : (avatarUrl === "" ? null : avatarUrl),
+        lookingFor: nextLookingFor,
       },
     });
 

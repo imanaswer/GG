@@ -4,16 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   MapPin, Calendar, Award, Loader2,
-  ArrowRight, Flame, Zap, Target, Clock, Activity,
+  ArrowRight, Flame, Target, Clock, Activity,
 } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "framer-motion";
 import { NavBar } from "@/components/NavBar";
 import { SkillBadge, StatusBadge, fmtDate } from "@/components/Shared";
-import { useUserProfile, useCancelBooking, type UserProfile, type Game } from "@/hooks/useData";
+import { useUserProfile, useCancelBooking, useUserActivity, type UserProfile, type Game } from "@/hooks/useData";
 import { tierLevelInfo, type TierLevelInfo } from "@/lib/reputation";
 import { IdentityHero } from "@/components/profile/IdentityHero";
 import { TierUpBanner } from "@/components/profile/TierUpBanner";
 import { ProfileCTAs } from "@/components/profile/ProfileCTAs";
+import { LookingForBanner } from "@/components/profile/LookingForBanner";
+import { RecentActivity } from "@/components/profile/RecentActivity";
+import { TeammatesRow } from "@/components/profile/TeammatesRow";
+import { StatsAccordion } from "@/components/profile/StatsAccordion";
 import { useAuth } from "@/context/AuthContext";
 import { HERO_BACKDROPS, pickFallback, GAME_FALLBACKS } from "@/lib/premium-images";
 
@@ -207,6 +211,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
           <TierUpBanner tier={profile.tier} tierUpdatedAt={profile.tierUpdatedAt} isOwn={isOwn} />
 
+          <LookingForBanner userId={profile.id} initial={profile.lookingFor} isOwn={isOwn} />
+
           {/* Tab nav */}
           <div className="profile-tabs-wrap">
             <div className="profile-tabs">
@@ -247,7 +253,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               transition={{ duration: 0.35, ease }}
             >
               {tab === "Overview" && (
-                <OverviewTab profile={profile} nextGame={nextGame} level={level} />
+                <OverviewTab profile={profile} nextGame={nextGame} isOwn={isOwn} />
               )}
 
               {tab === "Sports" && (
@@ -390,89 +396,60 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 /* ── Overview tab ─────────────────────────────────────────── */
 
 function OverviewTab({
-  profile, nextGame, level,
+  profile, nextGame, isOwn,
 }: {
   profile: UserProfile;
   nextGame?: Game;
-  level: TierLevelInfo;
+  isOwn: boolean;
 }) {
-  const topSports = (profile.sports ?? []).slice(0, 3);
-  const totalUpcoming = profile.upcomingGames?.length ?? 0;
-  const totalAchievements = profile.achievements?.length ?? 0;
+  const { data: activity } = useUserActivity(profile.id);
+  const heatmap = activity?.heatmap;
+  const dayCounts = heatmap?.dayCounts ?? {};
+  const sports = profile.sports ?? [];
+  const topSports = sports.slice(0, 3);
+  const moreSportsCount = Math.max(0, sports.length - 3);
+  const SPORT_EMOJI: Record<string, string> = {
+    Basketball: "🏀", Football: "⚽", Cricket: "🏏", Badminton: "🏸",
+    Tennis: "🎾", Volleyball: "🏐", Fitness: "💪", Running: "🏃",
+  };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16 }} className="overview-grid">
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-      {/* Next game spotlight */}
+      {/* Recent activity */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease }}
-        style={{
-          gridColumn: "1 / -1",
-          background: "linear-gradient(135deg, rgba(230,57,70,0.12) 0%, rgba(11,11,11,0.98) 70%)",
-          border: "1px solid rgba(230,57,70,0.22)",
-          borderRadius: 20,
-          padding: "22px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: 18,
-          flexWrap: "wrap",
-        }}
       >
-        <div style={{
-          width: 46, height: 46, borderRadius: 14,
-          background: "rgba(230,57,70,0.18)",
-          border: "1px solid rgba(230,57,70,0.35)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <Flame size={20} color="#ff6b74" />
-        </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#ff6b74", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>
-            {nextGame ? "Up next" : "No upcoming games"}
-          </div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 4 }}>
-            {nextGame ? nextGame.title : "Find something to play"}
-          </div>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)" }}>
-            {nextGame
-              ? <><Calendar size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "-1px" }} /> {fmtDate(nextGame.scheduledAt)} · <MapPin size={12} style={{ display: "inline", marginLeft: 4, marginRight: 4, verticalAlign: "-1px" }} /> {nextGame.location}</>
-              : "Check /play for pickup games nearby."}
-          </div>
-        </div>
-        {nextGame ? (
-          <Link href={`/game/${nextGame.id}`} style={primaryPill}>
-            Open <ArrowRight size={13} />
-          </Link>
-        ) : (
-          <Link href="/play" style={primaryPill}>
-            Browse <ArrowRight size={13} />
-          </Link>
-        )}
+        <RecentActivity userId={profile.id} />
       </motion.div>
 
-      {/* Activity card */}
+      {/* Heatmap (full width, real data + tooltips + caption) */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.08, ease }}
+        transition={{ duration: 0.5, delay: 0.06, ease }}
         style={{
           background: "#0b0b0b",
           border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: 20,
-          padding: "22px 24px",
+          padding: "20px 22px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <Activity size={14} color="#e63946" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Last 12 weeks
           </span>
+          <span style={{ marginLeft: "auto", fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>
+            {heatmap
+              ? `${heatmap.total} game${heatmap.total === 1 ? "" : "s"}${heatmap.mostActiveDay ? ` · most active on ${heatmap.mostActiveDay}` : ""}`
+              : "—"}
+          </span>
         </div>
-        <ActivityHeatmap gamesPlayed={profile.gamesPlayed} createdAt={profile.createdAt} upcomingCount={totalUpcoming} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+        <ActivityHeatmap dayCounts={dayCounts} />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
           <span>Less</span>
           <span style={{ display: "inline-flex", gap: 3 }}>
             {[0, 1, 2, 3].map(v => (
@@ -486,102 +463,104 @@ function OverviewTab({
         </div>
       </motion.div>
 
-      {/* Level progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.14, ease }}
-        style={{
-          background: "#0b0b0b",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 20,
-          padding: "22px 24px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-          <Zap size={14} color="#e63946" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Player level
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-          <span style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>
-            {level.icon} {level.label}
-          </span>
-        </div>
-        <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.55, marginBottom: 16 }}>
-          {level.next
-            ? `${level.next.pointsToNext} more rep to reach ${level.next.label}.`
-            : "Peak tier unlocked. Keep the streak alive."}
-        </p>
-        <div style={{ height: 8, background: "rgba(255,255,255,0.04)", borderRadius: 100, overflow: "hidden" }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${level.progressPct}%` }}
-            transition={{ duration: 1.1, ease, delay: 0.2 }}
-            style={{
-              height: "100%",
-              background: `linear-gradient(90deg, ${level.colorDim}, ${level.color})`,
-              borderRadius: 100,
-              boxShadow: `0 0 12px ${level.color}66`,
-            }}
-          />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-          <span>{level.floor} rep</span>
-          <span>{level.next?.pointsRequired ?? "∞"}</span>
-        </div>
-      </motion.div>
-
-      {/* Top sports */}
-      {topSports.length > 0 && (
+      {/* Top sports — single pill row */}
+      {sports.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2, ease }}
+          transition={{ duration: 0.5, delay: 0.12, ease }}
           style={{
-            gridColumn: "1 / -1",
             background: "#0b0b0b",
             border: "1px solid rgba(255,255,255,0.06)",
             borderRadius: 20,
-            padding: "22px 24px",
+            padding: "18px 22px",
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Target size={14} color="#e63946" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Top sports
-              </span>
-            </div>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-              {profile.sports.length} total
+          <Target size={14} color="#e63946" />
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: "0.1em", textTransform: "uppercase", marginRight: 6 }}>
+            Sports
+          </span>
+          {topSports.map(s => (
+            <span
+              key={s.sport}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "5px 12px", borderRadius: 100,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: 600,
+              }}
+            >
+              <span style={{ fontSize: 14 }}>{SPORT_EMOJI[s.sport] ?? "🏆"}</span>
+              {s.sport}
+              <span style={{ color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{s.games}</span>
             </span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-            {topSports.map((s, i) => (
-              <SportCard key={s.sport} s={s} index={i} total={profile.gamesPlayed} compact />
-            ))}
-          </div>
+          ))}
+          {moreSportsCount > 0 && (
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              and {moreSportsCount} more
+            </span>
+          )}
         </motion.div>
       )}
 
-      {/* Summary chips */}
+      {/* Recent teammates */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.26, ease }}
-        style={{
-          gridColumn: "1 / -1",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
-        }}
+        transition={{ duration: 0.5, delay: 0.18, ease }}
       >
-        <SummaryChip Icon={Calendar} label="Upcoming" value={totalUpcoming} hint={totalUpcoming ? "games on the books" : "nothing booked"} />
-        <SummaryChip Icon={Award} label="Achievements" value={totalAchievements} hint={totalAchievements === 1 ? "badge earned" : "badges earned"} />
-        <SummaryChip Icon={Target} label="Sports played" value={profile.sports?.length ?? 0} hint="across all time" />
+        <TeammatesRow userId={profile.id} />
       </motion.div>
+
+      {/* Stats accordion (collapsed by default) */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.22, ease }}
+      >
+        <StatsAccordion profile={profile} />
+      </motion.div>
+
+      {/* Smaller "Find something to play" CTA — own profile only */}
+      {isOwn && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.28, ease }}
+          style={{
+            display: "flex", alignItems: "center", gap: 14,
+            padding: "14px 18px",
+            background: "linear-gradient(135deg, rgba(230,57,70,0.06) 0%, rgba(11,11,11,0.7) 100%)",
+            border: "1px solid rgba(230,57,70,0.18)",
+            borderRadius: 16,
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "rgba(230,57,70,0.15)",
+            border: "1px solid rgba(230,57,70,0.28)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <Flame size={15} color="#ff6b74" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              {nextGame ? nextGame.title : "Find something to play"}
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+              {nextGame
+                ? <>{fmtDate(nextGame.scheduledAt)} · {nextGame.location}</>
+                : "Pickup games happen daily near you."}
+            </div>
+          </div>
+          <Link href={nextGame ? `/game/${nextGame.id}` : "/play"} style={primaryPill}>
+            {nextGame ? "Open" : "Browse"} <ArrowRight size={13} />
+          </Link>
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -735,48 +714,68 @@ function LevelRing({ level, size, children }: { level: TierLevelInfo; size: numb
 
 /* ── Activity heatmap (12 weeks × 7 days derived) ─────────── */
 
-function ActivityHeatmap({ gamesPlayed, createdAt, upcomingCount }: { gamesPlayed: number; createdAt: string; upcomingCount: number }) {
-  // Deterministic "busy" pattern derived from gamesPlayed frequency.
+function ActivityHeatmap({ dayCounts }: { dayCounts: Record<string, number> }) {
   const cells = useMemo(() => {
     const weeks = 12;
     const days = 7;
-    const seed = gamesPlayed * 7 + new Date(createdAt).getDate();
-    const density = Math.min(1, (gamesPlayed + upcomingCount) / 30);
-    const out: number[][] = [];
-    let s = seed;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build columns oldest → newest. Top of each column is Mon, bottom is Sun.
+    const cols: { date: Date; count: number; isToday: boolean }[][] = [];
+    const start = new Date(today);
+    start.setDate(start.getDate() - (weeks * days - 1));
+
     for (let w = 0; w < weeks; w++) {
-      const row: number[] = [];
+      const col: { date: Date; count: number; isToday: boolean }[] = [];
       for (let d = 0; d < days; d++) {
-        s = (s * 9301 + 49297) % 233280;
-        const r = s / 233280;
-        const weight = (w / weeks) * 0.35 + density * 0.65;
-        let v = 0;
-        if (r < weight * 0.35) v = 3;
-        else if (r < weight * 0.6) v = 2;
-        else if (r < weight * 0.85) v = 1;
-        row.push(v);
+        const day = new Date(start);
+        day.setDate(start.getDate() + w * days + d);
+        const key = day.toISOString().slice(0, 10);
+        col.push({
+          date: day,
+          count: dayCounts[key] ?? 0,
+          isToday: day.getTime() === today.getTime(),
+        });
       }
-      out.push(row);
+      cols.push(col);
     }
-    return out;
-  }, [gamesPlayed, createdAt, upcomingCount]);
+    return cols;
+  }, [dayCounts]);
+
+  const bucket = (count: number) => count === 0 ? 0 : count >= 3 ? 3 : count;
 
   return (
-    <div style={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+    <div style={{ display: "flex", gap: 4, alignItems: "flex-start", overflowX: "auto", paddingBottom: 4 }}>
       {cells.map((col, i) => (
-        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {col.map((v, j) => (
-            <motion.span
-              key={j}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25, delay: (i * 7 + j) * 0.006 }}
-              style={{
-                width: 12, height: 12, borderRadius: 3,
-                background: heatColor(v),
-              }}
-            />
-          ))}
+        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {col.map((cell, j) => {
+            const v = bucket(cell.count);
+            const label = cell.date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+            const tooltip = cell.count > 0
+              ? `${label} · ${cell.count} game${cell.count === 1 ? "" : "s"}`
+              : `${label} · no games`;
+            return (
+              <motion.span
+                key={j}
+                title={tooltip}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={cell.isToday
+                  ? { opacity: 1, scale: [1, 1.18, 1] }
+                  : { opacity: 1, scale: 1 }}
+                transition={cell.isToday
+                  ? { scale: { duration: 1.8, repeat: Infinity, ease: "easeInOut" }, opacity: { duration: 0.25, delay: (i * 7 + j) * 0.005 } }
+                  : { duration: 0.25, delay: (i * 7 + j) * 0.005 }}
+                style={{
+                  width: 14, height: 14, borderRadius: 3,
+                  background: heatColor(v),
+                  outline: cell.isToday ? "1px solid rgba(255,255,255,0.5)" : "none",
+                  outlineOffset: 1,
+                  cursor: "default",
+                }}
+              />
+            );
+          })}
         </div>
       ))}
     </div>
@@ -801,38 +800,6 @@ const primaryPill: React.CSSProperties = {
   boxShadow: "0 6px 20px rgba(230,57,70,0.35)",
   border: "none", cursor: "pointer", fontFamily: "inherit",
 };
-
-function SummaryChip({ Icon, label, value, hint }: { Icon: typeof Calendar; label: string; value: number; hint: string }) {
-  return (
-    <motion.div
-      whileHover={{ y: -2, borderColor: "rgba(230,57,70,0.28)" }}
-      style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 14,
-        padding: "14px 16px",
-        display: "flex", alignItems: "center", gap: 12,
-        transition: "border-color 250ms ease",
-      }}
-    >
-      <div style={{
-        width: 36, height: 36, borderRadius: 10,
-        background: "rgba(230,57,70,0.1)",
-        border: "1px solid rgba(230,57,70,0.2)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        <Icon size={15} color="#ff6b74" />
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-          <CountUp to={value} /> <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.45)", marginLeft: 4 }}>{hint}</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 function CountUp({ to, decimals = 0, suffix = "" }: { to: number; decimals?: number; suffix?: string }) {
   const mv = useMotionValue(0);

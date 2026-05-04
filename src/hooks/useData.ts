@@ -46,6 +46,7 @@ export type UserProfile = {
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
   reputationScore: number; tier: string; tierUpdatedAt?: string;
   streakWeeks?: number; playerRank?: number; playerCount?: number;
+  lookingFor?: string | null;
   sports: { sport: string; games: number; level: string }[];
   upcomingGames: Game[];
   organizedGames: Game[];
@@ -139,6 +140,40 @@ export function useCancelBooking() {
 // ─── User profile ─────────────────────────────────────────────────────────────
 export function useUserProfile(id: string) {
   return useQuery<UserProfile>({ queryKey: ["user", id], queryFn: () => f(`/api/users/${id}`), enabled: !!id });
+}
+
+export type ActivityItem = {
+  id: string;
+  kind: "joined" | "organized" | "tier-up" | "registration" | "review";
+  icon: string;
+  text: string;
+  href?: string;
+  ts: string;
+};
+export type ActivityResponse = {
+  items: ActivityItem[];
+  heatmap: { dayCounts: Record<string, number>; total: number; mostActiveDay: string | null; windowDays: number };
+};
+export function useUserActivity(id: string) {
+  return useQuery<ActivityResponse>({
+    queryKey: ["user-activity", id],
+    queryFn: () => f(`/api/users/${id}/activity`),
+    enabled: !!id,
+    staleTime: 30_000,
+  });
+}
+
+export type Teammate = {
+  id: string; name: string; username: string; avatarUrl?: string | null;
+  tier: string; sharedGames: number; lastPlayedAt: string;
+};
+export function useUserTeammates(id: string) {
+  return useQuery<{ teammates: Teammate[] }>({
+    queryKey: ["user-teammates", id],
+    queryFn: () => f(`/api/users/${id}/teammates`),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
 }
 
 // ─── Leaderboard ──────────────────────────────────────────────────────────────
