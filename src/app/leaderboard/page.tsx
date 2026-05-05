@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Trophy, MapPin, ArrowUpRight, Crown } from "lucide-react";
 
@@ -183,7 +184,7 @@ function PodiumCard({ row, height, position, type }: { row: LeaderboardRow; heig
       <div style={{ position: "relative" }}>
         <TierRing tier={row.tier} size={position === "first" ? 92 : 76}>
           {row.avatarUrl ? (
-            <img src={row.avatarUrl} alt={row.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Image src={row.avatarUrl} alt={row.name} width={92} height={92} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <div style={{
               width: "100%", height: "100%",
@@ -261,7 +262,7 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
 
       <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
         {row.avatarUrl ? (
-          <img src={row.avatarUrl} alt={row.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <Image src={row.avatarUrl} alt={row.name} width={44} height={44} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{
             width: "100%", height: "100%",

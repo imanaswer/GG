@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-interface User { id: string; name: string; email: string; username: string; role: string; }
+interface User { id: string; name: string; email: string; username: string; role: string; avatarUrl?: string | null; }
 interface AuthCtx {
   user: User | null; loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;

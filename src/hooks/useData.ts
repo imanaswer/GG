@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 // ─── shared fetcher ───────────────────────────────────────────────────────────
 async function f<T>(url: string, opts?: RequestInit): Promise<T> {
@@ -80,27 +81,89 @@ export function useGame(id: string) {
 }
 export function useJoinGame() {
   const qc = useQueryClient();
-  return useMutation<{ joined?: boolean; waitlisted?: boolean; position?: number; slotsLeft?: number }, Error, string>({
+  const { user } = useAuth();
+  return useMutation<{ joined?: boolean; waitlisted?: boolean; position?: number; slotsLeft?: number }, Error, string, { previous?: Game }>({
     mutationFn: id => f(`/api/games/${id}`, { method: "POST" }),
-    onSuccess: (data, id) => {
-      qc.invalidateQueries({ queryKey: ["games"] });
-      qc.invalidateQueries({ queryKey: ["game", id] });
+
+    // Optimistically add the current user to the game's player list and decrement slots.
+    onMutate: async (id) => {
+      if (!user) return {};
+      await qc.cancelQueries({ queryKey: ["game", id] });
+      const previous = qc.getQueryData<Game>(["game", id]);
+      if (previous && previous.slotsLeft > 0) {
+        const optimisticPlayer = {
+          id: `__optimistic_${user.id}`,
+          userId: user.id,
+          name: user.name,
+          username: user.username,
+          avatarUrl: user.avatarUrl ?? undefined,
+          rating: 4.5,
+          tier: "bronze",
+          reputationScore: 0,
+          joinedAt: new Date().toISOString(),
+        };
+        const slotsLeft = previous.slotsLeft - 1;
+        qc.setQueryData<Game>(["game", id], {
+          ...previous,
+          slotsLeft,
+          status: slotsLeft === 0 ? "full" : previous.status,
+          players: [...(previous.players ?? []), optimisticPlayer],
+          playerCount: (previous.playerCount ?? previous.players?.length ?? 0) + 1,
+        });
+      }
+      return { previous };
+    },
+
+    onError: (e, id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["game", id], ctx.previous);
+      toast.error(e.message);
+    },
+
+    onSuccess: (data) => {
       if (data.waitlisted) toast.success(`Added to waitlist at position ${data.position}`);
       else toast.success("You've joined the game! 🎉");
     },
-    onError: e => toast.error(e.message),
+
+    onSettled: (_, __, id) => {
+      qc.invalidateQueries({ queryKey: ["games"] });
+      qc.invalidateQueries({ queryKey: ["game", id] });
+    },
   });
 }
 export function useLeaveGame() {
   const qc = useQueryClient();
-  return useMutation<unknown, Error, string>({
+  const { user } = useAuth();
+  return useMutation<unknown, Error, string, { previous?: Game }>({
     mutationFn: id => f(`/api/games/${id}`, { method: "DELETE" }),
-    onSuccess: (_, id) => {
+
+    onMutate: async (id) => {
+      if (!user) return {};
+      await qc.cancelQueries({ queryKey: ["game", id] });
+      const previous = qc.getQueryData<Game>(["game", id]);
+      if (previous) {
+        const players = (previous.players ?? []).filter(p => p.userId !== user.id);
+        qc.setQueryData<Game>(["game", id], {
+          ...previous,
+          slotsLeft: previous.slotsLeft + 1,
+          status: previous.status === "full" ? "open" : previous.status,
+          players,
+          playerCount: Math.max(0, (previous.playerCount ?? previous.players?.length ?? 0) - 1),
+        });
+      }
+      return { previous };
+    },
+
+    onError: (e, id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["game", id], ctx.previous);
+      toast.error(e.message);
+    },
+
+    onSuccess: () => toast.success("You've left the game."),
+
+    onSettled: (_, __, id) => {
       qc.invalidateQueries({ queryKey: ["games"] });
       qc.invalidateQueries({ queryKey: ["game", id] });
-      toast.success("You've left the game.");
     },
-    onError: e => toast.error(e.message),
   });
 }
 export function useCreateGame() {

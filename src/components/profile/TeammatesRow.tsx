@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { Users, ArrowUpRight } from "lucide-react";
 import { useUserTeammates } from "@/hooks/useData";
 import { TIER_META, type Tier } from "@/lib/reputation";
@@ -72,9 +73,7 @@ export function TeammatesRow({ userId }: { userId: string }) {
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     {t.avatarUrl ? (
-                      // Lightweight thumbnail; sizes are tiny so next/image is overkill here.
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={t.avatarUrl} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <Image src={t.avatarUrl} alt={t.name} width={48} height={48} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
                         {t.name[0]?.toUpperCase()}
