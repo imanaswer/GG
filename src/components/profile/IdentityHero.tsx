@@ -4,13 +4,14 @@ import { motion } from "framer-motion";
 import { Flame, Trophy, Crown, ArrowUpRight } from "lucide-react";
 
 import { tierLevelInfo } from "@/lib/reputation";
-import type { UserProfile } from "@/hooks/useData";
+import { useUserActivity, type UserProfile } from "@/hooks/useData";
 import { pickIdentityTag } from "./identityTag";
 
 export function IdentityHero({ profile }: { profile: UserProfile }) {
   const tag = pickIdentityTag(profile);
   const level = tierLevelInfo(profile.reputationScore ?? 0);
-  const streak = profile.streakWeeks ?? 0;
+  const { data: activity } = useUserActivity(profile.id);
+  const streak = activity?.streakWeeks ?? 0;
   const rank = profile.playerRank ?? 0;
   const isPro = level.tier === "pro";
 

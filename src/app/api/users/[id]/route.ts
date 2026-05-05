@@ -11,7 +11,16 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user || user.deletedAt) return fail("User not found", 404);
 
-    const [gamesPlayed, gamesOrganized, bookingsRows, playerRows] = await Promise.all([
+    const now = new Date();
+
+    // Three targeted queries instead of one heavy include({ game: true }).
+    // All three hit the GamePlayer(userId, joinedAt DESC) index added in
+    // the perf migration. The streak compute moved to the activity endpoint
+    // where the same 84-day slice already feeds the heatmap.
+    const [
+      gamesPlayed, gamesOrganized, bookingsRows, sportTallyRows, upcomingPlayerRows,
+      higherRanked, playerCount,
+    ] = await Promise.all([
       prisma.gamePlayer.count({ where: { userId: id } }),
       prisma.game.count({ where: { organizerId: id } }),
       prisma.booking.findMany({
@@ -21,22 +30,37 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       }),
       prisma.gamePlayer.findMany({
         where: { userId: id },
-        include: { game: true },
+        select: { game: { select: { sport: true } } },
       }),
+      prisma.gamePlayer.findMany({
+        where: {
+          userId: id,
+          game: { scheduledAt: { gt: now }, status: { not: "cancelled" } },
+        },
+        include: { game: true },
+        orderBy: { joinedAt: "desc" },
+      }),
+      user.role === "admin"
+        ? Promise.resolve(0)
+        : prisma.user.count({
+            where: {
+              deletedAt: null,
+              role: { not: "admin" },
+              reputationScore: { gt: user.reputationScore },
+            },
+          }),
+      prisma.user.count({ where: { deletedAt: null, role: { not: "admin" } } }),
     ]);
 
     const sportMap: Record<string, number> = {};
-    for (const gp of playerRows) {
+    for (const gp of sportTallyRows) {
       if (gp.game) sportMap[gp.game.sport] = (sportMap[gp.game.sport] ?? 0) + 1;
     }
     const sports = Object.entries(sportMap)
       .sort((a, b) => b[1] - a[1])
       .map(([sport, games]) => ({ sport, games, level: "Intermediate" }));
 
-    const now = new Date();
-    const upcomingGames = playerRows
-      .map(gp => gp.game)
-      .filter(g => !!g && g.scheduledAt > now && g.status !== "cancelled");
+    const upcomingGames = upcomingPlayerRows.map(gp => gp.game).filter(Boolean);
 
     const achievements: { icon: string; title: string; description: string }[] = [];
     if (gamesPlayed >= 1)    achievements.push({ icon: "🏃", title: "First Game",  description: "Played your first pickup game" });
@@ -52,54 +76,14 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       imageUrl: b.coach?.imageUrl,
     }));
 
-    // Streak: consecutive ISO weeks ending with the current week, in which the user
-    // joined ≥1 game. 0 if no game this week. Caps at 52 to avoid runaway loops.
-    const streakWeeks = computeStreakWeeks(playerRows.map(p => p.joinedAt));
-
-    // Leaderboard rank by reputationScore (1-indexed). Excludes admins + soft-deleted.
-    const [playerRank, playerCount] = await Promise.all([
-      user.role === "admin"
-        ? Promise.resolve(0)
-        : prisma.user.count({
-            where: {
-              deletedAt: null,
-              role: { not: "admin" },
-              reputationScore: { gt: user.reputationScore },
-            },
-          }).then(higher => higher + 1),
-      prisma.user.count({ where: { deletedAt: null, role: { not: "admin" } } }),
-    ]);
+    const playerRank = user.role === "admin" ? 0 : higherRanked + 1;
 
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
       gamesPlayed, gamesOrganized, sports, upcomingGames, bookings, achievements,
-      streakWeeks, playerRank, playerCount,
+      playerRank, playerCount,
     });
   } catch (e) { return handleErr(e); }
-}
-
-function startOfIsoWeek(d: Date): number {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  const day = x.getDay() || 7;       // Mon=1..Sun=7
-  x.setDate(x.getDate() - (day - 1));
-  return x.getTime();
-}
-
-function computeStreakWeeks(joinDates: Date[]): number {
-  if (!joinDates.length) return 0;
-  const weeksWithGame = new Set<number>();
-  for (const d of joinDates) weeksWithGame.add(startOfIsoWeek(d));
-
-  const now = new Date();
-  let cursor = startOfIsoWeek(now);
-  let streak = 0;
-  for (let i = 0; i < 52; i++) {
-    if (!weeksWithGame.has(cursor)) break;
-    streak += 1;
-    cursor -= 7 * 24 * 60 * 60 * 1000;
-  }
-  return streak;
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {

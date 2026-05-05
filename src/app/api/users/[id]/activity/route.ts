@@ -23,12 +23,23 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     });
     if (!user || user.deletedAt) return fail("User not found", 404);
 
-    const [joinedRows, organizedRows, campRegs, eventRegs, workshopRegs, reviews] = await Promise.all([
+    // Streak window: at most 53 weeks back from today; that's the cap
+    // computeStreakWeeks supports.
+    const now = Date.now();
+    const streakWindowMs = 53 * 7 * 24 * 60 * 60 * 1000;
+    const streakSince = new Date(now - streakWindowMs);
+
+    const [joinedRows, streakSlice, organizedRows, campRegs, eventRegs, workshopRegs, reviews] = await Promise.all([
       prisma.gamePlayer.findMany({
         where: { userId: id },
         include: { game: { select: { id: true, title: true, sport: true, scheduledAt: true } } },
         orderBy: { joinedAt: "desc" },
         take: 10,
+      }),
+      prisma.gamePlayer.findMany({
+        where: { userId: id, joinedAt: { gte: streakSince } },
+        select: { joinedAt: true },
+        orderBy: { joinedAt: "desc" },
       }),
       prisma.game.findMany({
         where: { organizerId: id },
@@ -151,28 +162,21 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
     items.sort((a, b) => b.ts.localeCompare(a.ts));
 
-    // Per-day game counts for the heatmap (last 84 days = ~12 weeks).
-    const sinceMs = Date.now() - 84 * 24 * 60 * 60 * 1000;
+    // Heatmap: per-day counts for the last 84 days. Reuses streakSlice
+    // (which covers 53 weeks) so we avoid a second query.
+    const heatmapStartMs = now - 84 * 24 * 60 * 60 * 1000;
     const dayCounts: Record<string, number> = {};
-    for (const gp of joinedRows) {
+    for (const gp of streakSlice) {
       const t = gp.joinedAt.getTime();
-      if (t < sinceMs) continue;
+      if (t < heatmapStartMs) continue;
       const key = gp.joinedAt.toISOString().slice(0, 10);
       dayCounts[key] = (dayCounts[key] ?? 0) + 1;
     }
-    // Pull a wider slice for the heatmap if joinedRows didn't cover 84 days.
-    if (joinedRows.length === 10) {
-      const heatmapRows = await prisma.gamePlayer.findMany({
-        where: { userId: id, joinedAt: { gte: new Date(sinceMs) } },
-        select: { joinedAt: true },
-      });
-      for (const gp of heatmapRows) {
-        const key = gp.joinedAt.toISOString().slice(0, 10);
-        dayCounts[key] = (dayCounts[key] ?? 0) + 1;
-      }
-    }
 
-    // Most active weekday for the caption.
+    // Streak: consecutive ISO weeks ending with the current week, ≥1 game per week.
+    const streakWeeks = computeStreakWeeks(streakSlice.map(s => s.joinedAt));
+
+    // Most active weekday for the heatmap caption.
     const weekdayTotals = [0, 0, 0, 0, 0, 0, 0];
     for (const [day, count] of Object.entries(dayCounts)) {
       const d = new Date(day);
@@ -192,6 +196,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
     return ok({
       items: items.slice(0, 5),
+      streakWeeks,
       heatmap: {
         dayCounts,
         total: heatmapTotal,
@@ -200,4 +205,27 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       },
     });
   } catch (e) { return handleErr(e); }
+}
+
+function startOfIsoWeek(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay() || 7;       // Mon=1..Sun=7
+  x.setDate(x.getDate() - (day - 1));
+  return x.getTime();
+}
+
+function computeStreakWeeks(joinDates: Date[]): number {
+  if (!joinDates.length) return 0;
+  const weeksWithGame = new Set<number>();
+  for (const d of joinDates) weeksWithGame.add(startOfIsoWeek(d));
+
+  let cursor = startOfIsoWeek(new Date());
+  let streak = 0;
+  for (let i = 0; i < 53; i++) {
+    if (!weeksWithGame.has(cursor)) break;
+    streak += 1;
+    cursor -= 7 * 24 * 60 * 60 * 1000;
+  }
+  return streak;
 }

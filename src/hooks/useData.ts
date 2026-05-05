@@ -46,7 +46,7 @@ export type UserProfile = {
   bio?: string; avatarUrl?: string; role: string;
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
   reputationScore: number; tier: string; tierUpdatedAt?: string;
-  streakWeeks?: number; playerRank?: number; playerCount?: number;
+  playerRank?: number; playerCount?: number;
   lookingFor?: string | null;
   sports: { sport: string; games: number; level: string }[];
   upcomingGames: Game[];
@@ -215,6 +215,7 @@ export type ActivityItem = {
 };
 export type ActivityResponse = {
   items: ActivityItem[];
+  streakWeeks: number;
   heatmap: { dayCounts: Record<string, number>; total: number; mostActiveDay: string | null; windowDays: number };
 };
 export function useUserActivity(id: string) {
