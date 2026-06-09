@@ -77,6 +77,14 @@ async function resolveClient(): Promise<PrismaClient> {
         return mockClient;
       }
     }
+    
+    // Also route to mock DB if the user is logged into the admin dashboard AND there's no real DB
+    if (jar.get("gg_admin")?.value) {
+      const dbUrl = process.env.DATABASE_URL ?? "";
+      if (!dbUrl || isPlaceholderUrl(dbUrl)) {
+        return mockClient;
+      }
+    }
   } catch {
     // Fails silently if called outside a Next.js request context
   }
