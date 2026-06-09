@@ -520,10 +520,22 @@ function createModelProxy(model: string) {
       return resolveIncludes(newRow, args.include, model);
     },
 
-    async aggregate(args: { where?: Record<string, unknown>; _count?: unknown; _sum?: unknown; _avg?: unknown; _min?: unknown; _max?: unknown }) {
+    async aggregate(args: any) {
       const coll = getCollection(model);
-      const rows = coll.filter(r => matchesWhere(r, args.where));
-      return { _count: { _all: rows.length } };
+      const rows = coll.filter(r => matchesWhere(r, args?.where));
+      
+      const result: any = { _count: { _all: rows.length } };
+      
+      if (args?._sum && typeof args._sum === "object") {
+        result._sum = {};
+        for (const key of Object.keys(args._sum)) {
+          result._sum[key] = rows.reduce((sum, r) => sum + (Number(r[key]) || 0), 0);
+        }
+      } else {
+        result._sum = {};
+      }
+      
+      return result;
     },
 
     async groupBy() {
