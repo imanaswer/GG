@@ -51,17 +51,7 @@ export default function ForgotPassword() {
           display: "flex", flexDirection: "column", justifyContent: "space-between",
         }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", width: "fit-content" }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 28px rgba(230,57,70,0.5)",
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-            </div>
+            <img src="/logo2.png" alt="Game Ground" style={{ height: 32, width: "auto", display: "block" }} />
             <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Game Ground</span>
           </Link>
 

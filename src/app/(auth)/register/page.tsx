@@ -76,12 +76,7 @@ function RegisterForm() {
 
       {/* Logo */}
       <Link href="/" className="reg-logo">
-        <div className="reg-logo-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-          </svg>
-        </div>
+        <img src="/logo2.png" alt="Game Ground" className="reg-logo-icon" />
         <span className="reg-logo-text">Game Ground</span>
       </Link>
 
@@ -216,10 +211,7 @@ function RegisterForm() {
           display: flex; align-items: center; gap: 10; text-decoration: none;
         }
         .reg-logo-icon {
-          width: 36px; height: 36px; border-radius: 10px;
-          background: linear-gradient(135deg, #e63946, #b91c2d);
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 0 24px rgba(230,57,70,0.45);
+          height: 34px; width: auto; display: block;
         }
         .reg-logo-text {
           font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.03em;

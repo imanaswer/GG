@@ -63,27 +63,12 @@ export function PremiumNav({ variant = "solid" }: Props) {
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 22px rgba(230,57,70,0.45)",
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          </div>
-          <span style={{
-            fontFamily: "var(--font-sans)",
-            fontWeight: 800,
-            fontSize: 15,
-            color: "#fff",
-            letterSpacing: "-0.03em",
-          }}>
-            Game Ground
-          </span>
+        <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <img
+            src="/logo2.png"
+            alt="Game Ground"
+            style={{ height: 28, width: "auto", display: "block" }}
+          />
         </Link>
 
         {/* Desktop links */}
