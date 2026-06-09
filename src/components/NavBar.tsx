@@ -108,7 +108,7 @@ export function NavBar() {
           {/* ── Logo ── */}
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none", flexShrink: 0 }}>
             <motion.img
-              src="/Logonav.png"
+              src="/logo.png"
               alt="Game Ground"
               whileHover={{ opacity: 0.85 }}
               style={{ height: 30, width: "auto", filter: "invert(1)", display: "block" }}
