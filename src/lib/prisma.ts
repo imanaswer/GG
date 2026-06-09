@@ -79,10 +79,14 @@ async function resolveClient(): Promise<PrismaClient> {
     }
     
     // Also route to mock DB if the user is logged into the admin dashboard AND there's no real DB
-    if (jar.get("gg_admin")?.value) {
-      const dbUrl = process.env.DATABASE_URL ?? "";
-      if (!dbUrl || isPlaceholderUrl(dbUrl)) {
-        return mockClient;
+    const adminToken = jar.get("gg_admin")?.value;
+    if (adminToken) {
+      const adminPayload = await verifyToken(adminToken).catch(() => null) || await import("./adminAuth").then(m => m.verifyAdminToken(adminToken)).catch(() => null);
+      if (adminPayload?.email === "testadmin@gameground.com") {
+        const dbUrl = process.env.DATABASE_URL ?? "";
+        if (!dbUrl || isPlaceholderUrl(dbUrl)) {
+          return mockClient;
+        }
       }
     }
   } catch {

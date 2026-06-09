@@ -5,32 +5,32 @@ import { cookies } from "next/headers";
 const ADMIN_COOKIE = "gg_admin";
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET ?? "admin-dev-secret-minimum-32-chars!!");
 
-export async function signAdminToken(): Promise<string> {
-  return new SignJWT({ role: "admin" })
+export async function signAdminToken(email: string): Promise<string> {
+  return new SignJWT({ role: "admin", email })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("60m") // 60 min session timeout per spec
     .setIssuedAt()
     .sign(await secret());
 }
 
-export async function verifyAdminToken(token: string): Promise<boolean> {
+export async function verifyAdminToken(token: string): Promise<any | null> {
   try {
-    await jwtVerify(token, await secret());
-    return true;
-  } catch { return false; }
+    const { payload } = await jwtVerify(token, await secret());
+    return payload;
+  } catch { return null; }
 }
 
 export async function getAdminSession(): Promise<boolean> {
   const jar   = await cookies();
   const token = jar.get(ADMIN_COOKIE)?.value;
   if (!token) return false;
-  return verifyAdminToken(token);
+  return !!(await verifyAdminToken(token));
 }
 
 export async function getAdminSessionFromRequest(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return false;
-  return verifyAdminToken(token);
+  return !!(await verifyAdminToken(token));
 }
 
 export function setAdminCookie(res: { cookies: { set: (name: string, value: string, opts: object) => void } }, token: string) {

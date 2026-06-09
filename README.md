@@ -26,9 +26,8 @@ All player passwords are `password123`.
 | Email                   | Role   |
 | ----------------------- | ------ |
 | `test@gameground.net`   | Player (Dummy Account) |
-| `priya@gameground.com`  | Player |
-| `rahul@gameground.com`  | Player |
-| `admin@gameground.com`  | Admin  |
+| `admin@gameground.com`  | Admin (Real Database)  |
+| `testadmin@gameground.com` | Admin (Dummy Account) |
 
 > **Tip:** Clicking the "Demo" button or using the demo flow anywhere in the application will automatically log you into the dummy account (`test@gameground.net`) without needing a password. This account is specially configured to load the rich dummy data for testing!
 
