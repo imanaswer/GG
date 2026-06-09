@@ -211,7 +211,7 @@ function RegisterForm() {
           display: flex; align-items: center; gap: 10; text-decoration: none;
         }
         .reg-logo-icon {
-          height: 34px; width: auto; display: block;
+          height: 46px; width: auto; display: block;
         }
         .reg-logo-text {
           font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.03em;

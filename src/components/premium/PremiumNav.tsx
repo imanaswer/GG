@@ -67,7 +67,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
           <img
             src="/logo2.png"
             alt="Game Ground"
-            style={{ height: 28, width: "auto", display: "block" }}
+            style={{ height: 44, width: "auto", display: "block" }}
           />
         </Link>
 

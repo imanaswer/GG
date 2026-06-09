@@ -25,7 +25,7 @@ export default function AdminLogin() {
       <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <img src="/logo2.png" alt="Game Ground" style={{ height: 48, width: "auto", margin: "0 auto 16px", display: "block" }} />
+          <img src="/logo2.png" alt="Game Ground" style={{ height: 64, width: "auto", margin: "0 auto 16px", display: "block" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
             <Shield size={16} color="#e63946" />
             <span style={{ fontSize: 13, fontWeight: 700, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Access</span>

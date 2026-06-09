@@ -79,7 +79,7 @@ function ResetForm() {
           display: "flex", flexDirection: "column", justifyContent: "space-between",
         }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", width: "fit-content" }}>
-            <img src="/logo2.png" alt="Game Ground" style={{ height: 32, width: "auto", display: "block" }} />
+            <img src="/logo2.png" alt="Game Ground" style={{ height: 44, width: "auto", display: "block" }} />
             <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Game Ground</span>
           </Link>
 

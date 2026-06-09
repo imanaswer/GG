@@ -28,7 +28,7 @@ function Sidebar({
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0d0d0d", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
       <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <img src="/logo2.png" alt="Game Ground" style={{ height: 26, width: "auto", marginBottom: 6 }} />
+        <img src="/logo2.png" alt="Game Ground" style={{ height: 38, width: "auto", marginBottom: 6 }} />
         <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin Dashboard</div>
       </div>
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
