@@ -2,10 +2,25 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { NextResponse, type NextRequest } from "next/server";
 
-const url   = process.env.UPSTASH_REDIS_REST_URL;
+const url   = process.env.UPSTASH_REDIS_REST_TOKEN ? process.env.UPSTASH_REDIS_REST_URL : undefined;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-const redis = url && token ? new Redis({ url, token }) : null;
+// Only build a real Redis client when the URL is a usable https endpoint.
+// Placeholder values (e.g. the "https://..." from .env.example) must NOT throw
+// at module load — they fall back to the in-memory limiter instead, otherwise
+// any route behind middleware (including OAuth callbacks) 500s locally.
+function isUsableUrl(u: string | undefined): u is string {
+  if (!u) return false;
+  try {
+    const parsed = new URL(u);
+    const labels = parsed.hostname.split(".");
+    return parsed.protocol === "https:" && labels.length >= 2 && labels.every(l => l.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+const redis = isUsableUrl(url) && token ? new Redis({ url, token }) : null;
 
 function make(limit: number, window: `${number} ${"s" | "m" | "h" | "d"}`, prefix: string): Limiter {
   if (redis) {
