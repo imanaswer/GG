@@ -79,12 +79,20 @@ a route can set the httpOnly `state` cookie.
 5. **Reject if `email_verified` is false** — this is what makes auto-link safe;
    skipping it is an account-takeover vector for Workspace accounts that can
    present unverified emails.
-6. Resolve the user:
-   - **Existing user with that email** → log them in. Backfill `googleId` and
-     `avatarUrl` if currently null. (Do not overwrite an existing password.)
-   - **No existing user** → create one: `role: "player"`, `passwordHash: null`,
-     name from Google profile, `avatarUrl` from Google picture, and a
-     **generated unique username** (see below).
+6. Resolve the user, in this exact order:
+   1. **Find by `googleId`.** If found → log that user in (fast path for repeat
+      Google logins).
+   2. **Else find by `email`.** If found → **link**: set `googleId` on that
+      account (and backfill `avatarUrl` if null), then log in. Do not overwrite
+      an existing password.
+   3. **Else create** a new user: `role: "player"`, `passwordHash: null`, name
+      from Google profile, `avatarUrl` from Google picture, `googleId` set, and a
+      **generated unique username** (see below).
+   - **P2002 race handling:** wrap step 3's `create` so a Prisma `P2002` unique
+     violation (on `email` or `googleId`) does **not** error. Instead, re-run the
+     lookup (by `googleId`, then `email`) and link/log in the now-existing row.
+     This makes two near-simultaneous callbacks converge on one account instead
+     of one of them 500-ing.
 7. Issue `gg_token` via `signToken` + `cookieOpts`, set the cookie.
 8. Redirect to the saved `redirect` target (default `/`). On any error, redirect
    to `/login?error=google` so the user sees a message rather than a raw 500.

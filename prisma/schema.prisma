@@ -17,7 +17,8 @@ model User {
   email                String    @unique
   name                 String
   username             String    @unique
-  passwordHash         String
+  passwordHash         String?
+  googleId             String?   @unique
   role                 String    @default("player")
   location             String?
   bio                  String?

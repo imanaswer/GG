@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ArrowRight, Users, Trophy, Check } from "lucide-react";
 import { Input, Label } from "@/components/ui";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { STORY } from "@/lib/premium-images";
@@ -178,6 +179,14 @@ function RegisterForm() {
             </div>
           </form>
 
+          <div data-a className="reg-divider">
+            <span>or</span>
+          </div>
+
+          <div data-a>
+            <GoogleSignInButton redirect="/" label="Sign up with Google" />
+          </div>
+
           <p data-a className="reg-legal">
             By signing up you agree to our{" "}
             <Link href="/terms" className="reg-legal-link">Terms</Link> &{" "}
@@ -323,6 +332,19 @@ function RegisterForm() {
           position: absolute; inset: 0;
           background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
           animation: shimmer 2.5s ease infinite;
+        }
+
+        .reg-divider {
+          position: relative; text-align: center; margin: 18px 0 14px;
+        }
+        .reg-divider::before {
+          content: ""; position: absolute; top: 50%; left: 0; right: 0;
+          height: 1px; background: rgba(255,255,255,0.07);
+        }
+        .reg-divider span {
+          position: relative; background: rgba(12,12,12,0.85); padding: 0 14px;
+          font-size: 11px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.14em; color: rgba(255,255,255,0.4);
         }
 
         .reg-legal {

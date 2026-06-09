@@ -1,13 +1,22 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react";
 import { Input, Label } from "@/components/ui";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { STORY } from "@/lib/premium-images";
+
+const GOOGLE_ERRORS: Record<string, string> = {
+  google_denied: "Google sign-in was cancelled.",
+  google_state: "Sign-in session expired. Please try again.",
+  google_unverified: "Your Google email is not verified.",
+  google_unconfigured: "Google sign-in is not available right now.",
+  google_failed: "Google sign-in failed. Please try again.",
+};
 
 function LoginForm() {
   const router = useRouter();
@@ -18,6 +27,11 @@ function LoginForm() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const redirect = params.get("redirect") ?? "/";
+
+  useEffect(() => {
+    const err = params.get("error");
+    if (err) toast.error(GOOGLE_ERRORS[err] ?? "Sign-in failed. Please try again.");
+  }, [params]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +170,10 @@ function LoginForm() {
             <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", background: "#050505", padding: "0 14px" }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 600 }}>or</span>
             </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <GoogleSignInButton redirect={redirect} />
           </div>
 
           <button onClick={demo} disabled={loading} style={{
