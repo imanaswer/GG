@@ -278,11 +278,11 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
       }}
       className="lb-row"
     >
-      <span style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.55)", letterSpacing: "-0.02em" }}>
+      <span className="lb-row-rank" style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.55)", letterSpacing: "-0.02em" }}>
         #{row.rank}
       </span>
 
-      <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="lb-row-avatar" style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
         {row.avatarUrl ? (
           <Image src={row.avatarUrl} alt={row.name} width={44} height={44} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -299,19 +299,24 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
         <p style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {row.name}
         </p>
-        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <span>@{row.username}</span>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>@{row.username}</span>
+          <span className="mobile-tier-badge" style={{ display: "none" }}>
+            <TierBadge tier={row.tier} size="xs" showLabel={false} />
+          </span>
           {row.location && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-              <MapPin size={10} /> {row.location}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+              <MapPin size={10} style={{ flexShrink: 0 }} /> <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{row.location}</span>
             </span>
           )}
-        </p>
+        </div>
       </div>
 
-      <TierBadge tier={row.tier} size="xs" />
+      <div className="desktop-tier-badge">
+        <TierBadge tier={row.tier} size="xs" />
+      </div>
 
-      <div style={{ textAlign: "right" }}>
+      <div style={{ textAlign: "right", paddingLeft: 4 }}>
         <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
           {m.value}
         </p>
@@ -322,6 +327,17 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
 
       <style>{`
         .lb-row:hover { border-color: rgba(230,57,70,0.35) !important; transform: translateY(-1px); }
+        @media (max-width: 640px) {
+          .lb-row {
+            grid-template-columns: 28px 40px minmax(0, 1fr) auto !important;
+            gap: 12px !important;
+            padding: 14px 12px !important;
+          }
+          .desktop-tier-badge { display: none !important; }
+          .mobile-tier-badge { display: inline-flex !important; }
+          .lb-row-rank { font-size: 15px !important; }
+          .lb-row-avatar { width: 40px !important; height: 40px !important; }
+        }
       `}</style>
     </Link>
   );
