@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui";
 import { toast } from "sonner";
 import { Check, ArrowRight, ArrowLeft, Plus, Trash2, User, MapPin, Sparkles, CalendarClock, ClipboardCheck } from "lucide-react";
@@ -79,7 +79,7 @@ export default function RegisterCoach() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{ paddingTop: 96, paddingBottom: 80 }}>
         <div className="container-lg" style={{ maxWidth: 1200 }}>
           <div className="coach-signup-grid" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 48 }}>

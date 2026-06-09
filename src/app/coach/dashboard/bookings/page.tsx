@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { useAuth } from "@/context/AuthContext";
 import { useBookings, useCancelBooking } from "@/hooks/useData";
 import { StatusBadge } from "@/components/Shared";
@@ -28,11 +28,11 @@ export default function CoachBookings() {
     else toast.error("Failed to confirm booking");
   };
 
-  if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><NavBar /></div>;
+  if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><PremiumNav /></div>;
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px 60px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
           <Link href="/coach/dashboard" style={{ width: 36, height: 36, borderRadius: 9, background: "#1c1c1c", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: "#9ca3af" }}><ArrowLeft size={17} /></Link>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight } from "lucide-react";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
@@ -46,7 +46,7 @@ export default function CreateGamePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
 
       {/* Hero */}
       <section style={{ position: "relative", paddingTop: 96, paddingBottom: 48, overflow: "hidden" }}>
@@ -242,7 +242,7 @@ export default function CreateGamePage() {
 function AuthGate() {
   return (
     <div style={{ minHeight: "100vh", background: "#050505", display: "flex", flexDirection: "column" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{
         flex: 1,
         display: "flex", alignItems: "center", justifyContent: "center",

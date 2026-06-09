@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Users, CalendarClock, GraduationCap, Trophy, SearchX, ArrowRight, Loader2 } from "lucide-react";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Img } from "@/components/Shared";
 import { useQuery } from "@tanstack/react-query";
 
@@ -76,7 +76,7 @@ function SearchResults() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
 
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "120px 24px 80px" }}>
         {/* Hero */}
@@ -377,7 +377,7 @@ function ResultRow({ r }: { r: SearchResult }) {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#050505" }}><NavBar /></div>}>
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#050505" }}><PremiumNav /></div>}>
       <SearchResults />
     </Suspense>
   );

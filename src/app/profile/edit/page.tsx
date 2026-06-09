@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2, Image as ImageIcon, Check } from "lucide-react";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ export default function EditProfile() {
   if (loading || !profile) {
     return (
       <div style={{ minHeight: "100vh", background: "#050505" }}>
-        <NavBar />
+        <PremiumNav />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 160 }}>
           <Loader2 size={26} color="#e63946" style={{ animation: "spin 1s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -88,7 +88,7 @@ export default function EditProfile() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{ paddingTop: 96, paddingBottom: 80 }}>
         <div className="container-lg" style={{ maxWidth: 780 }}>
 

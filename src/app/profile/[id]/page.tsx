@@ -7,7 +7,7 @@ import {
   ArrowRight, Flame, Target, Clock, Activity,
 } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "framer-motion";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SkillBadge, StatusBadge, fmtDate } from "@/components/Shared";
 import { useUserProfile, useCancelBooking, useUserActivity, type UserProfile, type Game } from "@/hooks/useData";
 import { tierLevelInfo, type TierLevelInfo } from "@/lib/reputation";
@@ -36,7 +36,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", background: "#050505" }}>
-        <NavBar />
+        <PremiumNav />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 160 }}>
           <Loader2 size={32} color="#e63946" style={{ animation: "spin 1s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -48,7 +48,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   if (error || !profile) {
     return (
       <div style={{ minHeight: "100vh", background: "#050505" }}>
-        <NavBar />
+        <PremiumNav />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, paddingTop: 160 }}>
           <p style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>Profile not found</p>
           <Link href="/" style={{ padding: "12px 24px", borderRadius: 10, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>
@@ -71,7 +71,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
 
       {/* Hero backdrop */}
       <section className="profile-hero" style={{ position: "relative", height: 340, overflow: "hidden" }}>

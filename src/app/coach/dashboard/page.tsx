@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Users, Star, Clock, ChevronRight } from "lucide-react";
@@ -21,7 +21,7 @@ export default function CoachDashboard() {
     enabled: !!user,
   });
 
-  if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><NavBar /></div>;
+  if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><PremiumNav /></div>;
 
   const stats = [
     { icon: Calendar, label: "Pending Requests",  value: bookings?.pending ?? "—",   color: "#eab308" },
@@ -32,7 +32,7 @@ export default function CoachDashboard() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 60px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 36 }}>
           <div>

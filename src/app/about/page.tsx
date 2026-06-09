@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Heart, Sparkles, MapPin, Shield, Zap, Users } from "lucide-react";
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import { HERO_BACKDROPS, STORY } from "@/lib/premium-images";
 
 export const metadata = {
@@ -65,7 +65,7 @@ const CHAPTERS: Array<{
 export default function About() {
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
-      <NavBar />
+      <PremiumNav />
 
       {/* HERO */}
       <section style={{ position: "relative", paddingTop: 96, paddingBottom: 88, overflow: "hidden" }}>

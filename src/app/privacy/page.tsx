@@ -1,4 +1,4 @@
-import { NavBar } from "@/components/NavBar";
+import { PremiumNav } from "@/components/premium/PremiumNav";
 import Link from "next/link";
 
 export const metadata = { title: "Privacy Policy — Game Ground", description: "How Game Ground collects, uses, and protects your personal data." };
@@ -15,7 +15,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function Privacy() {
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
-      <NavBar />
+      <PremiumNav />
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 80px" }}>
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 10 }}>Privacy Policy</h1>
