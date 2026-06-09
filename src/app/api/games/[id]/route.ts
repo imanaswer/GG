@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
-import { recordActivityAndRecompute } from "@/lib/reputationService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -50,6 +49,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const game = await prisma.game.findUnique({ where: { id }, select: { organizerId: true, slotsLeft: true, status: true } });
     if (!game) return fail("Game not found", 404);
     if (game.organizerId === session.id) return fail("You cannot join your own game", 400);
+    if (["cancelled", "completed", "archived"].includes(game.status)) return fail("This game is no longer open to join", 400);
 
     const already = await prisma.gamePlayer.findUnique({ where: { gameId_userId: { gameId: id, userId: session.id } }, select: { id: true } });
     if (already) return fail("Already joined this game", 409);
@@ -63,16 +63,17 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     }
 
     const newSlotsLeft = game.slotsLeft - 1;
+    // Joining only creates participation records (GamePlayer + slot count).
+    // No permanent counters are touched and no reputation recompute runs here —
+    // every reward/stat update happens exclusively at admin finalization
+    // (see /api/admin/games/[id] finalize).
     await prisma.$transaction([
       prisma.gamePlayer.create({ data: { gameId: id, userId: session.id } }),
       prisma.game.update({
         where: { id },
         data: { slotsLeft: { decrement: 1 }, status: newSlotsLeft === 0 ? "full" : undefined },
       }),
-      prisma.user.update({ where: { id: session.id }, data: { gamesPlayed: { increment: 1 } } }),
     ]);
-
-    await recordActivityAndRecompute(session.id);
 
     return ok({ joined: true, slotsLeft: newSlotsLeft, status: newSlotsLeft === 0 ? "full" : game.status });
   } catch (e) { return handleErr(e); }

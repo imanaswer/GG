@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
 
   const [bookings, gamePlayers, campRegs, eventRegs, workshopRegs, users] = await Promise.all([
     prisma.booking.findMany({ include: { user: { select: { name: true } }, coach: { select: { name: true } } } }),
-    prisma.gamePlayer.findMany({ include: { user: { select: { name: true } }, game: { select: { title: true } } } }),
+    prisma.gamePlayer.findMany({ where: { game: { status: { not: "cancelled" } } }, include: { user: { select: { name: true } }, game: { select: { title: true } } } }),
     prisma.campRegistration.findMany({ include: { user: { select: { name: true } }, camp: { select: { title: true } } } }),
     prisma.eventRegistration.findMany({ include: { user: { select: { name: true } }, event: { select: { title: true } } } }),
     prisma.workshopRegistration.findMany({ include: { user: { select: { name: true } }, workshop: { select: { title: true } } } }),

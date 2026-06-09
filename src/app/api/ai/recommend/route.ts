@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (session) {
       const [user, playedGames] = await Promise.all([
         prisma.user.findUnique({ where: { id: session.id }, select: { name: true, location: true, gamesPlayed: true } }),
-        prisma.gamePlayer.findMany({ where: { userId: session.id }, include: { game: { select: { sport: true } } } }),
+        prisma.gamePlayer.findMany({ where: { userId: session.id, game: { status: { not: "cancelled" } } }, include: { game: { select: { sport: true } } } }),
       ]);
       const sportMap: Record<string, number> = {};
       playedGames.forEach(gp => {

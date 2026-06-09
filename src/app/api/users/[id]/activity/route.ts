@@ -30,19 +30,22 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     const streakSince = new Date(now - streakWindowMs);
 
     const [joinedRows, streakSlice, organizedRows, campRegs, eventRegs, workshopRegs, reviews] = await Promise.all([
+      // Recent games in the activity feed: never show cancelled games, and hide
+      // completed games once they've been archived (1h after completion, per cron).
       prisma.gamePlayer.findMany({
-        where: { userId: id },
+        where: { userId: id, game: { status: { notIn: ["cancelled", "archived"] } } },
         include: { game: { select: { id: true, title: true, sport: true, scheduledAt: true } } },
         orderBy: { joinedAt: "desc" },
         take: 10,
       }),
+      // Streak/heatmap: exclude cancelled games but keep archived (still real activity).
       prisma.gamePlayer.findMany({
-        where: { userId: id, joinedAt: { gte: streakSince } },
+        where: { userId: id, joinedAt: { gte: streakSince }, game: { status: { not: "cancelled" } } },
         select: { joinedAt: true },
         orderBy: { joinedAt: "desc" },
       }),
       prisma.game.findMany({
-        where: { organizerId: id },
+        where: { organizerId: id, status: { notIn: ["cancelled", "archived"] } },
         select: { id: true, title: true, sport: true, createdAt: true, slots: true, slotsLeft: true },
         orderBy: { createdAt: "desc" },
         take: 10,

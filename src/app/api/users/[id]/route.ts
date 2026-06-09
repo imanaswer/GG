@@ -21,15 +21,16 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       gamesPlayed, gamesOrganized, bookingsRows, sportTallyRows, upcomingPlayerRows,
       higherRanked, playerCount,
     ] = await Promise.all([
-      prisma.gamePlayer.count({ where: { userId: id } }),
-      prisma.game.count({ where: { organizerId: id } }),
+      // Cancelled games never count toward a user's stats.
+      prisma.gamePlayer.count({ where: { userId: id, game: { status: { not: "cancelled" } } } }),
+      prisma.game.count({ where: { organizerId: id, status: { not: "cancelled" } } }),
       prisma.booking.findMany({
         where: { userId: id },
         include: { coach: { select: { name: true, sport: true, location: true, imageUrl: true } } },
         orderBy: { createdAt: "desc" },
       }),
       prisma.gamePlayer.findMany({
-        where: { userId: id },
+        where: { userId: id, game: { status: { not: "cancelled" } } },
         select: { game: { select: { sport: true } } },
       }),
       prisma.gamePlayer.findMany({

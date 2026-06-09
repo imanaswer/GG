@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
+import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { ok, fail, handleErr } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -8,15 +9,32 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
+    const isAdmin = await getAdminSessionFromRequest(req);
     const session = await getSessionFromRequest(req);
-    if (!session) return fail("Authentication required", 401);
+    if (!session && !isAdmin) return fail("Authentication required", 401);
 
     const game = await prisma.game.findUnique({ where: { id }, select: { organizerId: true, status: true } });
     if (!game) return fail("Game not found", 404);
-    if (game.organizerId !== session.id) return fail("Only the organiser can cancel", 403);
-    if (game.status === "completed") return fail("Cannot cancel a completed game", 400);
 
-    await prisma.game.update({ where: { id }, data: { status: "cancelled" } });
+    // Authorization: admins may always cancel; otherwise only the organiser.
+    if (!isAdmin && game.organizerId !== session!.id) return fail("Only the organiser can cancel", 403);
+
+    if (game.status === "completed" || game.status === "archived") return fail("Cannot cancel a completed game", 400);
+    if (game.status === "cancelled") return fail("Game is already cancelled", 400);
+
+    // Host restriction (enforced server-side, not just in the UI): a host may
+    // cancel their own game ONLY when nobody has joined. Admins bypass this.
+    if (!isAdmin) {
+      const participantCount = await prisma.gamePlayer.count({ where: { gameId: id } });
+      if (participantCount > 0) {
+        return fail("This game cannot be cancelled because players have already joined. Please contact an administrator.", 403);
+      }
+    }
+
+    // Cancellation grants no rewards and triggers no leaderboard/reputation
+    // updates. Because rewards are only ever granted at admin finalization, a
+    // cancelled game can never have earned credit, so there is nothing to reverse.
+    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
     return ok({ cancelled: true });
   } catch (e) { return handleErr(e); }
 }

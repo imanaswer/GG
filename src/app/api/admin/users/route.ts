@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
       _count: {
         select: {
           bookings: true,
-          gamePlayers: true,
+          // Cancelled games must not count toward a user's stats.
+          gamePlayers: { where: { game: { status: { not: "cancelled" } } } },
           campRegistrations: true,
           eventRegistrations: true,
         },

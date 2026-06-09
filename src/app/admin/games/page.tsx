@@ -4,17 +4,62 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { StatCard }    from "@/components/admin/StatCard";
 import { Badge }       from "@/components/admin/Badge";
-import { useQuery }    from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
-type GameData = { id:string; title:string; sport:string; organizerName?:string; organizerReliability?:number; location:string; scheduledAt:string; slots:number; slotsLeft:number; cost:string; status:string; waitlistCount:number; players:{name:string; reliabilityScore:number}[] };
-type StatsData = { total:number; open:number; full:number; waitlisted:number };
+type Player = { userId:string; name:string; joinedAt:string; attended:boolean|null; reliabilityScore:number };
+type GameData = { id:string; title:string; sport:string; organizerName?:string; organizerReliability?:number; location:string; scheduledAt:string; slots:number; slotsLeft:number; cost:string; status:string; waitlistCount:number; playerCount:number; completedAt?:string|null; cancelledAt?:string|null; adminVerified:boolean; pointsAwarded:boolean; players:Player[] };
+type StatsData = { total:number; open:number; full:number; completed:number; cancelled:number; awaitingReview:number; waitlisted:number };
 
 export default function AdminGames() {
+  const qc = useQueryClient();
   const { data } = useQuery<{ games: GameData[]; stats: StatsData }>({ queryKey: ["admin-games"], queryFn: () => fetch("/api/admin/games").then(r => r.json()) });
-  const [selected, setSelected] = useState<GameData | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const games = data?.games ?? [];
   const st    = data?.stats;
+
+  // Derive the selected game from query data so the drawer always reflects the
+  // latest refetch (no effect / setState-in-effect needed).
+  const selected = selectedId ? games.find(g => g.id === selectedId) ?? null : null;
+
+  const openDrawer = (g: GameData) => {
+    setSelectedId(g.id);
+    setErr(null);
+    const init: Record<string, boolean> = {};
+    g.players.forEach(p => { init[p.userId] = p.attended ?? true; });
+    setAttendance(init);
+  };
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-games"] });
+
+  const runAction = async (g: GameData, action: "cancel" | "complete" | "finalize") => {
+    const labels: Record<string, string> = { cancel: "Cancel this game?", complete: "Mark this game completed (no rewards yet)?", finalize: "Finalize and award rewards? This cannot be undone." };
+    if (!confirm(labels[action])) return;
+    setBusy(true); setErr(null);
+    const body: { action: string; attendance?: Record<string, boolean> } =
+      (action === "complete" || action === "finalize") ? { action, attendance } : { action };
+    const r = await fetch(`/api/admin/games/${g.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok) { setErr(j.error ?? "Action failed"); return; }
+    refresh();
+  };
+
+  const deleteGame = async (g: GameData) => {
+    if (!confirm("Permanently delete this game and all its player/waitlist records? This cannot be undone.")) return;
+    setBusy(true); setErr(null);
+    const r = await fetch(`/api/admin/games/${g.id}`, { method: "DELETE" });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok) { setErr(j.error ?? "Delete failed"); return; }
+    setSelectedId(null);
+    refresh();
+  };
+
+  const btn = (bg: string): React.CSSProperties => ({ flex: 1, padding: "10px 12px", borderRadius: 8, border: "none", background: bg, color: "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 });
 
   return (
     <AdminGuard>
@@ -26,6 +71,9 @@ export default function AdminGames() {
             <StatCard value={st?.total ?? 0}     label="Total Games"        icon={Gamepad2} />
             <StatCard value={st?.open ?? 0}      label="Open Now"     sub="Accepting players" />
             <StatCard value={st?.full ?? 0}      label="Full"         sub="No slots left" />
+            <StatCard value={st?.awaitingReview ?? 0} label="Awaiting Review" sub="Completed, not finalized" />
+            <StatCard value={st?.completed ?? 0} label="Completed" />
+            <StatCard value={st?.cancelled ?? 0} label="Cancelled" />
             <StatCard value={st?.waitlisted ?? 0} label="Waitlisted"  sub="Across all games" />
           </div>
 
@@ -44,13 +92,16 @@ export default function AdminGames() {
                     const filled = g.slots - g.slotsLeft;
                     const pct    = Math.round((filled / g.slots) * 100);
                     return (
-                      <tr key={g.id} onClick={() => setSelected(g)} style={{ cursor: "pointer" }}
+                      <tr key={g.id} onClick={() => openDrawer(g)} style={{ cursor: "pointer" }}
                         onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"}
                         onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
                       >
                         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{g.title}</span>
                           <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{g.sport}</span>
+                          {(g.status === "completed" || g.status === "archived") && (g.pointsAwarded
+                            ? <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#4ade80" }}>✓ finalized</span>
+                            : <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#eab308" }}>● awaiting review</span>)}
                         </td>
                         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#9ca3af" }}>
                           {g.organizerName}
@@ -78,23 +129,64 @@ export default function AdminGames() {
 
         {/* Game detail drawer */}
         {selected && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex" }} onClick={() => setSelected(null)}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex" }} onClick={() => setSelectedId(null)}>
             <div style={{ flex: 1, background: "rgba(0,0,0,0.6)" }} />
-            <div style={{ width: 380, background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.1)", padding: "24px", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 400, background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.1)", padding: "24px", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Game Detail</h2>
-                <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 18 }}>✕</button>
+                <button onClick={() => setSelectedId(null)} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 18 }}>✕</button>
               </div>
-              <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 16 }}>{selected.title}</p>
-              <Badge status={selected.status} />
+              <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 }}>{selected.title}</p>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                <Badge status={selected.status} />
+                {(selected.status === "completed" || selected.status === "archived") && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: selected.pointsAwarded ? "#4ade80" : "#eab308" }}>
+                    {selected.pointsAwarded ? "Rewards granted ✓" : "Awaiting admin review"}
+                  </span>
+                )}
+              </div>
+              {selected.completedAt && <p style={{ fontSize: 11, color: "#6b7280" }}>Completed {new Date(selected.completedAt).toLocaleString("en-IN")}</p>}
+              {selected.cancelledAt && <p style={{ fontSize: 11, color: "#6b7280" }}>Cancelled {new Date(selected.cancelledAt).toLocaleString("en-IN")}</p>}
+
+              {err && <p style={{ marginTop: 12, fontSize: 12, color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "8px 10px", borderRadius: 8 }}>{err}</p>}
+
               <div style={{ marginTop: 16 }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Players ({selected.slots - selected.slotsLeft}/{selected.slots})</h3>
-                {selected.players.map((p, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#d1d5db" }}>
-                    <span>{p.name}</span>
-                    <span style={{ color: "#eab308" }}>★ {p.reliabilityScore.toFixed(1)}</span>
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10 }}>
+                  Players ({selected.players.length})
+                  {(selected.status === "completed" || selected.status === "archived") && !selected.pointsAwarded && <span style={{ fontWeight: 500, color: "#6b7280" }}> · tick who attended</span>}
+                </h3>
+                {selected.players.length === 0 && <p style={{ fontSize: 12, color: "#6b7280" }}>No players joined.</p>}
+                {selected.players.map((p) => {
+                  const finalizable = (selected.status === "completed" || selected.status === "archived") && !selected.pointsAwarded;
+                  return (
+                    <div key={p.userId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#d1d5db" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {finalizable && (
+                          <input type="checkbox" checked={attendance[p.userId] ?? true}
+                            onChange={e => setAttendance(a => ({ ...a, [p.userId]: e.target.checked }))} />
+                        )}
+                        {p.name}
+                        {!finalizable && p.attended === true && <span style={{ color: "#4ade80", fontSize: 11 }}>✓</span>}
+                        {!finalizable && p.attended === false && <span style={{ color: "#ef4444", fontSize: 11 }}>missed</span>}
+                      </span>
+                      <span style={{ color: "#eab308" }}>★ {p.reliabilityScore.toFixed(1)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Admin actions */}
+              <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                {(selected.status === "open" || selected.status === "full") && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button disabled={busy} onClick={() => runAction(selected, "complete")} style={btn("#2563eb")}>Mark Completed</button>
+                    <button disabled={busy} onClick={() => runAction(selected, "cancel")} style={btn("#b45309")}>Cancel Game</button>
                   </div>
-                ))}
+                )}
+                {(selected.status === "completed" || selected.status === "archived") && !selected.pointsAwarded && (
+                  <button disabled={busy} onClick={() => runAction(selected, "finalize")} style={btn("#16a34a")}>Finalize & Award Rewards</button>
+                )}
+                <button disabled={busy} onClick={() => deleteGame(selected)} style={btn("#dc2626")}>Delete Game</button>
               </div>
             </div>
           </div>

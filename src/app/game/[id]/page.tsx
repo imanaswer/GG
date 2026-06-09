@@ -89,6 +89,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const pct         = Math.min(100, Math.round((filled / game.slots) * 100));
   const isPast      = new Date(game.scheduledAt).getTime() + game.duration * 60000 < Date.now();
   const canCancel   = new Date(game.scheduledAt).getTime() - Date.now() >= 90 * 60000;
+  // A host may cancel their own game ONLY when nobody has joined. (Backend also
+  // enforces this; the UI mirrors it so the action isn't offered when blocked.)
+  const playerCount    = game.players?.length ?? 0;
+  const hostCanCancel  = playerCount === 0;
   const img         = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
 
   const handleComplete = async () => {
@@ -108,9 +112,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
     if (!confirm("Cancel this game? This cannot be undone.")) return;
     setCancelling(true);
     const r = await fetch(`/api/games/${game.id}/cancel`, { method: "POST" });
+    const j = await r.json().catch(() => ({}));
     setCancelling(false);
     if (r.ok) toast.success("Game cancelled.");
-    else toast.error("Failed to cancel game");
+    else toast.error(j?.error ?? "Failed to cancel game");
   };
 
   const handleShare = () => {
@@ -636,21 +641,33 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                             {completing ? "Completing…" : "Mark as complete"}
                           </button>
                         )}
-                        <button
-                          onClick={handleCancel}
-                          disabled={cancelling}
-                          style={{
-                            width: "100%", height: 44, borderRadius: 100,
-                            fontSize: 13, fontWeight: 600, fontFamily: "inherit",
-                            background: "transparent",
-                            color: "#f87171",
-                            border: "1px solid rgba(239,68,68,0.3)",
-                            cursor: cancelling ? "not-allowed" : "pointer",
-                            opacity: cancelling ? 0.7 : 1,
-                          }}
-                        >
-                          {cancelling ? "Cancelling…" : "Cancel game"}
-                        </button>
+                        {hostCanCancel ? (
+                          <button
+                            onClick={handleCancel}
+                            disabled={cancelling}
+                            style={{
+                              width: "100%", height: 44, borderRadius: 100,
+                              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                              background: "transparent",
+                              color: "#f87171",
+                              border: "1px solid rgba(239,68,68,0.3)",
+                              cursor: cancelling ? "not-allowed" : "pointer",
+                              opacity: cancelling ? 0.7 : 1,
+                            }}
+                          >
+                            {cancelling ? "Cancelling…" : "Cancel game"}
+                          </button>
+                        ) : (
+                          <p style={{
+                            padding: "12px 16px", borderRadius: 14,
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            textAlign: "center", fontSize: 12.5, lineHeight: 1.5,
+                            color: "rgba(255,255,255,0.6)",
+                          }}>
+                            This game cannot be cancelled because players have already joined. Please contact an administrator.
+                          </p>
+                        )}
                       </>
                     )}
                     {game.status === "cancelled" && (

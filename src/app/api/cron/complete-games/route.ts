@@ -12,8 +12,12 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60_000);
+  const oneHourAgo = new Date(now.getTime() - 60 * 60_000);
 
   // --- Games: mark completed when end time passes ---
+  // Completion is automatic and grants NO rewards — rewards are only granted
+  // when an admin finalizes the game. We stamp completedAt so the 1-hour
+  // visibility window can be measured precisely.
   const openGames = await prisma.game.findMany({
     where: { status: { in: ["open", "full"] } },
     select: { id: true, scheduledAt: true, duration: true },
@@ -27,7 +31,7 @@ export async function GET(req: NextRequest) {
   if (gamesToComplete.length > 0) {
     await prisma.game.updateMany({
       where: { id: { in: gamesToComplete.map(g => g.id) } },
-      data: { status: "completed" },
+      data: { status: "completed", completedAt: now },
     });
   }
 
@@ -49,15 +53,19 @@ export async function GET(req: NextRequest) {
     data: { status: "completed" },
   });
 
-  // --- Archive: games completed > 24h ago ---
+  // --- Archive: games completed > 1h ago (visibility window per business rules) ---
+  // Completed games stay visible for only 1 hour, then move to "archived" which
+  // every public/feed query already hides. Prefer the precise completedAt stamp;
+  // fall back to end time for any legacy rows completed before completedAt existed.
   const completedGames = await prisma.game.findMany({
     where: { status: "completed" },
-    select: { id: true, scheduledAt: true, duration: true },
+    select: { id: true, scheduledAt: true, duration: true, completedAt: true },
   });
 
   const gamesToArchive = completedGames.filter(g => {
+    if (g.completedAt) return g.completedAt < oneHourAgo;
     const end = new Date(g.scheduledAt.getTime() + g.duration * 60_000);
-    return end < oneDayAgo;
+    return end < oneHourAgo;
   });
 
   if (gamesToArchive.length > 0) {

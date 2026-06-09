@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
     if (period === "month") {
       const since = new Date(Date.now() - MONTH_MS);
       where.OR = [
-        { gamePlayers: { some: { joinedAt: { gte: since } } } },
-        { organizedGames: { some: { createdAt: { gte: since } } } },
+        { gamePlayers: { some: { joinedAt: { gte: since }, game: { status: { not: "cancelled" } } } } },
+        { organizedGames: { some: { createdAt: { gte: since }, status: { not: "cancelled" } } } },
         { reviews: { some: { createdAt: { gte: since } } } },
         { campRegistrations: { some: { registeredAt: { gte: since } } } },
         { eventRegistrations: { some: { registeredAt: { gte: since } } } },

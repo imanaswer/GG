@@ -122,6 +122,10 @@ model Game {
   lat           Float?
   lng           Float?
   attendanceRecorded Boolean @default(false)
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  adminVerified Boolean  @default(false)
+  pointsAwarded Boolean  @default(false)
   createdAt     DateTime @default(now())
   organizer   User            @relation(fields: [organizerId], references: [id])
   players     GamePlayer[]

@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     const since = new Date(Date.now() - THIRTY_DAYS_MS);
 
     const myGames = await prisma.gamePlayer.findMany({
-      where: { userId: id, joinedAt: { gte: since } },
+      where: { userId: id, joinedAt: { gte: since }, game: { status: { not: "cancelled" } } },
       select: { gameId: true },
     });
     if (!myGames.length) return ok({ teammates: [] });

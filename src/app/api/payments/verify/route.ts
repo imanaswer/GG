@@ -92,12 +92,16 @@ export async function POST(req: NextRequest) {
       const game = await prisma.game.findUnique({ where: { id: entityId }, select: { organizerId: true, slotsLeft: true, status: true } });
       if (!game) return fail("Game not found", 404);
       if (game.organizerId === session.id) return fail("You cannot join your own game", 400);
+      if (["cancelled", "completed", "archived"].includes(game.status)) return fail("This game is no longer open to join", 400);
       if (game.slotsLeft <= 0 || game.status === "full") return fail("Game is full", 400);
 
       const already = await prisma.gamePlayer.findUnique({ where: { gameId_userId: { gameId: entityId, userId: session.id } }, select: { id: true } });
       if (already) return fail("Already joined this game", 409);
 
       const newSlotsLeft = game.slotsLeft - 1;
+      // Joining only records participation (payment + GamePlayer + slot count).
+      // No permanent counters are touched — rewards are granted exclusively at
+      // admin finalization (see /api/admin/games/[id] finalize).
       await prisma.$transaction([
         prisma.payment.create({
           data: {
@@ -109,7 +113,6 @@ export async function POST(req: NextRequest) {
         }),
         prisma.gamePlayer.create({ data: { gameId: entityId, userId: session.id } }),
         prisma.game.update({ where: { id: entityId }, data: { slotsLeft: { decrement: 1 }, status: newSlotsLeft === 0 ? "full" : undefined } }),
-        prisma.user.update({ where: { id: session.id }, data: { gamesPlayed: { increment: 1 } } }),
       ]);
       return ok({ verified: true, slotsLeft: newSlotsLeft });
     }

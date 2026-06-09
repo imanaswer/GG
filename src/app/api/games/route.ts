@@ -3,7 +3,6 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
-import { safeRecompute } from "@/lib/reputationService";
 
 const SPORT_IMAGES: Record<string, string> = {
   Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
@@ -24,9 +23,24 @@ export async function GET(req: NextRequest) {
     const cost = p.get("cost");
     const status = p.get("status") || "open";
 
+    // The public list must NEVER expose cancelled or archived games.
+    const HIDDEN = ["cancelled", "archived"];
+    const ONE_HOUR_MS = 60 * 60_000;
     const where: Prisma.GameWhereInput = {};
-    if (status === "open")      where.status = { notIn: ["cancelled", "completed", "archived"] };
-    else if (status !== "all")  where.status = status;
+    if (status === "open") {
+      where.status = { notIn: ["cancelled", "completed", "archived"] };
+    } else if (status === "completed") {
+      // Recent Games: completed games stay visible for only 1 hour after completion.
+      where.status = "completed";
+      where.completedAt = { gte: new Date(Date.now() - ONE_HOUR_MS) };
+    } else if (status === "all") {
+      where.status = { notIn: HIDDEN };
+    } else if (HIDDEN.includes(status)) {
+      // Ignore attempts to list hidden games publicly.
+      where.status = { notIn: HIDDEN };
+    } else {
+      where.status = status;
+    }
     if (sport && sport !== "all") where.sport = sport;
     if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];
     if (cost === "free") where.costAmount = 0;
@@ -67,26 +81,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const input = CreateGameSchema.parse(body);
 
-    const [game] = await prisma.$transaction([
-      prisma.game.create({
-        data: {
-          sport: input.sport, title: input.title,
-          location: input.location, address: input.address ?? input.location,
-          scheduledAt: new Date(input.scheduledAt),
-          duration: input.duration,
-          slots: input.slots, slotsLeft: input.slots,
-          skillLevel: input.skillLevel, organizerId: session.id,
-          cost: input.cost, costAmount: input.costAmount,
-          description: input.description ?? "",
-          rules: input.rules ?? [],
-          imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
-          status: "open",
-        },
-      }),
-      prisma.user.update({ where: { id: session.id }, data: { gamesOrganized: { increment: 1 } } }),
-    ]);
-
-    await safeRecompute(session.id);
+    // Creating a game does not touch any permanent counter and triggers no
+    // reputation recompute. The organizing credit is granted exactly once, only
+    // when an admin finalizes the completed game, so cancelled games never earn
+    // leaderboard/reputation credit.
+    const game = await prisma.game.create({
+      data: {
+        sport: input.sport, title: input.title,
+        location: input.location, address: input.address ?? input.location,
+        scheduledAt: new Date(input.scheduledAt),
+        duration: input.duration,
+        slots: input.slots, slotsLeft: input.slots,
+        skillLevel: input.skillLevel, organizerId: session.id,
+        cost: input.cost, costAmount: input.costAmount,
+        description: input.description ?? "",
+        rules: input.rules ?? [],
+        imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
+        status: "open",
+      },
+    });
 
     return ok(game, 201);
   } catch (e) { return handleErr(e); }

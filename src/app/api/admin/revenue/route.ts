@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     prisma.booking.count({ where: { status: "confirmed" } }),
     prisma.campRegistration.findMany({ include: { camp: { select: { title: true, price: true } }, user: { select: { name: true } } } }),
     prisma.eventRegistration.findMany({ include: { event: { select: { title: true, entryFeeAmount: true } }, user: { select: { name: true } } } }),
-    prisma.gamePlayer.findMany({ include: { game: { select: { title: true, costAmount: true } }, user: { select: { name: true } } } }),
+    prisma.gamePlayer.findMany({ where: { game: { status: { not: "cancelled" } } }, include: { game: { select: { title: true, costAmount: true } }, user: { select: { name: true } } } }),
   ]);
 
   const campRevenue  = campRegs.reduce((a, r) => a + (r.camp?.price ?? 0), 0);
