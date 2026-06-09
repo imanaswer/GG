@@ -1,15 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail, CheckCircle2, ArrowRight } from "lucide-react";
 import { Input, Label } from "@/components/ui";
-import { STORY } from "@/lib/premium-images";
+import { HERO_BACKDROPS } from "@/lib/premium-images";
+import { gsap } from "gsap";
 
 export default function ForgotPassword() {
   const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent]       = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const targets = el.querySelectorAll("[data-a]");
+    gsap.fromTo(targets, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power3.out", delay: 0.1 });
+    
+    gsap.fromTo(".reg-orb", 
+      { scale: 0.8, opacity: 0 }, 
+      { scale: 1, opacity: 0.6, duration: 2, ease: "power2.out" }
+    );
+  }, [sent]); // Re-run animation when state changes to 'sent'
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,184 +38,220 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "grid", gridTemplateColumns: "1fr 1fr" }} className="auth-grid">
-      {/* Left — visual */}
-      <div style={{ position: "relative", overflow: "hidden" }} className="auth-visual">
+    <div className="reg-page">
+      {/* Background image */}
+      <div className="reg-bg">
         <Image
-          src={STORY.learn.src}
-          alt={STORY.learn.alt}
+          src={HERO_BACKDROPS[2]?.src || HERO_BACKDROPS[0].src}
+          alt="Recovery"
           fill
           priority
-          quality={85}
-          sizes="50vw"
+          quality={90}
+          sizes="100vw"
           style={{ objectFit: "cover" }}
         />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(160deg, rgba(5,5,5,0.3) 0%, rgba(5,5,5,0.6) 50%, rgba(5,5,5,0.92) 100%)",
-        }} />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse 80% 60% at 20% 30%, rgba(230,57,70,0.2) 0%, transparent 55%)",
-        }} />
-
-        <div style={{
-          position: "absolute", inset: 0,
-          padding: "56px",
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-        }}>
-          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", width: "fit-content" }}>
-            <img src="/logo2.png" alt="Game Ground" style={{ height: 44, width: "auto", display: "block" }} />
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Game Ground</span>
-          </Link>
-
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 18 }}>
-              Account recovery
-            </div>
-            <h1 style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: "clamp(36px, 3.5vw, 48px)",
-              lineHeight: 1.05,
-              fontWeight: 400,
-              color: "#fff",
-              letterSpacing: "-0.03em",
-              maxWidth: 440,
-              marginBottom: 20,
-            }}>
-              Let&apos;s get you back in.
-            </h1>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.65)", lineHeight: 1.6, maxWidth: 420 }}>
-              Enter the email on your account and we&apos;ll send a secure reset link. Valid for 30 minutes.
-            </p>
-          </div>
-        </div>
+        <div className="reg-bg-overlay" />
       </div>
 
-      {/* Right — form */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "48px 32px", background: "#050505",
-      }}>
-        <div style={{ width: "100%", maxWidth: 420 }}>
-          <Link href="/login" style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            fontSize: 13, color: "rgba(255,255,255,0.55)", textDecoration: "none",
-            marginBottom: 24, fontWeight: 500,
-          }}>
-            <ArrowLeft size={14} /> Back to sign in
-          </Link>
+      {/* Decorative Orbs */}
+      <div className="reg-orb orb-1" />
+      <div className="reg-orb orb-2" />
+
+      {/* Logo */}
+      <Link href="/" className="reg-logo">
+        <img src="/logo2.png" alt="Game Ground" className="reg-logo-icon" />
+      </Link>
+
+      {/* Centered card */}
+      <div className="reg-center">
+        <div ref={cardRef} className="reg-card">
+          <div className="reg-card-glow" />
 
           {sent ? (
-            <div style={{
-              padding: "32px 28px",
-              background: "rgba(34,197,94,0.04)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 20,
-            }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 16,
-                background: "rgba(34,197,94,0.12)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 20,
-              }}>
-                <CheckCircle2 size={28} color="#22c55e" strokeWidth={2} />
+            <div className="sent-container">
+              <div data-a className="sent-icon-wrapper">
+                <CheckCircle2 size={32} color="#22c55e" strokeWidth={2} />
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 10 }}>
+              <h1 data-a className="reg-title" style={{ textAlign: "center", marginBottom: 16 }}>
                 Check your inbox
-              </h2>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, marginBottom: 24 }}>
-                If an account exists for <strong style={{ color: "#fff" }}>{email}</strong>, we&apos;ve sent a reset link. It may take a minute to arrive.
+              </h1>
+              <p data-a className="reg-subtitle" style={{ textAlign: "center", marginBottom: 32, lineHeight: 1.6 }}>
+                If an account exists for <strong style={{ color: "#fff" }}>{email}</strong>, we&apos;ve sent a secure reset link. It may take a minute to arrive.
               </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  onClick={() => { setSent(false); setEmail(""); }}
-                  style={{
-                    flex: 1, height: 44, borderRadius: 12, fontSize: 13, fontWeight: 600,
-                    background: "rgba(255,255,255,0.04)",
-                    color: "#e5e7eb",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    cursor: "pointer", fontFamily: "inherit",
-                  }}
-                >
+              <div data-a className="sent-actions">
+                <button onClick={() => { setSent(false); setEmail(""); }} className="secondary-btn">
                   Try another email
                 </button>
-                <Link href="/login" style={{
-                  flex: 1, height: 44, borderRadius: 12, fontSize: 13, fontWeight: 700,
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  color: "#fff",
-                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  textDecoration: "none",
-                  boxShadow: "0 6px 24px rgba(230,57,70,0.3)",
-                }}>
-                  Back to sign in <ArrowRight size={14} />
+                <Link href="/login" className="reg-submit" style={{ display: "inline-flex", textDecoration: "none", flex: 1 }}>
+                  <div className="reg-submit-bg" />
+                  <span className="reg-submit-text">Back to sign in <ArrowRight size={16} /></span>
                 </Link>
               </div>
             </div>
           ) : (
             <>
-              <div style={{ marginBottom: 28 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: "rgba(230,57,70,0.1)",
-                  border: "1px solid rgba(230,57,70,0.25)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 16,
-                }}>
+              <div data-a className="reg-header">
+                <div className="icon-badge">
                   <Mail size={22} color="#e63946" />
                 </div>
-                <h2 style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8 }}>
-                  Forgot password?
-                </h2>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+                <h1 className="reg-title" style={{ fontSize: 32 }}>Forgot password?</h1>
+                <p className="reg-subtitle">
                   No worries — we&apos;ll send reset instructions to your email.
                 </p>
               </div>
 
-              <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <form onSubmit={submit} className="reg-form">
+                <div data-a className="reg-field">
                   <Label>Email address</Label>
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoFocus
-                  />
+                  <div className="input-wrapper">
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
                 </div>
-                <button type="submit" disabled={loading} style={{
-                  width: "100%", height: 48, borderRadius: 12, fontSize: 14, fontWeight: 700,
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  color: "#fff", border: "none",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                  fontFamily: "inherit",
-                  marginTop: 6,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  boxShadow: "0 8px 32px rgba(230,57,70,0.35), inset 0 1px 0 rgba(255,255,255,0.16)",
-                  transition: "transform 150ms ease",
-                }}
-                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-                >
-                  {loading ? "Sending…" : (<>Send reset link <ArrowRight size={16} /></>)}
-                </button>
+
+                <div data-a style={{ marginTop: 8 }}>
+                  <button type="submit" disabled={loading} className="reg-submit">
+                    <div className="reg-submit-bg" />
+                    <span className="reg-submit-text">
+                      {loading ? "Sending…" : (<>Send reset link <ArrowRight size={18} /></>)}
+                    </span>
+                  </button>
+                </div>
               </form>
 
-              <p style={{ marginTop: 28, fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
-                Remembered it?{" "}
-                <Link href="/login" style={{ color: "#e63946", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
-              </p>
+              <div data-a className="reg-footer">
+                <Link href="/login" className="back-link">
+                  <ArrowLeft size={14} /> Back to sign in
+                </Link>
+              </div>
             </>
           )}
         </div>
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
-          .auth-grid { grid-template-columns: 1fr !important; }
-          .auth-visual { min-height: 240px; max-height: 300px; }
+        .reg-page {
+          min-height: 100vh; position: relative;
+          display: flex; align-items: center; justify-content: center;
+          background: #000; overflow: hidden;
+          font-family: var(--font-sans), sans-serif;
+        }
+        .reg-bg { position: absolute; inset: 0; z-index: 0; }
+        .reg-bg-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.85) 100%);
+          backdrop-filter: blur(8px);
+        }
+        
+        .reg-orb {
+          position: absolute; border-radius: 50%; filter: blur(80px); z-index: 1; pointer-events: none;
+        }
+        .orb-1 {
+          width: 400px; height: 400px; background: rgba(230, 57, 70, 0.4);
+          top: -10%; left: -10%; animation: float 8s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+          width: 500px; height: 500px; background: rgba(255, 107, 53, 0.2);
+          bottom: -20%; right: -10%; animation: float 10s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 50px); } }
+
+        .reg-logo {
+          position: absolute; top: 32px; left: 40px; z-index: 20; transition: transform 0.3s ease;
+        }
+        .reg-logo:hover { transform: scale(1.05); }
+        .reg-logo-icon { height: 40px; width: auto; display: block; }
+
+        .reg-center { position: relative; z-index: 10; width: 100%; max-width: 460px; padding: 20px; }
+        
+        .reg-card {
+          position: relative; background: rgba(20, 20, 20, 0.6);
+          backdrop-filter: blur(30px) saturate(150%);
+          border: 1px solid rgba(255,255,255,0.08); border-radius: 28px;
+          padding: 44px 40px; box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+          overflow: hidden;
+        }
+        .reg-card-glow {
+          position: absolute; top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent); opacity: 0.6;
+        }
+
+        .icon-badge {
+          width: 48px; height: 48px; border-radius: 14px;
+          background: rgba(230,57,70,0.1); border: 1px solid rgba(230,57,70,0.25);
+          display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+        }
+
+        .reg-header { margin-bottom: 32px; }
+        .reg-title {
+          font-family: var(--font-serif); font-size: 38px; font-weight: 500; color: #fff;
+          letter-spacing: -0.04em; margin-bottom: 12px; line-height: 1.1;
+        }
+        .reg-subtitle { font-size: 15px; color: #a1a1aa; line-height: 1.5; }
+
+        .reg-form { display: flex; flex-direction: column; gap: 24px; }
+        .reg-field { display: flex; flex-direction: column; gap: 8px; }
+        .reg-field label { font-size: 13px; font-weight: 600; color: #d4d4d8; margin-left: 4px; }
+        
+        .input-wrapper {
+          position: relative; border-radius: 14px; background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease;
+        }
+        .input-wrapper:focus-within {
+          background: rgba(255,255,255,0.06); border-color: rgba(230,57,70,0.5);
+          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
+        }
+        .input-wrapper input {
+          background: transparent !important; border: none !important; box-shadow: none !important;
+          height: 52px; font-size: 15px; color: #fff;
+        }
+        
+        .reg-submit {
+          width: 100%; height: 56px; border-radius: 16px; font-size: 16px; font-weight: 700;
+          color: #fff; border: none; cursor: pointer; position: relative; overflow: hidden;
+          background: #e63946; box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
+        }
+        .reg-submit-bg {
+          position: absolute; inset: 0; background: linear-gradient(135deg, #ff4d5d, #b91c2d); transition: opacity 0.3s ease;
+        }
+        .reg-submit:hover .reg-submit-bg { opacity: 0.8; }
+        .reg-submit-text { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+        .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .reg-footer { margin-top: 32px; display: flex; justify-content: center; }
+        .back-link {
+          display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600;
+          color: #a1a1aa; text-decoration: none; transition: color 0.2s ease;
+        }
+        .back-link:hover { color: #fff; }
+
+        .sent-container { display: flex; flex-direction: column; align-items: center; }
+        .sent-icon-wrapper {
+          width: 64px; height: 64px; border-radius: 20px; background: rgba(34,197,94,0.1);
+          border: 1px solid rgba(34,197,94,0.2); display: flex; align-items: center; justify-content: center;
+          margin-bottom: 24px;
+        }
+        .sent-actions { display: flex; gap: 12px; width: 100%; margin-top: 8px; }
+        .secondary-btn {
+          flex: 1; height: 56px; border-radius: 16px; font-size: 15px; font-weight: 600;
+          background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.1);
+          cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .secondary-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); color: #fff; }
+
+        @media (max-width: 580px) {
+          .reg-page { flex-direction: column; justify-content: flex-start; padding-top: 24px; overflow-y: auto; }
+          .reg-logo { position: relative; top: 0; left: 0; margin-bottom: 8px; align-self: center; }
+          .reg-center { padding: 16px; margin-bottom: 24px; }
+          .reg-card { padding: 36px 24px; border-radius: 24px; }
+          .reg-title { font-size: 28px !important; }
+          .sent-actions { flex-direction: column-reverse; }
         }
       `}</style>
     </div>

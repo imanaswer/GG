@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Instrument_Serif } from "next/font/google";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { Providers } from "@/context/Providers";
 import { PWARegister } from "@/components/PWARegister";
+import { PostHogPageView } from "@/components/PostHogPageView";
 import "./globals.css";
 
 const inter = Inter({
@@ -57,8 +59,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} ${instrumentSerif.variable}`}>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
+          <Suspense>
+            <PostHogPageView />
+          </Suspense>
           {children}
           <PWARegister />
           <Toaster

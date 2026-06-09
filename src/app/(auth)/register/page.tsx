@@ -8,7 +8,7 @@ import { Input, Label } from "@/components/ui";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { STORY } from "@/lib/premium-images";
+import { HERO_BACKDROPS } from "@/lib/premium-images";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { gsap } from "gsap";
 
@@ -45,7 +45,12 @@ function RegisterForm() {
     const el = cardRef.current;
     if (!el) return;
     const targets = el.querySelectorAll("[data-a]");
-    gsap.fromTo(targets, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: "expo.out", delay: 0.15 });
+    gsap.fromTo(targets, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power3.out", delay: 0.1 });
+    
+    gsap.fromTo(".reg-orb", 
+      { scale: 0.8, opacity: 0 }, 
+      { scale: 1, opacity: 0.6, duration: 2, ease: "power2.out" }
+    );
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -61,35 +66,40 @@ function RegisterForm() {
 
   return (
     <div className="reg-page">
-      {/* Background image — full bleed */}
+      {/* Background image — sport theme */}
       <div className="reg-bg">
         <Image
-          src={STORY.connect.src}
-          alt={STORY.connect.alt}
+          src={HERO_BACKDROPS[0].src}
+          alt={HERO_BACKDROPS[0].alt}
           fill
           priority
-          quality={85}
+          quality={90}
           sizes="100vw"
           style={{ objectFit: "cover" }}
         />
         <div className="reg-bg-overlay" />
       </div>
 
+      {/* Decorative Orbs for Glassmorphism pop */}
+      <div className="reg-orb orb-1" />
+      <div className="reg-orb orb-2" />
+
       {/* Logo */}
       <Link href="/" className="reg-logo">
         <img src="/logo2.png" alt="Game Ground" className="reg-logo-icon" />
-        <span className="reg-logo-text">Game Ground</span>
       </Link>
 
       {/* Centered card */}
       <div className="reg-center">
         <div ref={cardRef} className="reg-card">
+          <div className="reg-card-glow" />
+          
           {/* Header */}
           <div data-a className="reg-header">
             <h1 className="reg-title">Create your account</h1>
             <p className="reg-subtitle">
-              Join 1,200+ players in Kozhikode.{" "}
-              <Link href="/login" className="reg-link">Already a member? Sign in</Link>
+              Join the elite sports community.{" "}
+              <Link href="/login" className="reg-link">Sign in instead</Link>
             </p>
           </div>
 
@@ -102,8 +112,9 @@ function RegisterForm() {
                 onClick={() => setRole(r)}
                 className={`reg-role-btn ${role === r ? "active" : ""}`}
               >
-                {r === "player" ? <Users size={15} /> : <Trophy size={15} />}
+                {r === "player" ? <Users size={16} /> : <Trophy size={16} />}
                 <span>{r === "player" ? "Player" : "Coach"}</span>
+                {role === r && <div className="role-active-bg" />}
               </button>
             ))}
           </div>
@@ -113,14 +124,16 @@ function RegisterForm() {
             <div data-a className="reg-row">
               <div className="reg-field">
                 <Label>Full name</Label>
-                <Input placeholder="Arjun Sharma" value={form.name} onChange={e => set("name", e.target.value)} required />
+                <div className="input-wrapper">
+                  <Input placeholder="Arjun Sharma" value={form.name} onChange={e => set("name", e.target.value)} required />
+                </div>
               </div>
               <div className="reg-field">
                 <Label>Username</Label>
-                <div style={{ position: "relative" }}>
+                <div className="input-wrapper">
                   <span className="reg-at">@</span>
                   <Input
-                    style={{ paddingLeft: 32 }}
+                    style={{ paddingLeft: 34 }}
                     placeholder="arjuns"
                     value={form.username}
                     onChange={e => set("username", e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
@@ -131,13 +144,15 @@ function RegisterForm() {
             </div>
 
             <div data-a className="reg-field">
-              <Label>Email</Label>
-              <Input type="email" placeholder="you@example.com" value={form.email} onChange={e => set("email", e.target.value)} required />
+              <Label>Email address</Label>
+              <div className="input-wrapper">
+                <Input type="email" placeholder="you@example.com" value={form.email} onChange={e => set("email", e.target.value)} required />
+              </div>
             </div>
 
             <div data-a className="reg-field">
               <Label>Password</Label>
-              <div style={{ position: "relative" }}>
+              <div className="input-wrapper">
                 <Input
                   type={showPw ? "text" : "password"}
                   placeholder="Create a strong password"
@@ -154,12 +169,12 @@ function RegisterForm() {
               {form.password && (
                 <div className="reg-pw-info">
                   <div className="reg-pw-bar-track">
-                    <div className="reg-pw-bar-fill" style={{ width: `${strength.pct}%`, background: strength.color }} />
+                    <div className="reg-pw-bar-fill" style={{ width: `${strength.pct}%`, background: strength.color, boxShadow: `0 0 10px ${strength.color}` }} />
                   </div>
                   <div className="reg-pw-checks">
                     {PW_RULES.map((rule, i) => (
                       <span key={rule} className={`reg-pw-check ${strength.checks[i] ? "met" : ""}`}>
-                        {strength.checks[i] && <Check size={9} />}
+                        {strength.checks[i] && <Check size={10} />}
                         {rule}
                       </span>
                     ))}
@@ -169,22 +184,26 @@ function RegisterForm() {
               )}
             </div>
 
-            <div data-a>
-              <Magnetic strength={10}>
-                <button type="submit" disabled={loading} className="reg-submit">
-                  <span className="reg-submit-shimmer" />
-                  {loading ? "Creating account…" : (<>Get started free <ArrowRight size={16} /></>)}
-                </button>
-              </Magnetic>
+            <div data-a style={{ marginTop: 8 }}>
+              <button type="submit" disabled={loading} className="reg-submit">
+                <div className="reg-submit-bg" />
+                <span className="reg-submit-text">
+                  {loading ? "Creating account…" : (<>Get Started <ArrowRight size={18} /></>)}
+                </span>
+              </button>
             </div>
           </form>
 
           <div data-a className="reg-divider">
-            <span>or</span>
+            <span className="line" />
+            <span className="text">or continue with</span>
+            <span className="line" />
           </div>
 
           <div data-a>
-            <GoogleSignInButton redirect="/" label="Sign up with Google" />
+            <div className="google-btn-wrapper">
+              <GoogleSignInButton redirect="/" label="Sign up with Google" />
+            </div>
           </div>
 
           <p data-a className="reg-legal">
@@ -202,167 +221,243 @@ function RegisterForm() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #050505;
+          background: #000;
           overflow: hidden;
+          font-family: var(--font-sans), sans-serif;
         }
         .reg-bg {
           position: absolute; inset: 0; z-index: 0;
         }
         .reg-bg-overlay {
           position: absolute; inset: 0;
-          background:
-            linear-gradient(180deg, rgba(5,5,5,0.5) 0%, rgba(5,5,5,0.3) 40%, rgba(5,5,5,0.6) 100%),
-            radial-gradient(ellipse 60% 50% at 50% 45%, transparent 0%, rgba(5,5,5,0.8) 100%);
-          backdrop-filter: blur(2px);
+          background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%);
+          backdrop-filter: blur(8px);
         }
+        
+        .reg-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          z-index: 1;
+          pointer-events: none;
+        }
+        .orb-1 {
+          width: 400px; height: 400px;
+          background: rgba(230, 57, 70, 0.4);
+          top: -10%; left: -10%;
+          animation: float 8s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+          width: 500px; height: 500px;
+          background: rgba(255, 107, 53, 0.2);
+          bottom: -20%; right: -10%;
+          animation: float 10s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(30px, 50px); }
+        }
+
         .reg-logo {
-          position: absolute; top: 24px; left: 28px; z-index: 20;
-          display: flex; align-items: center; gap: 10; text-decoration: none;
+          position: absolute; top: 32px; left: 40px; z-index: 20;
+          transition: transform 0.3s ease;
+        }
+        .reg-logo:hover {
+          transform: scale(1.05);
         }
         .reg-logo-icon {
-          height: 46px; width: auto; display: block;
-        }
-        .reg-logo-text {
-          font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.03em;
+          height: 40px; width: auto; display: block;
         }
 
         .reg-center {
           position: relative; z-index: 10;
-          width: 100%; max-width: 520px;
-          padding: 24px;
+          width: 100%; max-width: 480px;
+          padding: 20px;
         }
         .reg-card {
-          background: rgba(12,12,12,0.85);
-          backdrop-filter: blur(24px) saturate(140%);
+          position: relative;
+          background: rgba(20, 20, 20, 0.6);
+          backdrop-filter: blur(30px) saturate(150%);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
-          padding: 36px 32px 28px;
-          box-shadow:
-            0 32px 80px rgba(0,0,0,0.6),
-            0 0 0 1px rgba(255,255,255,0.04),
-            inset 0 1px 0 rgba(255,255,255,0.06);
+          border-radius: 28px;
+          padding: 40px;
+          box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+          overflow: hidden;
+        }
+        .reg-card-glow {
+          position: absolute; top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent);
+          opacity: 0.6;
         }
 
-        .reg-header { margin-bottom: 24px; text-align: center; }
+        .reg-header { margin-bottom: 28px; text-align: left; }
         .reg-title {
-          font-size: 26px; font-weight: 800; color: #fff;
-          letter-spacing: -0.03em; margin-bottom: 8px;
+          font-size: 32px; font-weight: 800; color: #fff;
+          letter-spacing: -0.04em; margin-bottom: 8px;
+          line-height: 1.1;
         }
-        .reg-subtitle { font-size: 14px; color: rgba(255,255,255,0.5); }
+        .reg-subtitle { font-size: 15px; color: #a1a1aa; }
         .reg-link {
           color: #e63946; font-weight: 600; text-decoration: none;
-          margin-left: 4px;
+          transition: color 0.2s ease;
         }
-        .reg-link:hover { text-decoration: underline; }
+        .reg-link:hover { color: #ff4d5d; }
 
         .reg-role-toggle {
-          display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-          margin-bottom: 22px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 14px;
-          padding: 4px;
-          border: 1px solid rgba(255,255,255,0.06);
+          display: flex; gap: 8px; margin-bottom: 28px;
+          background: rgba(0,0,0,0.4);
+          border-radius: 16px; padding: 6px;
+          border: 1px solid rgba(255,255,255,0.04);
+          position: relative;
         }
         .reg-role-btn {
+          flex: 1; position: relative;
           display: flex; align-items: center; justify-content: center; gap: 8px;
-          height: 44px; border-radius: 11px; border: none;
-          font-size: 14px; font-weight: 600; font-family: inherit;
-          cursor: pointer; transition: all 200ms ease;
-          background: transparent; color: rgba(255,255,255,0.45);
+          height: 46px; border-radius: 12px; border: none;
+          font-size: 15px; font-weight: 600; font-family: inherit;
+          cursor: pointer; transition: color 0.3s ease;
+          background: transparent; color: #71717a;
+          z-index: 1;
         }
-        .reg-role-btn.active {
-          background: linear-gradient(135deg, rgba(230,57,70,0.15), rgba(230,57,70,0.08));
-          color: #fff;
-          box-shadow: 0 0 0 1px rgba(230,57,70,0.3), 0 2px 8px rgba(230,57,70,0.1);
+        .reg-role-btn.active { color: #fff; }
+        .role-active-bg {
+          position: absolute; inset: 0; z-index: -1;
+          background: linear-gradient(135deg, #e63946, #b91c2d);
+          border-radius: 12px;
+          box-shadow: 0 4px 15px rgba(230,57,70,0.4);
         }
-        .reg-role-btn.active svg { color: #e63946; }
-        .reg-role-btn:not(.active):hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
 
-        .reg-form { display: flex; flex-direction: column; gap: 14px; }
-        .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .reg-field { display: flex; flex-direction: column; gap: 6px; }
+        .reg-form { display: flex; flex-direction: column; gap: 20px; }
+        .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .reg-field { display: flex; flex-direction: column; gap: 8px; }
+        .reg-field label {
+          font-size: 13px; font-weight: 600; color: #d4d4d8;
+          margin-left: 4px; letter-spacing: 0.02em;
+        }
+        
+        .input-wrapper {
+          position: relative;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: all 0.3s ease;
+        }
+        .input-wrapper:focus-within {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(230,57,70,0.5);
+          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
+        }
+        .input-wrapper input {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          height: 52px;
+          font-size: 15px;
+          color: #fff;
+        }
+        .input-wrapper input::placeholder { color: #52525b; }
+
         .reg-at {
-          position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-          color: rgba(255,255,255,0.35); font-size: 14px; pointer-events: none;
+          position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+          color: #71717a; font-size: 15px; pointer-events: none;
         }
         .reg-eye {
           position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-          color: rgba(255,255,255,0.5); background: none; border: none;
-          cursor: pointer; padding: 6px;
+          color: #71717a; background: none; border: none;
+          cursor: pointer; padding: 8px; border-radius: 8px;
+          transition: all 0.2s ease;
         }
+        .reg-eye:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
-        .reg-pw-info { margin-top: 6px; }
+        .reg-pw-info { margin-top: 10px; }
         .reg-pw-bar-track {
-          height: 3px; border-radius: 100px; background: rgba(255,255,255,0.06);
-          overflow: hidden; margin-bottom: 8px;
+          height: 4px; border-radius: 4px; background: rgba(255,255,255,0.1);
+          overflow: hidden; margin-bottom: 12px;
         }
-        .reg-pw-bar-fill {
-          height: 100%; border-radius: 100px;
-          transition: width 250ms ease, background 250ms ease;
-        }
-        .reg-pw-checks { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .reg-pw-bar-fill { height: 100%; border-radius: 4px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .reg-pw-checks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .reg-pw-check {
-          font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 100px;
-          display: flex; align-items: center; gap: 3px;
-          background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.3);
-          border: 1px solid rgba(255,255,255,0.05); transition: all 200ms ease;
+          font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;
+          display: flex; align-items: center; gap: 4px;
+          background: rgba(255,255,255,0.05); color: #71717a;
+          border: 1px solid transparent; transition: all 0.3s ease;
         }
         .reg-pw-check.met {
-          background: rgba(34,197,94,0.08); color: #22c55e;
-          border-color: rgba(34,197,94,0.15);
+          background: rgba(34,197,94,0.1); color: #22c55e;
+          border-color: rgba(34,197,94,0.2);
         }
-        .reg-pw-label {
-          margin-left: auto; font-size: 11px; font-weight: 600;
-        }
+        .reg-pw-label { margin-left: auto; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 
         .reg-submit {
-          width: 100%; height: 50px; border-radius: 14px;
-          font-size: 15px; font-weight: 700; font-family: inherit;
-          background: linear-gradient(135deg, #e63946 0%, #b91c2d 100%);
+          width: 100%; height: 56px; border-radius: 16px;
+          font-size: 16px; font-weight: 700; font-family: inherit;
           color: #fff; border: none; cursor: pointer;
-          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-          box-shadow: 0 8px 32px rgba(230,57,70,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-          transition: transform 150ms ease, opacity 150ms ease;
-          position: relative; overflow: hidden; margin-top: 4px;
+          position: relative; overflow: hidden;
+          background: #e63946;
+          box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
         }
-        .reg-submit:hover { transform: translateY(-1px); }
-        .reg-submit:active { transform: translateY(0); }
-        .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .reg-submit-shimmer {
+        .reg-submit-bg {
           position: absolute; inset: 0;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
-          animation: shimmer 2.5s ease infinite;
+          background: linear-gradient(135deg, #ff4d5d, #b91c2d);
+          transition: opacity 0.3s ease;
         }
+        .reg-submit:hover .reg-submit-bg { opacity: 0.8; }
+        .reg-submit-text {
+          position: relative; z-index: 1;
+          display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .reg-divider {
-          position: relative; text-align: center; margin: 18px 0 14px;
+          display: flex; align-items: center; gap: 12px;
+          margin: 28px 0;
         }
-        .reg-divider::before {
-          content: ""; position: absolute; top: 50%; left: 0; right: 0;
-          height: 1px; background: rgba(255,255,255,0.07);
+        .reg-divider .line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+        .reg-divider .text {
+          font-size: 12px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.1em; color: #71717a;
         }
-        .reg-divider span {
-          position: relative; background: rgba(12,12,12,0.85); padding: 0 14px;
-          font-size: 11px; font-weight: 600; text-transform: uppercase;
-          letter-spacing: 0.14em; color: rgba(255,255,255,0.4);
+
+        .google-btn-wrapper {
+          border-radius: 16px; overflow: hidden;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: all 0.3s ease;
+        }
+        .google-btn-wrapper:hover {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.15);
+        }
+        .google-btn-wrapper button {
+          height: 54px !important;
+          background: transparent !important;
+          border: none !important;
         }
 
         .reg-legal {
-          margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.35);
-          text-align: center; line-height: 1.5;
+          margin-top: 28px; font-size: 13px; color: #71717a;
+          text-align: center; line-height: 1.6;
         }
-        .reg-legal-link { color: rgba(255,255,255,0.55); text-decoration: none; }
-        .reg-legal-link:hover { color: rgba(255,255,255,0.8); }
+        .reg-legal-link { color: #a1a1aa; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .reg-legal-link:hover { color: #fff; text-decoration: underline; }
 
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
         @media (max-width: 580px) {
-          .reg-center { padding: 16px; }
-          .reg-card { padding: 28px 20px 22px; border-radius: 20px; }
+          .reg-page {
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 24px;
+            overflow-y: auto;
+          }
+          .reg-logo {
+            position: relative;
+            top: 0; left: 0;
+            margin-bottom: 8px;
+            align-self: center;
+          }
+          .reg-center { padding: 16px; margin-bottom: 24px; }
+          .reg-card { padding: 32px 24px; border-radius: 24px; }
           .reg-row { grid-template-columns: 1fr; }
-          .reg-title { font-size: 22px; }
+          .reg-title { font-size: 26px; }
         }
       `}</style>
     </div>
@@ -371,7 +466,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#050505" }} />}>
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#000" }} />}>
       <RegisterForm />
     </Suspense>
   );

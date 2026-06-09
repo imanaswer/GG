@@ -43,3 +43,4 @@ next-env.d.ts
 
 # Vercel env export (real secrets — never commit)
 vercel.env
+.env.local
