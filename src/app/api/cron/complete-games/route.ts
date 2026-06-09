@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ok } from "@/lib/api";
 
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
