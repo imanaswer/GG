@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { Send, Swords, Share2, Pencil, Trophy } from "lucide-react";
+import { Send, Swords, Share2, Pencil, Trophy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 import type { UserProfile } from "@/hooks/useData";
+import { useAuth } from "@/context/AuthContext";
 
 const baseBtn: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", gap: 7,
@@ -29,7 +30,15 @@ const ghost: React.CSSProperties = {
   borderColor: "rgba(255,255,255,0.1)",
 };
 
+const danger: React.CSSProperties = {
+  ...baseBtn,
+  background: "rgba(230,57,70,0.1)",
+  color: "#ff6b78",
+  borderColor: "rgba(230,57,70,0.25)",
+};
+
 export function ProfileCTAs({ profile, isOwn }: { profile: UserProfile; isOwn: boolean }) {
+  const { logout } = useAuth();
   const profileUrl = typeof window !== "undefined" ? `${window.location.origin}/profile/${profile.id}` : `/profile/${profile.id}`;
   const firstName = profile.name.split(" ")[0];
 
@@ -54,6 +63,9 @@ export function ProfileCTAs({ profile, isOwn }: { profile: UserProfile; isOwn: b
           style={ghost}
         >
           <Share2 size={13} /> Share
+        </button>
+        <button type="button" onClick={() => logout()} style={danger}>
+          <LogOut size={13} /> Log out
         </button>
       </div>
     );

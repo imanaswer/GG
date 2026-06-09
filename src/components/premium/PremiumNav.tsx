@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, ChevronDown, User as UserIcon, Pencil, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const LINKS = [
@@ -24,9 +24,11 @@ type Props = {
 
 export function PremiumNav({ variant = "solid" }: Props) {
   const path = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -34,6 +36,24 @@ export function PremiumNav({ variant = "solid" }: Props) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close the user dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!userMenu) return;
+    const onClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setUserMenu(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenu]);
+
+  // Close menus on route change.
+  useEffect(() => { setUserMenu(false); setOpen(false); }, [path]);
 
   const closeMenu = () => setOpen(false);
 
@@ -91,19 +111,72 @@ export function PremiumNav({ variant = "solid" }: Props) {
         {/* CTAs */}
         <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {user ? (
-            <Link
-              href="/profile"
-              style={{
-                fontSize: 13, fontWeight: 600, color: "#fff",
-                padding: "9px 16px", borderRadius: 100,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                textDecoration: "none",
-                transition: "background 200ms",
-              }}
-            >
-              {user.name.split(" ")[0]}
-            </Link>
+            <div ref={userMenuRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setUserMenu(v => !v)}
+                aria-haspopup="menu"
+                aria-expanded={userMenu}
+                className="pn-userpill"
+                data-open={userMenu ? "true" : undefined}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  fontSize: 13, fontWeight: 600, color: "#fff",
+                  fontFamily: "inherit", cursor: "pointer",
+                  padding: "9px 14px 9px 16px", borderRadius: 100,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  transition: "background 200ms, border-color 200ms",
+                }}
+              >
+                {user.name.split(" ")[0]}
+                <ChevronDown
+                  size={14}
+                  style={{
+                    opacity: 0.7,
+                    transform: userMenu ? "rotate(180deg)" : "none",
+                    transition: "transform 200ms cubic-bezier(.2,.6,.2,1)",
+                  }}
+                />
+              </button>
+              <AnimatePresence>
+                {userMenu && (
+                  <motion.div
+                    role="menu"
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.16, ease: [0.2, 0.6, 0.2, 1] }}
+                    style={{
+                      position: "absolute", top: "100%", right: 0, marginTop: 8,
+                      minWidth: 184, padding: 6, borderRadius: 14,
+                      background: "rgba(15,15,16,0.92)",
+                      backdropFilter: "blur(18px) saturate(1.3)",
+                      WebkitBackdropFilter: "blur(18px) saturate(1.3)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "0 18px 40px rgba(0,0,0,0.55)",
+                      transformOrigin: "top right",
+                    }}
+                  >
+                    <Link href="/profile" className="pn-menu-item" role="menuitem">
+                      <UserIcon size={15} /> View profile
+                    </Link>
+                    <Link href="/profile/edit" className="pn-menu-item" role="menuitem">
+                      <Pencil size={14} /> Edit profile
+                    </Link>
+                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "5px 8px" }} />
+                    <button
+                      type="button"
+                      onClick={() => { setUserMenu(false); logout(); }}
+                      className="pn-menu-item pn-menu-item-danger"
+                      role="menuitem"
+                    >
+                      <LogOut size={15} /> Log out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <>
               <Link
@@ -215,6 +288,40 @@ export function PremiumNav({ variant = "solid" }: Props) {
           .pn-link:hover { transform: none; box-shadow: none; }
           .pn-link::after { transition: none; }
         }
+
+        /* User pill + dropdown menu */
+        .pn-userpill:hover,
+        .pn-userpill[data-open] {
+          background: rgba(255,255,255,0.1) !important;
+          border-color: rgba(255,255,255,0.16) !important;
+        }
+        .pn-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 10px 12px;
+          border-radius: 9px;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          color: rgba(255,255,255,0.82);
+          background: transparent;
+          border: none;
+          text-align: left;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background-color 150ms ease, color 150ms ease;
+        }
+        .pn-menu-item:hover {
+          background: rgba(255,255,255,0.06);
+          color: #fff;
+        }
+        .pn-menu-item-danger { color: #ff6b78; }
+        .pn-menu-item-danger:hover {
+          background: rgba(230,57,70,0.14);
+          color: #ff8a94;
+        }
       `}</style>
 
       <AnimatePresence>
@@ -248,11 +355,26 @@ export function PremiumNav({ variant = "solid" }: Props) {
               ))}
               <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
                 {user ? (
-                  <Link href="/profile" onClick={closeMenu} style={{
-                    flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
-                    background: "rgba(255,255,255,0.06)", color: "#fff", fontWeight: 600, fontSize: 14,
-                    textDecoration: "none",
-                  }}>{user.name.split(" ")[0]}</Link>
+                  <>
+                    <Link href="/profile" onClick={closeMenu} style={{
+                      flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
+                      background: "rgba(255,255,255,0.06)", color: "#fff", fontWeight: 600, fontSize: 14,
+                      textDecoration: "none",
+                    }}>{user.name.split(" ")[0]}</Link>
+                    <button
+                      type="button"
+                      onClick={() => { closeMenu(); logout(); }}
+                      style={{
+                        flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        padding: "12px", borderRadius: 100,
+                        background: "rgba(230,57,70,0.12)", color: "#ff6b78",
+                        border: "1px solid rgba(230,57,70,0.25)",
+                        fontWeight: 600, fontSize: 14, fontFamily: "inherit", cursor: "pointer",
+                      }}
+                    >
+                      <LogOut size={15} /> Log out
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link href="/login" onClick={closeMenu} style={{
