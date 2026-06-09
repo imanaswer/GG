@@ -186,7 +186,7 @@ function CoachCard({ coach }: { coach: Coach }) {
         }}
       >
         {/* Image */}
-        <div style={{ position: "relative", aspectRatio: "4/5", overflow: "hidden" }}>
+        <div style={{ position: "relative", aspectRatio: "5/4", overflow: "hidden" }}>
           <motion.div
             variants={{ rest: { scale: 1 }, hover: { scale: 1.05 } }}
             transition={{ duration: 0.7, ease: [0.16,1,0.3,1] }}
@@ -329,7 +329,7 @@ function CoachSkeleton() {
       borderRadius: 20, overflow: "hidden",
       height: "100%",
     }}>
-      <div className="skeleton" style={{ aspectRatio: "4/5", borderRadius: 0 }} />
+      <div className="skeleton" style={{ aspectRatio: "5/4", borderRadius: 0 }} />
       <div style={{ padding: "22px 22px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
         <div className="skeleton" style={{ height: 14, width: "60%", borderRadius: 6 }} />
         <div className="skeleton" style={{ height: 12, width: "45%", borderRadius: 6 }} />
