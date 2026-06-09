@@ -45,7 +45,17 @@
       "Bash(claude plugin *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
       "Bash(curl -s http://localhost:3000/learn)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(lsof -i:3001 -sTCP:LISTEN)",
+      "Bash(curl *)",
+      "Bash(npx tsx *)",
+      "Bash(lsof -i:3000 -sTCP:LISTEN)",
+      "Bash(npx eslint *)",
+      "Bash(ipconfig getifaddr *)",
+      "Bash(grep -oE 'window\\\\.__next_f\\\\.push\\\\\\(\\\\[1,\"[^\"]{0,40}' /tmp/home.html)",
+      "Bash(grep -oE '\"error[^\"]{0,200}' /tmp/home.html)",
+      "Bash(grep -oE '<body[^>]*>.{0,400}' /tmp/home.html)",
+      "Bash(vercel --version)"
     ]
   }
 }
