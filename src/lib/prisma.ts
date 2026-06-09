@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { createMockPrismaClient } from "./prisma-mock";
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE } from "./auth";
@@ -48,15 +49,12 @@ const emptyClient = new Proxy({} as PrismaClient, {
 // 2. Export the explicit real client
 export const realClient = (() => {
   if (globalForPrisma.realClient) return globalForPrisma.realClient;
+
   const dbUrl = process.env.DATABASE_URL ?? "";
   
-  if (!dbUrl || isPlaceholderUrl(dbUrl)) {
-    // If no real DB URL provided yet, fallback to the EMPTY client.
-    // This ensures public visitors see no data, while the dummy user gets mockClient.
-    return emptyClient;
-  }
+  const pool = new Pool({ connectionString: dbUrl });
+  const adapter = new PrismaPg(pool);
   
-  const adapter = new PrismaPg({ connectionString: dbUrl, max: 1 });
   const client = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
