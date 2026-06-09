@@ -137,15 +137,20 @@ function Hero() {
             color: "#fff",
             maxWidth: 1200, margin: "0 auto",
           }}>
-            <SplitText text="Learn." as="span" />{" "}
-            <SplitText text="Play." delay={0.15} as="span" />{" "}
-            <span className="display-serif" style={{
-              fontSize: "0.94em",
-              background: "linear-gradient(135deg, #e63946 0%, #ff6b74 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              <SplitText text="Connect." delay={0.3} as="span" />
+            <span style={{ display: "block" }}>
+              <SplitText text="Learn." as="span" />{" "}
+              <SplitText text="Play." delay={0.15} as="span" />
+            </span>
+            <span
+              className="display-serif gradient-red"
+              style={{
+                display: "block",
+                fontSize: "0.96em",
+                marginTop: "0.06em",
+                letterSpacing: "-0.015em",
+              }}
+            >
+              <SplitText text="Connect." delay={0.35} as="span" />
             </span>
           </h1>
 

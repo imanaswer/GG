@@ -287,7 +287,7 @@ img {
   font-family: var(--font-sans);
   font-weight: 900;
   letter-spacing: -0.045em;
-  line-height: 0.92;
+  line-height: 1.05;
 }
 .display-serif {
   font-family: var(--font-serif);
@@ -303,9 +303,28 @@ img {
   color: var(--text2);
 }
 
-/* Split-text char mask for GSAP reveals */
-.char-mask { display: inline-block; overflow: hidden; vertical-align: bottom; }
+/* Split-text char mask for GSAP reveals.
+   Chars enter from above (yPercent: -110 → 0). clip-path clips only the
+   top edge (hiding chars during entry) while extending past the bottom so
+   descenders like the tail of "y" render fully. */
+.char-mask {
+  display: inline-block;
+  vertical-align: bottom;
+  clip-path: inset(0 -0.5em -0.5em -0.5em);
+}
 .char-mask > span { display: inline-block; will-change: transform; }
+
+/* Per-char gradient for SplitText inside a gradient wrapper.
+   background-clip:text on an outer span doesn't reach descendants
+   wrapped in inline-block (.char-mask > [data-char]); apply the
+   gradient to each animated char so the text actually renders. */
+.gradient-red [data-char] {
+  background-image: linear-gradient(135deg, #e63946 0%, #ff6b74 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
 
 /* Section shell for consistent vertical rhythm */
 .section {

@@ -29,7 +29,7 @@ export function SplitText({
     const chars = el.querySelectorAll<HTMLElement>("[data-char]");
     if (!chars.length) return;
 
-    gsap.set(chars, { yPercent: 110 });
+    gsap.set(chars, { yPercent: -110 });
     const tween = gsap.to(chars, {
       yPercent: 0,
       duration: 0.9,
