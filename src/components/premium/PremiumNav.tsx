@@ -79,17 +79,10 @@ export function PremiumNav({ variant = "solid" }: Props) {
               <Link
                 key={link.href}
                 href={link.href}
-                style={{
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: active ? "#fff" : "rgba(255,255,255,0.6)",
-                  borderRadius: 8,
-                  transition: "color 200ms",
-                  textDecoration: "none",
-                }}
+                className="pn-link"
+                data-active={active ? "true" : undefined}
               >
-                {link.label}
+                <span className="pn-link-label">{link.label}</span>
               </Link>
             );
           })}
@@ -162,6 +155,65 @@ export function PremiumNav({ variant = "solid" }: Props) {
       <style>{`
         @media (max-width: 768px) {
           .mobile-menu-btn { display: inline-flex !important; }
+        }
+
+        /* Desktop nav links — glass pill + red underline hover */
+        .pn-link {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 14px;
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.6);
+          border-radius: 8px;
+          text-decoration: none;
+          background: transparent;
+          box-shadow: 0 0 0 rgba(230,57,70,0);
+          transition:
+            color 200ms cubic-bezier(.2,.6,.2,1),
+            background-color 200ms cubic-bezier(.2,.6,.2,1),
+            transform 200ms cubic-bezier(.2,.6,.2,1),
+            box-shadow 200ms cubic-bezier(.2,.6,.2,1);
+        }
+        /* Red gradient underline that wipes in from the left */
+        .pn-link::after {
+          content: "";
+          position: absolute;
+          left: 14px;
+          right: 14px;
+          bottom: 4px;
+          height: 2px;
+          border-radius: 2px;
+          background: linear-gradient(90deg, #e63946 0%, #b91c2d 100%);
+          transform: scaleX(0);
+          transform-origin: left center;
+          transition: transform 220ms cubic-bezier(.2,.6,.2,1);
+          pointer-events: none;
+        }
+        .pn-link:hover {
+          color: #fff;
+          background: rgba(255,255,255,0.06);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(230,57,70,0.18);
+        }
+        .pn-link:hover::after,
+        .pn-link[data-active]::after {
+          transform: scaleX(1);
+        }
+        .pn-link[data-active] {
+          color: #fff;
+          background: rgba(255,255,255,0.06);
+        }
+        .pn-link:focus-visible {
+          outline: none;
+          color: #fff;
+          box-shadow: 0 0 0 2px rgba(230,57,70,0.6);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pn-link { transition: color 200ms ease, background-color 200ms ease; }
+          .pn-link:hover { transform: none; box-shadow: none; }
+          .pn-link::after { transition: none; }
         }
       `}</style>
 
