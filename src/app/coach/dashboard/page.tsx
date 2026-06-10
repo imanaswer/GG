@@ -6,6 +6,7 @@ import { PremiumNav } from "@/components/premium/PremiumNav";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Users, Star, Clock, ChevronRight } from "lucide-react";
+import { StatusBadge } from "@/components/Shared";
 
 export default function CoachDashboard() {
   const { user, loading } = useAuth();
@@ -15,7 +16,7 @@ export default function CoachDashboard() {
     if (!loading && (!user || user.role !== "coach")) router.push("/login");
   }, [user, loading, router]);
 
-  const { data: bookings } = useQuery<{ pending: number; confirmed: number; list: { id: string; status: string; coachName: string; batchId: string; note: string; createdAt: string; playerName: string }[] }>({
+  const { data: bookings } = useQuery<{ pending: number; approved: number; list: { id: string; status: string; coachName: string; batchId: string; note: string; createdAt: string; playerName: string }[] }>({
     queryKey: ["coach-bookings"],
     queryFn: () => fetch("/api/bookings?role=coach").then(r => r.json()).then(d => d.data ?? d),
     enabled: !!user,
@@ -25,7 +26,7 @@ export default function CoachDashboard() {
 
   const stats = [
     { icon: Calendar, label: "Pending Requests",  value: bookings?.pending ?? "—",   color: "#eab308" },
-    { icon: Users,    label: "Confirmed Students", value: bookings?.confirmed ?? "—", color: "#4ade80" },
+    { icon: Users,    label: "Approved Students", value: bookings?.approved ?? "—", color: "#4ade80" },
     { icon: Star,     label: "Your Rating",        value: "4.8",  color: "#e63946" },
     { icon: Clock,    label: "Active Batches",     value: "3",    color: "#60a5fa" },
   ];
@@ -76,7 +77,7 @@ export default function CoachDashboard() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{b.playerName ?? "Player"}</p>
                   <p style={{ fontSize: 11, color: "#6b7280" }}>{new Date(b.createdAt).toLocaleDateString()}</p>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: b.status === "confirmed" ? "rgba(34,197,94,0.15)" : b.status === "pending" ? "rgba(234,179,8,0.15)" : "rgba(239,68,68,0.15)", color: b.status === "confirmed" ? "#4ade80" : b.status === "pending" ? "#eab308" : "#f87171", textTransform: "capitalize" }}>{b.status}</span>
+                <StatusBadge status={b.status} />
               </div>
             ))}
           </div>
@@ -84,7 +85,7 @@ export default function CoachDashboard() {
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "18px 20px" }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Quick Actions</h2>
             {[
-              { href: "/coach/dashboard/bookings", label: "Review Pending Requests", desc: "Confirm or reject booking requests" },
+              { href: "/coach/dashboard/bookings", label: "Review Pending Requests", desc: "Track booking requests & their status" },
               { href: "/coach/profile/edit",       label: "Update Your Profile",      desc: "Edit bio, pricing, timings" },
               { href: `/coach/${user.id}`,          label: "View Public Profile",      desc: "See how players see you" },
             ].map(({ href, label, desc }) => (

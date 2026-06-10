@@ -1,78 +1,87 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { useAuth } from "@/context/AuthContext";
-import { useBookings, useCancelBooking } from "@/hooks/useData";
 import { StatusBadge } from "@/components/Shared";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
+
+const TABS = [
+  { key: "pending",   label: "Pending Requests", match: (s: string) => s === "pending" },
+  { key: "upcoming",  label: "Upcoming Sessions", match: (s: string) => s === "approved" },
+  { key: "completed", label: "Completed", match: (s: string) => s === "completed" },
+  { key: "cancelled", label: "Cancelled", match: (s: string) => s === "cancelled" || s === "rejected" },
+] as const;
 
 export default function CoachBookings() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const { data: bookings, isLoading } = useBookings();
-  const [confirming, setConfirming] = useState<string | null>(null);
-  const cancel = useCancelBooking();
+  const { data, isLoading } = useQuery<{ list: { id: string; status: string; note?: string; createdAt: string; playerName?: string }[] }>({
+    queryKey: ["coach-bookings"],
+    queryFn: () => fetch("/api/bookings?role=coach").then(r => r.json()).then(d => d.data ?? d),
+    enabled: !!user,
+  });
+  const bookings = data?.list;
+  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("pending");
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "coach")) router.push("/login");
   }, [user, loading, router]);
 
-  const confirm = async (bookingId: string) => {
-    setConfirming(bookingId);
-    const r = await fetch("/api/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: bookingId, status: "confirmed" }) });
-    setConfirming(null);
-    if (r.ok) toast.success("Booking confirmed! Player notified.");
-    else toast.error("Failed to confirm booking");
-  };
-
   if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><PremiumNav /></div>;
+
+  const active = TABS.find(t => t.key === tab)!;
+  const list = (bookings ?? []).filter(b => active.match(b.status));
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
       <PremiumNav />
       <main style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px 60px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <Link href="/coach/dashboard" style={{ width: 36, height: 36, borderRadius: 9, background: "#1c1c1c", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: "#9ca3af" }}><ArrowLeft size={17} /></Link>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Booking Requests</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>My Bookings</h1>
         </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{ padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                background: tab === t.key ? "#e63946" : "transparent",
+                color: tab === t.key ? "#fff" : "#9ca3af",
+                border: `1px solid ${tab === t.key ? "#e63946" : "rgba(255,255,255,0.12)"}` }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 14 }}>
+          Bookings are reviewed and approved by the Game Ground team. You&apos;ll see them here once their status updates.
+        </p>
 
         {isLoading ? (
           <p style={{ color: "#6b7280" }}>Loading…</p>
-        ) : !bookings?.length ? (
+        ) : !list.length ? (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <p style={{ color: "#9ca3af", fontSize: 16 }}>No bookings yet. Share your profile link to get started!</p>
+            <p style={{ color: "#9ca3af", fontSize: 16 }}>Nothing here yet.</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[...bookings].sort((a, b) => a.status === "pending" ? -1 : 1).map(b => (
-              <div key={b.id} style={{ background: "#141414", border: `1px solid ${b.status === "pending" ? "rgba(234,179,8,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px" }}>
+            {list.map(b => (
+              <div key={b.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "16px 18px" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#e63946", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0 }}>
-                      {(b as { playerName?: string }).playerName?.[0] ?? "P"}
+                      {b.playerName?.[0] ?? "P"}
                     </div>
                     <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{(b as { playerName?: string }).playerName ?? "Player"}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{b.playerName ?? "Player"}</p>
                       <p style={{ fontSize: 12, color: "#9ca3af" }}>Requested {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                      {b.note && <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>"{b.note}"</p>}
+                      {b.note && <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>&quot;{b.note}&quot;</p>}
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <StatusBadge status={b.status} />
-                    {b.status === "pending" && (
-                      <>
-                        <button onClick={() => confirm(b.id)} disabled={confirming === b.id} style={{ padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-                          {confirming === b.id ? "…" : "Confirm"}
-                        </button>
-                        <button onClick={() => cancel.mutate(b.id)} style={{ padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "transparent", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  <StatusBadge status={b.status} />
                 </div>
               </div>
             ))}
