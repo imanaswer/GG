@@ -123,4 +123,28 @@ export const emails = {
       <p style="color:#9ca3af;margin-top:16px;font-size:13px">Log in to your coach dashboard to confirm or reject this booking.</p>
     </div>${footer}`,
   }),
+
+  bookingApproved: (playerName: string, coachName: string, slot: string, address: string, phone: string) => ({
+    subject: "Your coaching session has been approved 🎉 — Game Ground",
+    html: `${brand}<div style="padding:28px">
+      <h2 style="color:#e63946;margin:0 0 12px">Session Approved! 🎉</h2>
+      <p style="color:#9ca3af">Hi ${playerName}, your coaching session with <strong style="color:#fff">${coachName}</strong> has been approved.</p>
+      <div style="margin-top:20px;padding:16px;background:#1a1a1a;border-radius:8px">
+        <p style="color:#fff;font-weight:700;margin:0 0 8px">Session Details</p>
+        <p style="color:#9ca3af;margin:4px 0">📅 ${slot}</p>
+        ${address ? `<p style="color:#9ca3af;margin:4px 0">📍 ${address}</p>` : ""}
+        ${phone ? `<p style="color:#9ca3af;margin:4px 0">📞 ${phone}</p>` : ""}
+      </div>
+    </div>${footer}`,
+  }),
+
+  bookingRejected: (playerName: string, coachName: string, slot: string, reason?: string) => ({
+    subject: "Update on your coaching session request — Game Ground",
+    html: `${brand}<div style="padding:28px">
+      <h2 style="color:#fff;margin:0 0 12px">Booking Request Rejected</h2>
+      <p style="color:#9ca3af">Hi ${playerName}, your coaching session request with <strong style="color:#fff">${coachName}</strong> (${slot}) was rejected.</p>
+      ${reason ? `<div style="margin-top:16px;padding:14px;background:#1a1a1a;border-radius:8px;border-left:3px solid #e63946"><p style="color:#9ca3af;margin:0">Reason: ${reason}</p></div>` : ""}
+      <p style="color:#9ca3af;margin-top:16px;font-size:13px">You can browse other coaches and request a new session anytime.</p>
+    </div>${footer}`,
+  }),
 };
