@@ -530,7 +530,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             marginTop: 14, flexWrap: "wrap", gap: 10,
                           }}>
                             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                              {review.text.length}/500 · Must have a confirmed booking to review
+                              {review.text.length}/500 · Must have a completed session to review
                             </span>
                             <button
                               onClick={handleReview}
@@ -673,35 +673,35 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {booked ? (
                       <div style={{
-                        background: bookingStatus === "confirmed"
+                        background: bookingStatus === "approved"
                           ? "rgba(34,197,94,0.06)" : "rgba(234,179,8,0.06)",
-                        border: `1px solid ${bookingStatus === "confirmed"
+                        border: `1px solid ${bookingStatus === "approved"
                           ? "rgba(34,197,94,0.2)" : "rgba(234,179,8,0.2)"}`,
                         borderRadius: 20, padding: "22px 20px",
                         textAlign: "center",
                       }}>
                         <div style={{
                           width: 44, height: 44, borderRadius: "50%",
-                          background: bookingStatus === "confirmed"
+                          background: bookingStatus === "approved"
                             ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           margin: "0 auto 14px",
                         }}>
-                          {bookingStatus === "confirmed"
+                          {bookingStatus === "approved"
                             ? <CheckCircle size={22} color="#22c55e" />
                             : <Clock size={22} color="#eab308" />
                           }
                         </div>
                         <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-                          {bookingStatus === "confirmed" ? "Session confirmed!" : "Session booked!"}
+                          {bookingStatus === "approved" ? "Session approved!" : "Session booked!"}
                         </p>
                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
-                          {bookingStatus === "confirmed"
-                            ? "Your session has been confirmed by the coach. See you on the court!"
+                          {bookingStatus === "approved"
+                            ? "Your session has been approved. See you on the court!"
                             : "Waiting for confirmation from the team. A person will get back to you within 24 hours."
                           }
                         </p>
-                        {bookingStatus !== "confirmed" && (
+                        {bookingStatus !== "approved" && (
                           <div style={{
                             marginTop: 14, padding: "8px 14px", borderRadius: 10,
                             background: "rgba(255,255,255,0.03)",
