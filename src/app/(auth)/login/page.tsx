@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Input, Label } from "@/components/ui";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";
@@ -58,13 +58,6 @@ function LoginForm() {
     router.push(redirect);
   };
 
-  const demo = async () => {
-    setLoading(true);
-    const err = await login("test@gameground.net", "password123");
-    setLoading(false);
-    if (err) toast.error(err);
-    else { toast.success("Logged in as demo"); router.push(redirect); }
-  };
 
   return (
     <div className="reg-page">
@@ -158,12 +151,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <div data-a style={{ marginTop: 16 }}>
-            <button onClick={demo} disabled={loading} className="demo-btn">
-              <Zap size={16} color="#e63946" />
-              <span>Try the demo account</span>
-            </button>
-          </div>
+
 
           <p data-a className="reg-legal">
             By signing in you agree to our{" "}

@@ -1,16 +1,18 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma, mockClient } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { signToken, cookieOpts } from "@/lib/auth";
 import { ok, fail, handleErr, LoginSchema } from "@/lib/api";
-import { DEMO_EMAIL } from "@/lib/dbMode";
+import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = clientIp(req);
+    const rl = await authLimit(ip);
+    if (!rl.success) return tooManyRequests(rl);
     const body = await req.json();
     const input = LoginSchema.parse(body);
-    const clientToUse = input.email.trim().toLowerCase() === DEMO_EMAIL ? mockClient : prisma;
-    const user = await clientToUse.user.findUnique({ where: { email: input.email } });
+    const user = await prisma.user.findUnique({ where: { email: input.email } });
     if (!user) return fail("Invalid email or password", 401);
     // Google-only accounts have no password — guide them to the right flow.
     if (!user.passwordHash) return fail("This account uses Google sign-in — continue with Google.", 401);

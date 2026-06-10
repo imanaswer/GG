@@ -3,7 +3,12 @@ import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 const ADMIN_COOKIE = "gg_admin";
-const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET ?? "admin-dev-secret-minimum-32-chars!!");
+const secret = () => new TextEncoder().encode(
+  process.env.AUTH_SECRET ?? (() => {
+    if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET env var is required in production");
+    return "admin-dev-secret-minimum-32-chars!!";
+  })()
+);
 
 export async function signAdminToken(email: string): Promise<string> {
   return new SignJWT({ role: "admin", email })

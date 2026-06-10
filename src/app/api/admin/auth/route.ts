@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signAdminToken, clearAdminCookie } from "@/lib/adminAuth";
-import { isDemoMode } from "@/lib/dbMode";
+import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   const { email, password, action } = await req.json();
@@ -11,20 +11,19 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
-  const adminPw = process.env.ADMIN_PASSWORD ?? "admin123";
+  const adminPw = process.env.ADMIN_PASSWORD ?? (() => {
+    if (process.env.NODE_ENV === "production") throw new Error("ADMIN_PASSWORD env var is required in production");
+    return "admin123";
+  })();
+
+  // Rate limit login attempts (not logouts)
+  const ip = clientIp(req);
+  const rl = await authLimit(ip);
+  if (!rl.success) return tooManyRequests(rl);
+
   let validAdmin = false;
 
   if (email === "admin@gameground.com" && password === adminPw) {
-    validAdmin = true;
-  } else if (
-    // Demo/test admin: only valid when there's no real database configured, so
-    // it can never grant access to a production DB. Mirrors the routing gate in
-    // prisma.ts resolveClient(), which only sends testadmin to the mock DB in
-    // demo mode.
-    isDemoMode() &&
-    email === "testadmin@gameground.com" &&
-    password === "password123"
-  ) {
     validAdmin = true;
   }
 
