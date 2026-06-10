@@ -12,7 +12,15 @@ import { Magnetic } from "@/components/premium/Magnetic";
 import { Stars, SkillBadge, SportBadge } from "@/components/Shared";
 import { useCoach, useCreateBooking } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
-import { COACH_FALLBACKS, pickFallback } from "@/lib/premium-images";
+import { COACH_FALLBACKS, HERO_BACKDROPS, pickFallback } from "@/lib/premium-images";
+
+/** Build a Google Maps link from coordinates when available, else free-text. */
+function mapsHref(coach: { lat?: number | null; lng?: number | null; location?: string; address?: string }) {
+  const query = coach.lat != null && coach.lng != null
+    ? `${coach.lat},${coach.lng}`
+    : [coach.location, coach.address].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -131,9 +139,12 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const occupancy = Math.round(((coach.totalSeats - coach.seatsLeft) / coach.totalSeats) * 100);
   const features  = Array.isArray(coach.features) ? coach.features : [];
   const img       = coach.imageUrl || pickFallback(COACH_FALLBACKS, coach.id).src;
+  // Hero background is a distinct cover image; falls back to a sporty backdrop so
+  // it never duplicates the portrait above.
+  const bgImg     = coach.coverImageUrl || pickFallback(HERO_BACKDROPS, coach.id).src;
 
-  const quickInfo = [
-    { Icon: MapPin,   l: "Location", v: coach.location },
+  const quickInfo: { Icon: typeof MapPin; l: string; v: string; href?: string }[] = [
+    { Icon: MapPin,   l: "Location", v: coach.location, href: coach.location ? mapsHref(coach) : undefined },
     { Icon: DollarSign, l: "Price",  v: coach.price    },
     { Icon: Clock,    l: "Schedule", v: coach.timing   },
     { Icon: Target,   l: "Level",    v: coach.skillLevel },
@@ -151,7 +162,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
         }}>
           <div style={{ position: "absolute", inset: 0, opacity: 0.35 }}>
             <Image
-              src={img} alt={coach.name}
+              src={bgImg} alt=""
               fill priority quality={80} sizes="100vw"
               style={{ objectFit: "cover", filter: "saturate(0.55) brightness(0.55)" }}
             />
@@ -308,13 +319,22 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                         <h2 className="eyebrow" style={{ marginBottom: 18 }}>Contact</h2>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {[
-                            { Icon: MapPin, v: coach.address },
-                            { Icon: Phone,  v: coach.phone },
-                            { Icon: Mail,   v: coach.email },
-                          ].filter(row => row.v).map(({ Icon, v }) => (
+                            { Icon: MapPin, v: coach.address, href: coach.address ? mapsHref(coach) : undefined },
+                            { Icon: Phone,  v: coach.phone, href: coach.phone ? `tel:${coach.phone}` : undefined },
+                            { Icon: Mail,   v: coach.email, href: coach.email ? `mailto:${coach.email}` : undefined },
+                          ].filter(row => row.v).map(({ Icon, v, href }) => (
                             <div key={v} style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
                               <Icon size={14} color="#e63946" style={{ flexShrink: 0 }} />
-                              <span>{v}</span>
+                              {href ? (
+                                <a href={href} target="_blank" rel="noopener noreferrer"
+                                   style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none" }}
+                                   onMouseEnter={e => { e.currentTarget.style.color = "#ff6b74"; }}
+                                   onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}>
+                                  {v}
+                                </a>
+                              ) : (
+                                <span>{v}</span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -584,7 +604,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                   }}>
                     <h2 className="eyebrow" style={{ marginBottom: 16 }}>Quick info</h2>
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                      {quickInfo.map(({ Icon, l, v }) => (
+                      {quickInfo.map(({ Icon, l, v, href }) => (
                         <div key={l} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                           <div style={{
                             width: 30, height: 30, borderRadius: 10,
@@ -599,7 +619,14 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
                               {l}
                             </p>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{v}</p>
+                            {href ? (
+                              <a href={href} target="_blank" rel="noopener noreferrer"
+                                 style={{ fontSize: 13, fontWeight: 600, color: "#ff6b74", textDecoration: "none" }}>
+                                {v} ↗
+                              </a>
+                            ) : (
+                              <p style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{v}</p>
+                            )}
                           </div>
                         </div>
                       ))}

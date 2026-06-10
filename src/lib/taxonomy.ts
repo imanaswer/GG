@@ -4,6 +4,18 @@ export const SPORTS = [
   "Fitness", "Multi-Sport",
 ] as const;
 
+/**
+ * Build the display price string for a coach.
+ * A blank/0 max price means a single price (e.g. "₹500"); otherwise a range
+ * ("₹500–1500"). Used everywhere the stored `price` string is written so the
+ * DB value and UI stay consistent.
+ */
+export function formatPrice(min: number | string, max: number | string): string {
+  const lo = Number(min) || 0;
+  const hi = Number(max) || 0;
+  return hi > 0 && hi !== lo ? `₹${lo}–${hi}` : `₹${lo}`;
+}
+
 export const SKILL_LEVELS = ["All Levels", "Beginner", "Intermediate", "Advanced"] as const;
 
 export const COACH_TYPES = ["Academy", "Personal Trainer", "Training Center", "Sports Club"] as const;

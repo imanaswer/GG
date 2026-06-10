@@ -5,9 +5,11 @@ import { Upload, X, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 export function ImageUpload({
   value,
   onChange,
+  label = "Cover Photo",
 }: {
   value: string;
   onChange: (url: string) => void;
+  label?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -75,7 +77,7 @@ export function ImageUpload({
             letterSpacing: "0.04em",
           }}
         >
-          Cover Photo
+          {label}
         </label>
         <div style={{ display: "flex", gap: 4 }}>
           <button

@@ -3,19 +3,19 @@ import { useState, useCallback } from "react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { Badge }       from "@/components/admin/Badge";
-import { AdminModal, FormInput, FormTextarea, FormSelect, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
+import { AdminModal, FormInput, FormTextarea, FormSelect, FormCombobox, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { COACH_TYPES, SKILL_LEVELS } from "@/lib/taxonomy";
+import { COACH_TYPES, SKILL_LEVELS, formatPrice } from "@/lib/taxonomy";
 
 type Coach = {
   id: string; name: string; sport: string; type: string; skillLevel: string;
   location: string; address: string; price: string; priceMin: number; priceMax: number;
   timing: string; phone: string; email: string; description: string;
-  features: string[]; certifications: string[]; imageUrl: string; photos: string[];
+  features: string[]; certifications: string[]; imageUrl: string; coverImageUrl: string; photos: string[];
   seatsLeft: number; totalSeats: number; rating: number; reviewCount: number;
   status: string; totalBookings: number; confirmedBookings: number; revenue: number;
 };
@@ -24,7 +24,7 @@ const EMPTY: Partial<Coach> = {
   name: "", sport: "Football", type: "Personal Trainer", skillLevel: "All Levels",
   location: "", address: "", price: "", priceMin: 0, priceMax: 0,
   timing: "", phone: "", email: "", description: "",
-  features: [], certifications: [], imageUrl: "", photos: [],
+  features: [], certifications: [], imageUrl: "", coverImageUrl: "", photos: [],
   totalSeats: 20, seatsLeft: 20, status: "active",
 };
 
@@ -55,7 +55,7 @@ export default function AdminCoaches() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          price: `₹${data.priceMin}–${data.priceMax}`,
+          price: formatPrice(data.priceMin ?? 0, data.priceMax ?? 0),
         }),
       }).then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); });
     },
@@ -116,7 +116,7 @@ export default function AdminCoaches() {
                       </div>
                       <Badge status="pending_approval" />
                     </div>
-                    <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 14 }}>₹{c.priceMin.toLocaleString()}–{c.priceMax.toLocaleString()}/session</p>
+                    <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 14 }}>{formatPrice(c.priceMin, c.priceMax)}/session</p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={() => approve.mutate({ id: c.id, action: "approve" })} style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve</button>
                       <button onClick={() => approve.mutate({ id: c.id, action: "reject" })}  style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, background: "transparent", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>Reject</button>
@@ -178,7 +178,7 @@ export default function AdminCoaches() {
           <form onSubmit={e => { e.preventDefault(); save.mutate(form); }}>
             <FormInput label="Name" value={form.name ?? ""} onChange={v => update("name", v)} required />
             <FormRow>
-              <FormSelect label="Sport" value={form.sport ?? "Football"} onChange={v => update("sport", v)} options={SPORTS.map(s => ({ value: s, label: s }))} />
+              <FormCombobox label="Sport" value={form.sport ?? ""} onChange={v => update("sport", v)} options={SPORTS} placeholder="Type or pick a sport" />
               <FormSelect label="Type" value={form.type ?? "Personal Trainer"} onChange={v => update("type", v)} options={COACH_TYPES.map(t => ({ value: t, label: t }))} />
             </FormRow>
             <FormRow>
@@ -187,7 +187,7 @@ export default function AdminCoaches() {
             </FormRow>
             <FormRow>
               <FormInput label="Min Price (₹)" value={form.priceMin ?? 0} onChange={v => update("priceMin", Number(v) as never)} type="number" />
-              <FormInput label="Max Price (₹)" value={form.priceMax ?? 0} onChange={v => update("priceMax", Number(v) as never)} type="number" />
+              <FormInput label="Max Price (₹) — leave 0 for single price" value={form.priceMax ?? 0} onChange={v => update("priceMax", Number(v) as never)} type="number" />
             </FormRow>
             <FormInput label="Location" value={form.location ?? ""} onChange={v => update("location", v)} />
             <FormInput label="Address" value={form.address ?? ""} onChange={v => update("address", v)} />
@@ -201,7 +201,8 @@ export default function AdminCoaches() {
               <FormInput label="Seats Left" value={form.seatsLeft ?? 20} onChange={v => update("seatsLeft", Number(v) as never)} type="number" />
             </FormRow>
             <FormTextarea label="Description" value={form.description ?? ""} onChange={v => update("description", v)} rows={3} />
-            <ImageUpload value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
+            <ImageUpload label="Profile Photo (portrait & listing card)" value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
+            <ImageUpload label="Cover Photo (detail page background)" value={form.coverImageUrl ?? ""} onChange={v => update("coverImageUrl", v)} />
             <MultiImageUpload label="Facility Photos" value={form.photos ?? []} onChange={v => update("photos", v as never)} />
             <FormTextarea label="Features (one per line)" value={(form.features ?? []).join("\n")} onChange={v => update("features", v.split("\n").filter(Boolean) as never)} rows={3} placeholder="Professional training equipment&#10;Personalized coaching&#10;Video analysis" />
             <FormTextarea label="Certifications (one per line)" value={(form.certifications ?? []).join("\n")} onChange={v => update("certifications", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="AFC C License&#10;SAI Certified" />

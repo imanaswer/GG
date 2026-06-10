@@ -16,7 +16,8 @@ export type Coach = {
   id: string; name: string; sport: string; type: string; skillLevel: string;
   price: string; priceMin: number; priceMax: number; timing: string;
   location: string; address: string; phone: string; email: string;
-  description: string; features: string[]; imageUrl: string; photos?: string[];
+  description: string; features: string[]; imageUrl: string; coverImageUrl?: string; photos?: string[];
+  lat?: number | null; lng?: number | null;
   rating: number; reviewCount: number; totalSeats: number; seatsLeft: number;
   batches?: Batch[]; reviews?: CoachReview[];
   userBooking?: { id: string; status: string } | null;

@@ -215,6 +215,40 @@ export function FormSelect({
   );
 }
 
+export function FormCombobox({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  style,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+  style?: React.CSSProperties;
+}) {
+  const listId = `combo-${label.replace(/\s+/g, "-").toLowerCase()}`;
+  return (
+    <FormField label={label} style={style}>
+      <input
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={inputStyle}
+      />
+      <datalist id={listId}>
+        {options.map((o) => (
+          <option key={o} value={o} />
+        ))}
+      </datalist>
+    </FormField>
+  );
+}
+
 export function FormRow({ children }: { children: React.ReactNode }) {
   return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{children}</div>;
 }

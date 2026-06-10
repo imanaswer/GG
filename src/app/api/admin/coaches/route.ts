@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/taxonomy";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       sport: body.sport,
       type: body.type,
       skillLevel: body.skillLevel || "All Levels",
-      price: `₹${body.priceMin}–${body.priceMax}`,
+      price: formatPrice(body.priceMin, body.priceMax),
       priceMin: Number(body.priceMin) || 0,
       priceMax: Number(body.priceMax) || 0,
       timing: body.timing || "",
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
       features: body.features || [],
       certifications: body.certifications || [],
       imageUrl: body.imageUrl || "/placeholder-coach.jpg",
+      coverImageUrl: body.coverImageUrl || "",
       photos: Array.isArray(body.photos) ? body.photos : [],
       totalSeats: Number.isFinite(Number(body.totalSeats)) ? Number(body.totalSeats) : 20,
       seatsLeft: Number.isFinite(Number(body.seatsLeft ?? body.totalSeats)) ? Number(body.seatsLeft ?? body.totalSeats) : 20,
@@ -70,7 +72,7 @@ export async function PUT(req: NextRequest) {
       ...(body.skillLevel !== undefined && { skillLevel: body.skillLevel }),
       ...(body.priceMin !== undefined && { priceMin: Number(body.priceMin) }),
       ...(body.priceMax !== undefined && { priceMax: Number(body.priceMax) }),
-      ...((body.priceMin !== undefined && body.priceMax !== undefined) && { price: `₹${Number(body.priceMin)}–${Number(body.priceMax)}` }),
+      ...((body.priceMin !== undefined && body.priceMax !== undefined) && { price: formatPrice(body.priceMin, body.priceMax) }),
       ...(body.timing !== undefined && { timing: body.timing }),
       ...(body.location !== undefined && { location: body.location }),
       ...(body.address !== undefined && { address: body.address }),
@@ -80,6 +82,7 @@ export async function PUT(req: NextRequest) {
       ...(body.features !== undefined && { features: body.features }),
       ...(body.certifications !== undefined && { certifications: body.certifications }),
       ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
+      ...(body.coverImageUrl !== undefined && { coverImageUrl: body.coverImageUrl }),
       ...(body.photos !== undefined && { photos: Array.isArray(body.photos) ? body.photos : [] }),
       ...(body.totalSeats !== undefined && { totalSeats: Number(body.totalSeats) }),
       ...(body.seatsLeft !== undefined && { seatsLeft: Number(body.seatsLeft) }),
