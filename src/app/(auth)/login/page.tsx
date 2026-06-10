@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Zap, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Input, Label } from "@/components/ui";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/context/AuthContext";

@@ -3,9 +3,13 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, cookieOpts } from "@/lib/auth";
 import { ok, fail, handleErr, LoginSchema } from "@/lib/api";
+import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = clientIp(req);
+    const rl = await authLimit(ip);
+    if (!rl.success) return tooManyRequests(rl);
     const body = await req.json();
     const input = LoginSchema.parse(body);
     const user = await prisma.user.findUnique({ where: { email: input.email } });

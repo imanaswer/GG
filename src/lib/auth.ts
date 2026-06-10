@@ -2,7 +2,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "gridgame-dev-secret-key-minimum-32-chars!!"
+  process.env.AUTH_SECRET ?? (() => {
+    if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET env var is required in production");
+    return "gridgame-dev-secret-key-minimum-32-chars!!";
+  })()
 );
 export const COOKIE = "gg_token";
 
