@@ -15,8 +15,6 @@ export async function POST(req: NextRequest) {
 
   if (email === "admin@gameground.com" && password === adminPw) {
     validAdmin = true;
-  } else if (email === "testadmin@gameground.com" && password === "password123") {
-    validAdmin = true;
   }
 
   if (!validAdmin) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });

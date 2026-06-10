@@ -58,13 +58,6 @@ function LoginForm() {
     router.push(redirect);
   };
 
-  const demo = async () => {
-    setLoading(true);
-    const err = await login("test@gameground.net", "password123");
-    setLoading(false);
-    if (err) toast.error(err);
-    else { toast.success("Logged in as demo"); router.push(redirect); }
-  };
 
   return (
     <div className="reg-page">
@@ -158,12 +151,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <div data-a style={{ marginTop: 16 }}>
-            <button onClick={demo} disabled={loading} className="demo-btn">
-              <Zap size={16} color="#e63946" />
-              <span>Try the demo account</span>
-            </button>
-          </div>
+
 
           <p data-a className="reg-legal">
             By signing in you agree to our{" "}
