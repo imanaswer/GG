@@ -78,7 +78,6 @@ function RegisterForm() {
       {/* Logo */}
       <Link href="/" className="reg-logo">
         <img src="/logo2.png" alt="Game Ground" className="reg-logo-icon" />
-        <span className="reg-logo-text">Game Ground</span>
       </Link>
 
       {/* Centered card */}
