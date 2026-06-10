@@ -21,10 +21,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!coach) return fail("Coach not found", 404);
 
     const hasBooking = await prisma.booking.findFirst({
-      where: { coachId, userId: session.id, status: "confirmed" },
+      where: { coachId, userId: session.id, status: "completed" },
       select: { id: true },
     });
-    if (!hasBooking) return fail("You can only review coaches you've had a confirmed booking with", 403);
+    if (!hasBooking) return fail("You can only review a coach after a completed session", 403);
 
     const existing = await prisma.review.findUnique({ where: { userId_coachId: { userId: session.id, coachId } }, select: { id: true } });
     if (existing) return fail("You've already submitted a review for this coach", 409);

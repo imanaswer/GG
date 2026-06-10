@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/taxonomy";
+import { BILLABLE_STATUSES } from "@/lib/bookings";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
     return {
       ...c,
       totalBookings: bookings.length,
-      confirmedBookings: bookings.filter(b => b.status === "confirmed").length,
+      confirmedBookings: bookings.filter(b => (BILLABLE_STATUSES as string[]).includes(b.status)).length,
       revenue: revenueByEntity.get(c.id) ?? 0,
       reviews: c.reviews,
     };

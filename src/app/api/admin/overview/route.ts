@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import { BILLABLE_STATUSES } from "@/lib/bookings";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   ] = await Promise.all([
     prisma.user.count({ where: { role: { not: "admin" } } }),
     prisma.coach.count({ where: { status: "active" } }),
-    prisma.booking.count({ where: { status: { not: "cancelled" } } }),
+    prisma.booking.count({ where: { status: { in: ["pending", "approved"] } } }),
     prisma.game.count({ where: { scheduledAt: { gte: weekAgo }, status: { in: ["open", "full"] } } }),
     prisma.campRegistration.count(),
     prisma.workshopRegistration.count(),
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
   const filledSlots = totalSlots - slotsLeft;
   const slotFillRate = totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0;
   const confirmRate = bookings.length > 0
-    ? Math.round((bookings.filter(b => b.status === "confirmed").length / bookings.length) * 100) : 0;
+    ? Math.round((bookings.filter(b => (BILLABLE_STATUSES as string[]).includes(b.status)).length / bookings.length) * 100) : 0;
   const cancelRate = bookings.length > 0
     ? Math.round((bookings.filter(b => b.status === "cancelled").length / bookings.length) * 100) : 0;
   const avgReliability = users.length > 0

@@ -37,7 +37,7 @@ export default function AdminOverview() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14, marginBottom: 20 }}>
             <StatCard value={m?.totalUsers      ?? "—"} label="Total Users"        sub="Registered players"   icon={Users}          />
             <StatCard value={m?.totalCoaches    ?? "—"} label="Active Coaches"     sub="On the platform"      icon={Star}           />
-            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + confirmed"  icon={CalendarCheck}  />
+            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + approved"  icon={CalendarCheck}  />
             <StatCard value={m?.gamesThisWeek   ?? "—"} label="Games This Week"    sub="Open + full"          icon={Gamepad2}       />
             <StatCard value={m?.campRegistrations?? "—"} label="Camp Registrations" sub="All camps"           icon={Tent}           />
             <StatCard value={m?.workshopRegistrations ?? "—"} label="Workshop Sign-ups" sub="All workshops"   icon={Lightbulb}      />

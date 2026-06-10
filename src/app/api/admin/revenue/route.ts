@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import { BILLABLE_STATUSES } from "@/lib/bookings";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   const monthAgo = new Date(now.getTime() - 30 * 86400000);
 
   const [confirmedBookings, campRegs, eventRegs, gamePlayers] = await Promise.all([
-    prisma.booking.count({ where: { status: "confirmed" } }),
+    prisma.booking.count({ where: { status: { in: BILLABLE_STATUSES } } }),
     prisma.campRegistration.findMany({ include: { camp: { select: { title: true, price: true } }, user: { select: { name: true } } } }),
     prisma.eventRegistration.findMany({ include: { event: { select: { title: true, entryFeeAmount: true } }, user: { select: { name: true } } } }),
     prisma.gamePlayer.findMany({ where: { game: { status: { not: "cancelled" } } }, include: { game: { select: { title: true, costAmount: true } }, user: { select: { name: true } } } }),
