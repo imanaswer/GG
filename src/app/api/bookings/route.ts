@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
         where: { OR: [{ userId: session.id }, { email: session.email }] },
         select: { id: true },
       });
-      if (!coach) return ok({ pending: 0, confirmed: 0, list: [] });
+      if (!coach) return ok({ pending: 0, approved: 0, list: [] });
 
       const coachBookings = await prisma.booking.findMany({
         where: { coachId: coach.id },
@@ -23,8 +24,8 @@ export async function GET(req: NextRequest) {
       });
       const list = coachBookings.map(b => ({ ...b, playerName: b.user?.name }));
       return ok({
-        pending:   list.filter(b => b.status === "pending").length,
-        confirmed: list.filter(b => b.status === "confirmed").length,
+        pending:  list.filter(b => b.status === "pending").length,
+        approved: list.filter(b => (BILLABLE_STATUSES as string[]).includes(b.status)).length,
         list,
       });
     }
@@ -79,34 +80,21 @@ export async function PATCH(req: NextRequest) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const { id, status, coachNote } = await req.json();
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: { coach: { select: { id: true, userId: true, email: true } } },
-    });
+    const { id, status } = await req.json();
+    // Players/coaches may only cancel their own booking here.
+    // Approve / reject / complete go through the admin route only.
+    if (status && status !== "cancelled") return fail("Only cancellation is allowed here", 403);
+
+    const booking = await prisma.booking.findUnique({ where: { id }, select: { userId: true } });
     if (!booking) return fail("Booking not found", 404);
+    if (booking.userId !== session.id) return fail("Unauthorized", 403);
 
-    const coach = booking.coach;
-    const isCoach  = coach?.userId === session.id || coach?.email === session.email;
-    const isPlayer = booking.userId === session.id;
-    if (!isCoach && !isPlayer) return fail("Unauthorized", 403);
-
-    const prev = booking.status;
-    const updated = await prisma.$transaction(async tx => {
-      const u = await tx.booking.update({
-        where: { id },
-        data: { status, coachNote: coachNote ?? undefined },
-      });
-
-      if (prev !== "cancelled" && status === "cancelled" && coach) {
-        await tx.coach.update({ where: { id: coach.id }, data: { seatsLeft: { increment: 1 } } });
-        if (booking.batchId) {
-          await tx.batch.update({ where: { id: booking.batchId }, data: { seats: { increment: 1 } } });
-        }
-      }
-      return u;
-    });
-
-    return ok(updated);
+    try {
+      const updated = await cancelBooking(id);
+      return ok(updated);
+    } catch (e) {
+      if (e instanceof BookingTransitionError) return fail(e.message, 409);
+      throw e;
+    }
   } catch (e) { return handleErr(e); }
 }

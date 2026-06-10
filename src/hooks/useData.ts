@@ -40,6 +40,9 @@ export type Booking = {
   id: string; userId: string; coachId: string; batchId?: string;
   status: string; note?: string; coachName?: string; sport?: string;
   imageUrl?: string; location?: string; createdAt: string; updatedAt: string;
+  rejectionReason?: string | null;
+  approvedAt?: string | null; rejectedAt?: string | null;
+  completedAt?: string | null; cancelledAt?: string | null;
 };
 
 export type UserProfile = {
@@ -195,7 +198,7 @@ export function useCreateBooking() {
 export function useCancelBooking() {
   const qc = useQueryClient();
   return useMutation<unknown, Error, string>({
-    mutationFn: bookingId => f("/api/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingId }) }),
+    mutationFn: id => f("/api/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "cancelled" }) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Booking cancelled."); },
     onError: e => toast.error(e.message),
   });
