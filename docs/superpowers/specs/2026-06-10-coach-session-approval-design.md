@@ -33,6 +33,46 @@ Player books → PENDING → Admin reviews → APPROVED or REJECTED → Player n
 - No change to the seat-hold timing: seats remain held at booking time.
 - No automated `completed` transition. Admin marks bookings completed manually.
 
+## Status State Machine (single source of truth)
+
+All transition rules, terminal states, audit-timestamp mapping, seat-release
+rules, and "which statuses count for business metrics" live in **one** module
+(`src/lib/bookings.ts`). Routes must call these helpers rather than inlining
+status checks (future-proofing requirement #6).
+
+**Allowed transitions:**
+
+```
+pending  → approved | rejected | cancelled
+approved → completed | cancelled
+rejected   (terminal)
+cancelled  (terminal)
+completed  (terminal)
+```
+
+Any other transition (e.g. `rejected → approved`, `cancelled → approved`,
+`completed → approved`) is rejected by backend validation with HTTP 409 and no
+state change. A no-op (same → same) is also rejected.
+
+**Seat release rule:** a transition **into** `cancelled` or `rejected` releases
+the held seat (`coach.seatsLeft++`, and `batch.seats++` when batched). Seats are
+held continuously from `pending` through `approved`, so cancelling an approved
+booking still releases the seat. `completed` does not release (the seat was
+consumed).
+
+**Audit-timestamp mapping:** each terminal/approval transition stamps exactly
+one column — `approved → approvedAt`, `rejected → rejectedAt`,
+`completed → completedAt`, `cancelled → cancelledAt`.
+
+**Business-metric statuses:** `BILLABLE_STATUSES = ['approved', 'completed']`.
+Only these count toward coach stats, revenue, upcoming/confirmed counts, and
+dashboard analytics. `pending`, `rejected`, and `cancelled` never affect
+business metrics (requirement #1).
+
+**Review eligibility:** only a `completed` booking unlocks a review — an
+approved-but-not-completed booking does not (requirement #2). The flow is
+`pending → approved → completed → review allowed`.
+
 ## Current State (as found)
 
 - `Booking` model: `status` (default `"pending"`), `note`, `coachNote`,
@@ -73,14 +113,17 @@ codebase.
 
 ### 1. Data model
 
-Add three non-destructive (nullable) columns to `Booking`:
+Add the audit columns to `Booking` (all nullable → non-destructive). Full audit
+trail per requirement #5:
 
 ```prisma
 model Booking {
   // ...existing fields...
   rejectionReason String?
-  rejectedAt      DateTime?
   approvedAt      DateTime?
+  rejectedAt      DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
 }
 ```
 
@@ -96,37 +139,48 @@ Apply with `npm run db:deploy` (per project convention; the dev migrate flow may
 
 ### 2. Seat & double-booking model (hold-at-booking, confirmed)
 
-Seats stay held at booking time (unchanged POST behaviour). The workflow makes
-the lifecycle coherent:
+Seats stay held at booking time (unchanged POST behaviour). Every transition
+flows through the state machine in `src/lib/bookings.ts`, which validates the
+transition, stamps the audit column, and applies the seat-release rule in one
+transaction:
 
-- **Reject** releases the held seat: `coach.seatsLeft++`, and `batch.seats++`
-  if the booking is batched. Mirrors the existing cancel logic. Runs in a
-  transaction. Releasing only happens on the `pending → rejected` transition
-  (guard against double-release).
-- **Approve** re-validates inside a transaction:
-  1. The booking is still `pending` (else 409 — already decided).
+- **Approve** (`pending → approved`) re-validates inside the transaction:
+  1. The transition is legal (source is `pending`; else 409).
   2. The same user has **no other `approved` booking** for the same
      `coachId` + `batchId` (prevents double-booking; test #4). 409 on conflict.
-  3. On success: `status = 'approved'`, `approvedAt = now()`. (The seat is
-     already held from booking time, so no seat change is needed.)
+  3. On success: `status = 'approved'`, `approvedAt = now()`. The seat is
+     already held from booking time, so no seat change.
 
   There is no DB unique constraint to lean on, so the conflict check lives
   inside the transaction.
 
-- **Complete**: admin-only `approved → completed`. No seat change.
-- **Cancel** (player): `pending`/`approved` → `cancelled`, releases the seat
-  (existing behaviour, retained).
+- **Reject** (`pending → rejected`): stamps `rejectedAt`, stores optional
+  `rejectionReason`, releases the held seat.
+- **Complete** (`approved → completed`, admin-only): stamps `completedAt`, no
+  seat change.
+- **Cancel** (`pending`/`approved` → `cancelled`): stamps `cancelledAt`,
+  releases the held seat. A `cancelled` (or `rejected`/`completed`) booking can
+  never transition to `approved`/`completed` — the state machine rejects it
+  (requirement #3 + #4).
 
 ### 3. API & authorization
 
-**`src/lib/bookings.ts`** (new) holds the transactional helpers so route
-handlers stay thin and the logic is unit-testable:
+**`src/lib/bookings.ts`** (new) is the single source of truth for status logic
+(requirement #6). It exports:
 
-- `approveBooking(id)` → runs the approve transaction above; throws a typed
-  conflict error surfaced as HTTP 409.
-- `rejectBooking(id, reason?)` → sets `status='rejected'`, `rejectedAt=now()`,
-  `rejectionReason=reason ?? null`, releases the seat.
-- `completeBooking(id)` → `approved → completed`.
+- Constants: `BOOKING_STATUSES`, `TERMINAL_STATUSES`, `BILLABLE_STATUSES =
+  ['approved','completed']`, the `ALLOWED_TRANSITIONS` map, and the
+  `STATUS_TIMESTAMP` map (status → audit column).
+- `canTransition(from, to)` / `assertTransition(from, to)` — pure validation;
+  `assertTransition` throws a typed `BookingTransitionError` surfaced as 409.
+- `transitionBooking(id, to, { reason?, actorCheck? })` — the one transactional
+  helper used by every route: loads the booking, asserts the transition, applies
+  the seat-release rule (release on `cancelled`/`rejected`), runs the
+  approve double-booking conflict check when `to==='approved'`, stamps the audit
+  column, and returns the updated row. Thin wrappers `approveBooking`,
+  `rejectBooking(id, reason?)`, `completeBooking`, `cancelBooking` call it.
+
+Routes never inline status strings or seat math — they call these helpers.
 
 **`/api/admin/bookings` PATCH** (admin-only — already guarded) is the **only**
 path to `approved` / `rejected` / `completed`. Body: `{ id, status,
@@ -181,10 +235,18 @@ Email failures are logged and do **not** fail the status update.
   color mapping (approved=green, rejected=red, completed=blue/muted,
   pending=amber, cancelled=grey).
 
-**Legacy `"confirmed"` consumers updated in the same change:**
-`api/coaches/[id]/reviews`, `api/admin/revenue`, `api/admin/overview`,
-`api/admin/coaches`, `api/bookings` GET (coach `confirmed` count → `approved`),
-`coach/[id]/page.tsx`, `admin/page.tsx` copy.
+**Legacy `"confirmed"` consumers updated in the same change** (this is the
+authoritative checklist — miss one and metrics/reviews break silently):
+
+- `api/coaches/[id]/reviews` — review-eligibility changes from `"confirmed"` to
+  **`completed` only** (requirement #2). An approved booking does not unlock a
+  review.
+- `api/admin/revenue`, `api/admin/overview`, `api/admin/coaches`,
+  `api/bookings` GET (coach counts), `coach/dashboard` analytics — count
+  `BILLABLE_STATUSES` (`approved` + `completed`) instead of `"confirmed"`
+  (requirement #1). `pending`/`rejected`/`cancelled` are excluded.
+- `coach/[id]/page.tsx` UI and `admin/page.tsx` copy — replace `"confirmed"`
+  wording/state with `approved`.
 
 ### 6. Next.js 16 caveat
 
@@ -206,6 +268,19 @@ Maps to the six required checks:
    `approved`/`rejected`/`completed` (403); only the admin route can.
 6. UI reflects status correctly: badges and admin tabs render all five states;
    player sees the rejection message; coach view is read-only.
+
+Additional checks for the requirements added in review:
+
+7. Invalid transitions are blocked (409, no state change): `rejected → approved`,
+   `cancelled → approved`, `completed → approved`, and same → same.
+8. Business metrics count `approved + completed` only — a `pending`/`rejected`/
+   `cancelled` booking does not move coach stats, revenue, or analytics.
+9. Review eligibility requires `completed`: an `approved`-but-not-`completed`
+   booking is rejected by `api/coaches/[id]/reviews` (403).
+10. Cancel by the player releases the seat, stamps `cancelledAt`, and the
+    booking cannot later be approved/completed.
+11. Audit timestamps are stamped on the matching transition (`approvedAt`,
+    `rejectedAt`, `completedAt`, `cancelledAt`) and only that one.
 
 ## Risks
 
