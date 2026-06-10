@@ -3,7 +3,7 @@ import { signAdminToken, clearAdminCookie } from "@/lib/adminAuth";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
-  const { email, password, action } = await req.json();
+  const { password, action } = await req.json();
 
   if (action === "logout") {
     const res = NextResponse.json({ ok: true });
@@ -21,15 +21,9 @@ export async function POST(req: NextRequest) {
   const rl = await authLimit(ip);
   if (!rl.success) return tooManyRequests(rl);
 
-  let validAdmin = false;
+  if (password !== adminPw) return NextResponse.json({ error: "Invalid password" }, { status: 401 });
 
-  if (email === "admin@gameground.com" && password === adminPw) {
-    validAdmin = true;
-  }
-
-  if (!validAdmin) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
-
-  const token = await signAdminToken(email);
+  const token = await signAdminToken();
   const res   = NextResponse.json({ ok: true });
   res.cookies.set("gg_admin", token, { httpOnly: true, path: "/", secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 60 * 60 });
   return res;

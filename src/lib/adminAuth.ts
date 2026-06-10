@@ -10,8 +10,8 @@ const secret = () => new TextEncoder().encode(
   })()
 );
 
-export async function signAdminToken(email: string): Promise<string> {
-  return new SignJWT({ role: "admin", email })
+export async function signAdminToken(): Promise<string> {
+  return new SignJWT({ role: "admin" })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("60m") // 60 min session timeout per spec
     .setIssuedAt()
