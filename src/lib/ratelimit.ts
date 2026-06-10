@@ -14,6 +14,9 @@ function isUsableUrl(u: string | undefined): u is string {
   try {
     const parsed = new URL(u);
     const labels = parsed.hostname.split(".");
+    // Reject placeholder/dummy hostnames that will never resolve.
+    const host = parsed.hostname.toLowerCase();
+    if (host.includes("placeholder") || host.includes("example") || host === "localhost" || host.endsWith("...")) return false;
     return parsed.protocol === "https:" && labels.length >= 2 && labels.every(l => l.length > 0);
   } catch {
     return false;

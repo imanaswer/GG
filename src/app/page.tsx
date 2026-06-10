@@ -659,13 +659,7 @@ function SportsGrid() {
           </Reveal>
         </div>
 
-        <Stagger
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <Stagger className="sports-grid-layout">
           {SPORTS.map(sport => {
             const img = SPORT_TILES[sport];
             return (
@@ -704,11 +698,11 @@ function SportsGrid() {
                 <div style={{
                   position: "absolute", bottom: 20, left: 20, right: 20,
                   display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                }}>
+                }} className="sport-tile-content">
                   <span style={{
                     fontSize: 20, fontWeight: 800, color: "#fff",
                     letterSpacing: "-0.02em",
-                  }}>
+                  }} className="sport-tile-title">
                     {sport}
                   </span>
                   <span style={{
@@ -717,7 +711,7 @@ function SportsGrid() {
                     background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)",
                     border: "1px solid rgba(255,255,255,0.15)",
                     color: "#fff",
-                  }}>
+                  }} className="sport-tile-icon">
                     <ArrowUpRight size={15} />
                   </span>
                 </div>
@@ -728,6 +722,30 @@ function SportsGrid() {
       </div>
       <style>{`
         .sport-tile:hover img { transform: scale(1.06); filter: grayscale(0) brightness(0.9); }
+        .sports-grid-layout {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 16px;
+        }
+        @media (max-width: 640px) {
+          .sports-grid-layout {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+          .sport-tile {
+            aspect-ratio: 1 / 1 !important;
+            border-radius: 12px !important;
+          }
+          .sport-tile-content {
+            bottom: 12px !important; left: 12px !important; right: 12px !important;
+          }
+          .sport-tile-title {
+            font-size: 16px !important;
+          }
+          .sport-tile-icon {
+            width: 28px !important; height: 28px !important;
+          }
+        }
       `}</style>
     </section>
   );
@@ -738,7 +756,7 @@ function SportsGrid() {
 function Immersive() {
   const ref = useRef<HTMLDivElement>(null);
   return (
-    <section ref={ref} style={{ position: "relative", minHeight: "80vh" }}>
+    <section ref={ref} style={{ position: "relative", minHeight: "80vh", overflow: "hidden" }}>
       <Parallax speed={100} style={{ position: "absolute", inset: 0 }}>
         <div style={{ position: "absolute", inset: "-10%" }}>
           <Image
@@ -753,7 +771,7 @@ function Immersive() {
       </Parallax>
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.4) 30%, rgba(5,5,5,0.85) 100%)",
+        background: "linear-gradient(180deg, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.4) 30%, rgba(5,5,5,1) 100%)",
       }} />
       <div style={{ position: "relative", padding: "180px 0" }}>
         <div className="container-lg" style={{ textAlign: "center" }}>
@@ -841,10 +859,10 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
 
 function Stats() {
   const items = [
-    { value: 147, suffix: "+",      label: "Players on the waitlist",   icon: Users },
-    { value: 12,  suffix: "",       label: "Founding coaches onboard",  icon: Trophy },
-    { value: 3,   suffix: " sports", label: "Available at launch",      icon: Sparkles },
-    { value: 1,   suffix: " city",  label: "Live now · more coming",    icon: MapPin },
+    { value: 147, suffix: "+", label: "Players on the waitlist", icon: Users },
+    { value: 12, suffix: "", label: "Founding coaches onboard", icon: Trophy },
+    { value: 3, suffix: " sports", label: "Available at launch", icon: Sparkles },
+    { value: 1, suffix: " city", label: "Live now · more coming", icon: MapPin },
   ];
 
   return (
@@ -868,35 +886,59 @@ function Stats() {
 
         <Stagger style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
           gap: 1,
           background: "rgba(255,255,255,0.06)",
-          borderRadius: 20, overflow: "hidden",
+          borderRadius: 24, overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.06)",
-        }}>
+          maxWidth: 960, margin: "0 auto",
+        }} className="stats-grid">
           {items.map(({ value, suffix, label, icon: Icon }) => (
             <div
               key={label}
               data-stagger
               style={{
-                padding: "40px 28px",
-                background: "#0a0a0a",
-                minHeight: 200,
+                position: "relative",
+                padding: "32px 24px",
+                background: "#080808",
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
+                gap: 24,
+                overflow: "hidden",
+                isolation: "isolate",
               }}
+              className="stat-card"
             >
-              <Icon size={18} color="#e63946" />
+              {/* Subtle accent glow */}
+              <div style={{
+                position: "absolute", top: -20, right: -20,
+                width: 100, height: 100,
+                background: "radial-gradient(circle, rgba(230,57,70,0.12) 0%, transparent 70%)",
+                borderRadius: "50%",
+                pointerEvents: "none",
+                zIndex: -1,
+              }} className="stat-glow" />
+
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(230,57,70,0.08)",
+                border: "1px solid rgba(230,57,70,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Icon size={17} color="#e63946" />
+              </div>
+
               <div>
                 <div style={{
                   fontFamily: "var(--font-sans)", fontWeight: 900,
-                  fontSize: "clamp(44px, 5vw, 72px)",
+                  fontSize: "clamp(36px, 5vw, 52px)",
                   color: "#fff", letterSpacing: "-0.04em", lineHeight: 1,
                 }}>
                   <Counter to={value} suffix={suffix} />
                 </div>
                 <div style={{
                   fontSize: 13, color: "rgba(255,255,255,0.5)",
-                  marginTop: 10, letterSpacing: "0.02em",
+                  marginTop: 8, letterSpacing: "0.02em",
+                  lineHeight: 1.4,
                 }}>
                   {label}
                 </div>
@@ -905,6 +947,15 @@ function Stats() {
           ))}
         </Stagger>
       </div>
+
+      <style>{`
+        .stat-card { transition: background 300ms ease; }
+        .stat-card:hover { background: #0a0a0a !important; }
+        .stat-card:hover .stat-glow { background: radial-gradient(circle, rgba(230,57,70,0.25) 0%, transparent 70%) !important; }
+        @media (max-width: 640px) {
+          .stats-grid { margin-top: 80px !important; }
+        }
+      `}</style>
     </section>
   );
 }
@@ -979,15 +1030,9 @@ function Footer() {
           gap: 48, marginBottom: 64,
         }} className="four-col">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-              }} />
-              <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-                Game Ground
-              </span>
-            </div>
+            <Link href="/" style={{ display: "inline-flex", alignItems: "center", marginBottom: 20, textDecoration: "none" }}>
+              <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
+            </Link>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
               Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
             </p>
@@ -998,9 +1043,9 @@ function Footer() {
           </div>
 
           {[
-            { title: "Discover", links: [["Coaches","/learn"],["Games","/play"],["Camps","/camps"],["Events","/events"]] },
-            { title: "Company",  links: [["About","/about"],["Search","/search"]] },
-            { title: "Legal",    links: [["Privacy","/privacy"],["Terms","/terms"]] },
+            { title: "Discover", links: [["Coaches", "/learn"], ["Games", "/play"], ["Camps", "/camps"], ["Events", "/events"]] },
+            { title: "Company", links: [["About", "/about"], ["Search", "/search"]] },
+            { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
           ].map(col => (
             <div key={col.title}>
               <div className="eyebrow" style={{ marginBottom: 16, color: "rgba(255,255,255,0.4)" }}>

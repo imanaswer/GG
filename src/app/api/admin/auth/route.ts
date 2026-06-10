@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { signAdminToken, clearAdminCookie } from "@/lib/adminAuth";
 
 export async function POST(req: NextRequest) {
-  const { password, action } = await req.json();
+  const { email, password, action } = await req.json();
 
   if (action === "logout") {
     const res = NextResponse.json({ ok: true });
@@ -11,9 +11,17 @@ export async function POST(req: NextRequest) {
   }
 
   const adminPw = process.env.ADMIN_PASSWORD ?? "admin123";
-  if (password !== adminPw) return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+  let validAdmin = false;
 
-  const token = await signAdminToken();
+  if (email === "admin@gameground.com" && password === adminPw) {
+    validAdmin = true;
+  } else if (email === "testadmin@gameground.com" && password === "password123") {
+    validAdmin = true;
+  }
+
+  if (!validAdmin) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+
+  const token = await signAdminToken(email);
   const res   = NextResponse.json({ ok: true });
   res.cookies.set("gg_admin", token, { httpOnly: true, path: "/", secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 60 * 60 });
   return res;

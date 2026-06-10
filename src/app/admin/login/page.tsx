@@ -5,6 +5,7 @@ import { Eye, EyeOff, Shield } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
+  const [email,   setEmail]   = useState("");
   const [pw,      setPw]      = useState("");
   const [show,    setShow]    = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,10 +14,10 @@ export default function AdminLogin() {
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError("");
-    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password: pw }) });
     setLoading(false);
     if (r.ok) router.push("/admin");
-    else setError("Invalid password. Contact the platform admin.");
+    else setError("Invalid email or password. Contact the platform admin.");
   };
 
   return (
@@ -37,6 +38,17 @@ export default function AdminLogin() {
         <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "28px" }}>
           <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Admin Email</label>
+              <input
+                type="email"
+                placeholder="admin@gameground.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                style={{ width: "100%", height: 44, padding: "0 14px", borderRadius: 9, border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`, background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Admin Password</label>
               <div style={{ position: "relative" }}>
                 <input
@@ -53,7 +65,7 @@ export default function AdminLogin() {
               </div>
               {error && <p style={{ fontSize: 12, color: "#ef4444" }}>{error}</p>}
             </div>
-            <button type="submit" disabled={loading} style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "inherit" }}>
+            <button type="submit" disabled={loading} style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "inherit", marginTop: 8 }}>
               {loading ? "Verifying…" : "Access Dashboard"}
             </button>
           </form>

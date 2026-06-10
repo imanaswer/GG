@@ -83,7 +83,7 @@ export function SkillBadge({ level }: { level: string }) {
   return (
     <span style={{
       display: "inline-flex", padding: "3px 10px", borderRadius: 100,
-      fontSize: 11, fontWeight: 600,
+      fontSize: 11, fontWeight: 600, whiteSpace: "nowrap",
       background: s.bg, color: s.color,
       border: `1px solid ${s.border}`,
     }}>

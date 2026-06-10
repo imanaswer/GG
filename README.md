@@ -25,10 +25,11 @@ All player passwords are `password123`.
 
 | Email                   | Role   |
 | ----------------------- | ------ |
-| `demo@gameground.com`   | Player |
-| `priya@gameground.com`  | Player |
-| `rahul@gameground.com`  | Player |
-| `admin@gameground.com`  | Admin  |
+| `test@gameground.net`   | Player (Dummy Account) |
+| `admin@gameground.com`  | Admin (Real Database)  |
+| `testadmin@gameground.com` | Admin (Dummy Account) |
+
+> **Tip:** Clicking the "Demo" button or using the demo flow anywhere in the application will automatically log you into the dummy account (`test@gameground.net`) without needing a password. This account is specially configured to load the rich dummy data for testing!
 
 ---
 
@@ -43,6 +44,7 @@ All player passwords are `password123`.
 | Payments       | **Razorpay** popup — camps, events, paid games; slot gated on verification   |
 | Rate limiting  | **Upstash Redis** + `@upstash/ratelimit` — auth, AI, and mutation buckets     |
 | AI             | **Claude** via `@anthropic-ai/sdk` at `/api/ai/recommend`                     |
+| Analytics      | **PostHog** — user event tracking, session replay, and page views             |
 | Media / email  | **Cloudinary** (uploads) · **Resend** (transactional)                         |
 | Styling        | Inline styles throughout — no Tailwind utility classes                        |
 

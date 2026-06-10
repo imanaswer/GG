@@ -12,7 +12,7 @@ interface EmailPayload {
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from   = process.env.FROM_EMAIL ?? "noreply@gameground.in";
+  const from = process.env.FROM_EMAIL ?? "noreply@gameground.in";
 
   if (!apiKey) {
     console.log(`[EMAIL — no RESEND_API_KEY] To: ${payload.to} | Subject: ${payload.subject}`);
@@ -35,7 +35,7 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
 const brand = `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#080808;color:#fff;border-radius:12px;overflow:hidden">
     <div style="background:#e63946;padding:20px 28px">
-      <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.02em">G Game Ground</span>
+      <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.02em"></span>
     </div>
 `;
 const footer = `

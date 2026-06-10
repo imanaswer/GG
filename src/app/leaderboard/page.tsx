@@ -25,7 +25,6 @@ const PERIOD_TABS: { key: LeaderboardPeriod; label: string }[] = [
   { key: "month", label: "Last 30 days" },
 ];
 
-const PODIUM_HEIGHTS = [188, 220, 156]; // 2nd, 1st, 3rd
 
 export default function LeaderboardPage() {
   const [type, setType] = useState<LeaderboardType>("players");
@@ -126,7 +125,6 @@ export default function LeaderboardPage() {
                       <PodiumCard
                         key={row.id}
                         row={row}
-                        height={PODIUM_HEIGHTS[i]}
                         position={(["second", "first", "third"][i]) as "first" | "second" | "third"}
                         type={type}
                       />
@@ -149,8 +147,31 @@ export default function LeaderboardPage() {
       </main>
 
       <style>{`
+        :root {
+          --podium-h-first: 220px;
+          --podium-h-second: 188px;
+          --podium-h-third: 156px;
+        }
+        .box-first { height: var(--podium-h-first); }
+        .box-second { height: var(--podium-h-second); }
+        .box-third { height: var(--podium-h-third); }
+        
         @media (max-width: 720px) {
-          .leaderboard-podium { grid-template-columns: 1fr !important; }
+          :root {
+            --podium-h-first: 160px;
+            --podium-h-second: 130px;
+            --podium-h-third: 110px;
+          }
+          .leaderboard-podium {
+            gap: 8px !important;
+          }
+          .podium-avatar { transform: scale(0.85); transform-origin: bottom center; }
+          .podium-name { font-size: 12.5px !important; }
+          .podium-username { font-size: 10px !important; }
+          .podium-rank { font-size: 22px !important; }
+          .podium-score { font-size: 15px !important; }
+          .podium-label { font-size: 9px !important; }
+          .podium-box { padding: 12px 4px !important; }
         }
       `}</style>
     </>
@@ -169,7 +190,7 @@ function metricFor(row: LeaderboardRow, type: LeaderboardType): { label: string;
   return { label: "rep", value: row.reputationScore.toLocaleString("en-IN") };
 }
 
-function PodiumCard({ row, height, position, type }: { row: LeaderboardRow; height: number; position: "first" | "second" | "third"; type: LeaderboardType }) {
+function PodiumCard({ row, position, type }: { row: LeaderboardRow; position: "first" | "second" | "third"; type: LeaderboardType }) {
   const accent = position === "first" ? "#eab308" : position === "second" ? "#cbd5e1" : "#b45309";
   const m = metricFor(row, type);
   return (
@@ -180,8 +201,9 @@ function PodiumCard({ row, height, position, type }: { row: LeaderboardRow; heig
         display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         textDecoration: "none",
       }}
+      className={`podium-card podium-${position}`}
     >
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} className="podium-avatar">
         <TierRing tier={row.tier} size={position === "first" ? 92 : 76}>
           {row.avatarUrl ? (
             <Image src={row.avatarUrl} alt={row.name} width={92} height={92} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -206,13 +228,13 @@ function PodiumCard({ row, height, position, type }: { row: LeaderboardRow; heig
         )}
       </div>
       <div style={{ textAlign: "center", maxWidth: "100%" }}>
-        <p style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <p className="podium-name" style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {row.name}
         </p>
-        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>@{row.username}</p>
+        <p className="podium-username" style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>@{row.username}</p>
       </div>
-      <div style={{
-        width: "100%", height,
+      <div className={`podium-box box-${position}`} style={{
+        width: "100%",
         borderRadius: "16px 16px 4px 4px",
         background: `linear-gradient(180deg, ${accent}22 0%, rgba(20,20,20,0.4) 100%)`,
         border: `1px solid ${accent}44`,
@@ -220,15 +242,15 @@ function PodiumCard({ row, height, position, type }: { row: LeaderboardRow; heig
         padding: "16px 12px",
         gap: 8,
       }}>
-        <span style={{ fontSize: 32, fontWeight: 900, color: accent, lineHeight: 1, letterSpacing: "-0.04em" }}>
+        <span className="podium-rank" style={{ fontSize: 32, fontWeight: 900, color: accent, lineHeight: 1, letterSpacing: "-0.04em" }}>
           #{row.rank}
         </span>
         <TierBadge tier={row.tier} size="sm" />
         <div style={{ marginTop: "auto", textAlign: "center" }}>
-          <p style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          <p className="podium-score" style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             {m.value}
           </p>
-          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.45)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <p className="podium-label" style={{ fontSize: 10.5, color: "rgba(255,255,255,0.45)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>
             {m.label}
           </p>
         </div>
@@ -256,11 +278,11 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
       }}
       className="lb-row"
     >
-      <span style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.55)", letterSpacing: "-0.02em" }}>
+      <span className="lb-row-rank" style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.55)", letterSpacing: "-0.02em" }}>
         #{row.rank}
       </span>
 
-      <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="lb-row-avatar" style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
         {row.avatarUrl ? (
           <Image src={row.avatarUrl} alt={row.name} width={44} height={44} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -277,19 +299,24 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
         <p style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {row.name}
         </p>
-        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <span>@{row.username}</span>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>@{row.username}</span>
+          <span className="mobile-tier-badge" style={{ display: "none" }}>
+            <TierBadge tier={row.tier} size="xs" showLabel={false} />
+          </span>
           {row.location && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-              <MapPin size={10} /> {row.location}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+              <MapPin size={10} style={{ flexShrink: 0 }} /> <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{row.location}</span>
             </span>
           )}
-        </p>
+        </div>
       </div>
 
-      <TierBadge tier={row.tier} size="xs" />
+      <div className="desktop-tier-badge">
+        <TierBadge tier={row.tier} size="xs" />
+      </div>
 
-      <div style={{ textAlign: "right" }}>
+      <div style={{ textAlign: "right", paddingLeft: 4 }}>
         <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
           {m.value}
         </p>
@@ -300,6 +327,17 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
 
       <style>{`
         .lb-row:hover { border-color: rgba(230,57,70,0.35) !important; transform: translateY(-1px); }
+        @media (max-width: 640px) {
+          .lb-row {
+            grid-template-columns: 28px 40px minmax(0, 1fr) auto !important;
+            gap: 12px !important;
+            padding: 14px 12px !important;
+          }
+          .desktop-tier-badge { display: none !important; }
+          .mobile-tier-badge { display: inline-flex !important; }
+          .lb-row-rank { font-size: 15px !important; }
+          .lb-row-avatar { width: 40px !important; height: 40px !important; }
+        }
       `}</style>
     </Link>
   );

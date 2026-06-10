@@ -186,7 +186,7 @@ function FeaturedCard({ camp }: { camp: Camp }) {
         height: "100%",
       }}
     >
-      <div style={{ position: "relative", aspectRatio: "16/10", overflow: "hidden" }}>
+      <div style={{ position: "relative", aspectRatio: "5/4", overflow: "hidden" }}>
         <div className="camp-card-img" style={{ position: "absolute", inset: 0 }}>
           <Image
             src={img} alt={camp.title}
@@ -645,7 +645,7 @@ function CampsContent() {
                       y={24}
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(440px, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
                         gap: 24,
                       }}
                     >
