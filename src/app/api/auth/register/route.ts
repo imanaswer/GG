@@ -3,11 +3,18 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, cookieOpts } from "@/lib/auth";
 import { ok, fail, handleErr, RegisterSchema } from "@/lib/api";
+import { isReservedDemoIdentity } from "@/lib/dbMode";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const input = RegisterSchema.parse(body);
+
+    // Reserved for the built-in demo account (always routed to the mock DB);
+    // a real user claiming these would be silently shadowed by mock data.
+    if (isReservedDemoIdentity(input.email, input.username)) {
+      return fail("That email or username is reserved", 409);
+    }
 
     const [emailTaken, usernameTaken] = await Promise.all([
       prisma.user.findUnique({ where: { email: input.email }, select: { id: true } }),

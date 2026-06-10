@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { createMockPrismaClient } from "./prisma-mock";
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE } from "./auth";
-import { isPlaceholderUrl } from "./dbMode";
+import { isPlaceholderUrl, DEMO_EMAIL, DEMO_USERNAME } from "./dbMode";
 
 const globalForPrisma = globalThis as unknown as {
   realClient?: PrismaClient;
@@ -64,8 +64,8 @@ async function resolveClient(): Promise<PrismaClient> {
     const token = jar.get(COOKIE)?.value;
     if (token) {
       const payload = await verifyToken(token);
-      // Route queries to mock DB if it's the test account
-      if (payload?.email === "test@gameground.net" || payload?.username === "testplayer") {
+      // Route queries to mock DB if it's the demo account
+      if (payload?.email === DEMO_EMAIL || payload?.username === DEMO_USERNAME) {
         return mockClient;
       }
     }

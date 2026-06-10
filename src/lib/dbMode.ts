@@ -16,3 +16,17 @@ export function isPlaceholderUrl(url: string): boolean {
 export function isDemoMode(): boolean {
   return isPlaceholderUrl(process.env.DATABASE_URL ?? "");
 }
+
+// Identities reserved for the built-in demo player account, which is always
+// routed to the in-memory mock DB (see prisma.ts resolveClient). Real users
+// must not be able to register these, or they'd be silently routed to mock
+// data with their real records invisible and writes lost.
+export const DEMO_EMAIL = "test@gameground.net";
+export const DEMO_USERNAME = "testplayer";
+
+export function isReservedDemoIdentity(email?: string, username?: string): boolean {
+  return (
+    (!!email && email.trim().toLowerCase() === DEMO_EMAIL) ||
+    (!!username && username.trim().toLowerCase() === DEMO_USERNAME)
+  );
+}
