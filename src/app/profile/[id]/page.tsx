@@ -289,6 +289,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   <EmptyState copy="No bookings yet." cta={{ href: "/learn", label: "Find a coach" }} />
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 2 }}>
+                      <Link href="/bookings" style={{ fontSize: 12.5, fontWeight: 600, color: "#e63946", textDecoration: "none" }}>
+                        View all &amp; details →
+                      </Link>
+                    </div>
                     {profile.bookings.map((b, i) => (
                       <motion.div
                         key={b.id}
