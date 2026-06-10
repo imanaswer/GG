@@ -2,6 +2,8 @@ export function Badge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string }> = {
     pending:           { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
     confirmed:         { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
+    approved:          { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
+    rejected:          { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
     cancelled:         { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
     open:              { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
     full:              { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },

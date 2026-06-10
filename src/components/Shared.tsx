@@ -110,6 +110,8 @@ export function SportBadge({ sport }: { sport: string }) {
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string; border: string }> = {
     pending:   { bg: "rgba(234,179,8,0.08)",  color: "#fbbf24", border: "rgba(234,179,8,0.2)"  },
+    approved:  { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
+    rejected:  { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
     confirmed: { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
     cancelled: { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
     open:      { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
