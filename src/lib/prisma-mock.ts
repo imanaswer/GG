@@ -308,16 +308,16 @@ function resolveIncludes(row: Row, include: Record<string, unknown> | undefined,
 
     const rel = relationMap[key];
     if (key === "_count" && typeof val === "object" && val !== null) {
-      result._count = {};
+      (result as any)._count = {};
       const selectObj = (val as any).select || val;
       for (const [countKey, _v] of Object.entries(selectObj)) {
         if (_v) {
           const countRel = relationMap[countKey];
           if (countRel && countRel.type === "many") {
             const countColl = getCollection(countRel.model);
-            result._count[countKey] = countColl.filter(r => r[countRel.fk] === row.id).length;
+            (result as any)._count[countKey] = countColl.filter(r => r[countRel.fk] === row.id).length;
           } else {
-            result._count[countKey] = 0;
+            (result as any)._count[countKey] = 0;
           }
         }
       }
