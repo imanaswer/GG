@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import {
+  approveBooking,
+  rejectBooking,
+  completeBooking,
+  cancelBooking,
+  BookingTransitionError,
+  BookingConflictError,
+} from "@/lib/bookings";
+import { sendEmail, emails } from "@/lib/email";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,13 +43,50 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ bookings, total: bookings.length });
 }
 
+type DecidedBooking = {
+  id: string; userId: string; coachId: string; batchId: string | null; rejectionReason: string | null;
+};
+
+async function notifyBookingDecision(booking: DecidedBooking, status: string) {
+  if (status !== "approved" && status !== "rejected") return;
+  const [user, coach, batch] = await Promise.all([
+    prisma.user.findUnique({ where: { id: booking.userId }, select: { name: true, email: true } }),
+    prisma.coach.findUnique({ where: { id: booking.coachId }, select: { name: true, address: true, phone: true } }),
+    booking.batchId
+      ? prisma.batch.findUnique({ where: { id: booking.batchId }, select: { day: true, time: true } })
+      : Promise.resolve(null),
+  ]);
+  if (!user?.email) return;
+  const slot = batch ? `${batch.day} ${batch.time}` : "your requested session";
+  const coachName = coach?.name ?? "your coach";
+  const tpl =
+    status === "approved"
+      ? emails.bookingApproved(user.name, coachName, slot, coach?.address ?? "", coach?.phone ?? "")
+      : emails.bookingRejected(user.name, coachName, slot, booking.rejectionReason ?? undefined);
+  await sendEmail({ to: user.email, ...tpl });
+}
+
 export async function PATCH(req: NextRequest) {
-  if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { id, status } = await req.json();
+  if (!(await getAdminSessionFromRequest(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id, status, rejectionReason } = await req.json();
+  if (!id) return NextResponse.json({ error: "Missing booking id" }, { status: 400 });
+
   try {
-    await prisma.booking.update({ where: { id }, data: { status } });
-  } catch {
+    let updated;
+    if (status === "approved") updated = await approveBooking(id);
+    else if (status === "rejected") updated = await rejectBooking(id, rejectionReason);
+    else if (status === "completed") updated = await completeBooking(id);
+    else if (status === "cancelled") updated = await cancelBooking(id);
+    else return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+
+    // Best-effort email; never fail the status change on a mail error.
+    await notifyBookingDecision(updated, status).catch((e) => console.error("[booking email]", e));
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    if (e instanceof BookingTransitionError || e instanceof BookingConflictError) {
+      return NextResponse.json({ error: e.message }, { status: 409 });
+    }
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json({ ok: true });
 }
