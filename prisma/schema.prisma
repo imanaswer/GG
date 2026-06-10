@@ -137,15 +137,19 @@ model Game {
 }
 
 model GamePlayer {
-  id       String   @id @default(cuid())
-  gameId   String
-  userId   String
-  attended Boolean?
-  joinedAt DateTime @default(now())
+  id        String   @id @default(cuid())
+  gameId    String
+  userId    String
+  attended  Boolean?
+  status    String   @default("joined")
+  cancelledAt DateTime?
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
   game Game @relation(fields: [gameId], references: [id])
   user User @relation(fields: [userId], references: [id])
   @@unique([gameId, userId])
   @@index([userId, joinedAt(sort: Desc)])
+  @@index([gameId, status, joinedAt(sort: Desc)])
 }
 
 model WaitlistEntry {
@@ -233,10 +237,14 @@ model CampRegistration {
   userId        String
   childName     String
   childAge      Int
-  paymentStatus String   @default("unpaid")
+  status        String   @default("registered")
+  paymentStatus String   @default("pending")
+  cancelledAt   DateTime?
   registeredAt  DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   camp Camp @relation(fields: [campId], references: [id])
   user User @relation(fields: [userId], references: [id])
+  @@index([campId, status, registeredAt(sort: Desc)])
 }
 
 model SportEvent {
@@ -277,10 +285,14 @@ model EventRegistration {
   eventId       String
   userId        String
   teamName      String?
-  paymentStatus String   @default("unpaid")
+  status        String   @default("registered")
+  paymentStatus String   @default("pending")
+  cancelledAt   DateTime?
   registeredAt  DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   event SportEvent @relation(fields: [eventId], references: [id])
   user  User       @relation(fields: [userId], references: [id])
+  @@index([eventId, status, registeredAt(sort: Desc)])
 }
 
 model Workshop {
@@ -329,10 +341,14 @@ model WorkshopRegistration {
   participantName  String
   participantAge   Int?
   registrationType String   @default("adult")
-  paymentStatus    String   @default("unpaid")
+  status           String   @default("registered")
+  paymentStatus    String   @default("pending")
+  cancelledAt      DateTime?
   registeredAt     DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   workshop Workshop @relation(fields: [workshopId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
+  @@index([workshopId, status, registeredAt(sort: Desc)])
 }
 
 model Payment {
