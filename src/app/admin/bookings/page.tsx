@@ -33,10 +33,19 @@ export default function AdminBookings() {
   });
 
   const patch = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      fetch("/api/admin/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }),
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) => {
+      const r = await fetch("/api/admin/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, rejectionReason }) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Action failed");
+      return r.json();
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-bookings"] }),
+    onError: (e: Error) => alert(e.message),
   });
+
+  const reject = (id: string) => {
+    const reason = prompt("Optional: reason for rejection (shown to the player)") ?? undefined;
+    patch.mutate({ id, status: "rejected", rejectionReason: reason || undefined });
+  };
 
   const bookings = data?.bookings ?? [];
   const paged    = bookings.slice((page - 1) * PGSIZE, page * PGSIZE);
@@ -59,13 +68,28 @@ export default function AdminBookings() {
             </button>
           </div>
 
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+            {([
+              ["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["completed", "Completed"], ["all", "All"],
+            ] as [string, string][]).map(([val, label]) => (
+              <button key={val} onClick={() => { setStatus(val); setPage(1); }}
+                style={{ padding: "7px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  background: status === val ? "#e63946" : "transparent",
+                  color: status === val ? "#fff" : "#9ca3af",
+                  border: `1px solid ${status === val ? "#e63946" : "rgba(255,255,255,0.12)"}` }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Filters */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
             <div style={{ position: "relative", flex: "1 1 200px" }}>
               <Search size={14} color="#6b7280" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
               <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Search player or coach…" style={{ width: "100%", height: 38, paddingLeft: 36, paddingRight: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#1c1c1c", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
             </div>
-            {[{ val: status, set: setStatus, opts: ["all","pending","confirmed","cancelled"], label: "Status" },
+            {[{ val: status, set: setStatus, opts: ["all","pending","approved","rejected","completed","cancelled"], label: "Status" },
               { val: sport,  set: setSport,  opts: ["all", ...SPORTS], label: "Sport" }
             ].map(({ val, set, opts, label }) => (
               <select key={label} value={val} onChange={e => { set(e.target.value); setPage(1); }} style={{ height: 38, padding: "0 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#1c1c1c", color: val === "all" ? "#6b7280" : "#fff", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
@@ -104,10 +128,13 @@ export default function AdminBookings() {
                       <td style={tdStyle} onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6 }}>
                           {b.status === "pending" && (
-                            <button onClick={() => patch.mutate({ id: b.id, status: "confirmed" })} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.15)", color: "#4ade80", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
+                            <>
+                              <button onClick={() => patch.mutate({ id: b.id, status: "approved" })} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.15)", color: "#4ade80", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve</button>
+                              <button onClick={() => reject(b.id)} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239,68,68,0.12)", color: "#f87171", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Reject</button>
+                            </>
                           )}
-                          {b.status !== "cancelled" && (
-                            <button onClick={() => patch.mutate({ id: b.id, status: "cancelled" })} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(239,68,68,0.12)", color: "#f87171", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                          {b.status === "approved" && (
+                            <button onClick={() => patch.mutate({ id: b.id, status: "completed" })} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "rgba(96,165,250,0.15)", color: "#60a5fa", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Mark Completed</button>
                           )}
                         </div>
                       </td>
@@ -158,8 +185,15 @@ export default function AdminBookings() {
                 </div>
               ))}
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                {drawer.status === "pending" && <button onClick={() => { patch.mutate({ id: drawer.id, status: "confirmed" }); setDrawer(null); }} style={{ height: 40, borderRadius: 9, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Confirm Booking</button>}
-                {drawer.status !== "cancelled" && <button onClick={() => { patch.mutate({ id: drawer.id, status: "cancelled" }); setDrawer(null); }} style={{ height: 40, borderRadius: 9, fontSize: 13, fontWeight: 600, background: "transparent", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>Cancel Booking</button>}
+                {drawer.status === "pending" && (
+                  <>
+                    <button onClick={() => { patch.mutate({ id: drawer.id, status: "approved" }); setDrawer(null); }} style={{ height: 40, borderRadius: 9, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve Booking</button>
+                    <button onClick={() => { reject(drawer.id); setDrawer(null); }} style={{ height: 40, borderRadius: 9, fontSize: 13, fontWeight: 600, background: "transparent", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>Reject Booking</button>
+                  </>
+                )}
+                {drawer.status === "approved" && (
+                  <button onClick={() => { patch.mutate({ id: drawer.id, status: "completed" }); setDrawer(null); }} style={{ height: 40, borderRadius: 9, fontSize: 13, fontWeight: 700, background: "#60a5fa", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Mark Completed</button>
+                )}
               </div>
             </div>
           </div>
