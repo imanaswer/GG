@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { PaymentStatus } from "@/lib/paymentStatus";
 import crypto from "crypto";
 
 type Body = {
@@ -51,11 +52,11 @@ export async function POST(req: NextRequest) {
             userId: session.id, entityType, entityId,
             razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
             amount: amount ?? 0, currency: "INR",
-            status: "paid", paidAt: new Date(),
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
         prisma.campRegistration.create({
-          data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" },
+          data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
         }),
         prisma.camp.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
       ]);
@@ -79,10 +80,10 @@ export async function POST(req: NextRequest) {
             userId: session.id, entityType, entityId,
             razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
             amount: amount ?? 0, currency: "INR",
-            status: "paid", paidAt: new Date(),
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
-        prisma.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" } }),
+        prisma.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus } }),
         prisma.sportEvent.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
       ]);
       return ok({ verified: true });
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
             userId: session.id, entityType, entityId,
             razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
             amount: amount ?? 0, currency: "INR",
-            status: "paid", paidAt: new Date(),
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
         prisma.gamePlayer.create({ data: { gameId: entityId, userId: session.id } }),
@@ -139,14 +140,14 @@ export async function POST(req: NextRequest) {
             userId: session.id, entityType, entityId,
             razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
             amount: amount ?? 0, currency: "INR",
-            status: "paid", paidAt: new Date(),
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
         prisma.workshopRegistration.create({
           data: {
             workshopId: entityId, userId: session.id,
             participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
-            registrationType, paymentStatus: "paid",
+            registrationType, paymentStatus: "paid" satisfies PaymentStatus,
           },
         }),
         prisma.workshop.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
