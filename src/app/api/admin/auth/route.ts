@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signAdminToken, clearAdminCookie } from "@/lib/adminAuth";
+import { isDemoMode } from "@/lib/dbMode";
 
 export async function POST(req: NextRequest) {
   const { email, password, action } = await req.json();
@@ -15,7 +16,15 @@ export async function POST(req: NextRequest) {
 
   if (email === "admin@gameground.com" && password === adminPw) {
     validAdmin = true;
-  } else if (email === "testadmin@gameground.com" && password === "password123") {
+  } else if (
+    // Demo/test admin: only valid when there's no real database configured, so
+    // it can never grant access to a production DB. Mirrors the routing gate in
+    // prisma.ts resolveClient(), which only sends testadmin to the mock DB in
+    // demo mode.
+    isDemoMode() &&
+    email === "testadmin@gameground.com" &&
+    password === "password123"
+  ) {
     validAdmin = true;
   }
 

@@ -4,20 +4,12 @@ import { Pool } from "pg";
 import { createMockPrismaClient } from "./prisma-mock";
 import { cookies } from "next/headers";
 import { verifyToken, COOKIE } from "./auth";
+import { isPlaceholderUrl } from "./dbMode";
 
-const globalForPrisma = globalThis as unknown as { 
+const globalForPrisma = globalThis as unknown as {
   realClient?: PrismaClient;
   mockClient?: PrismaClient;
 };
-
-function isPlaceholderUrl(url: string): boolean {
-  return (
-    url.includes("placeholder") ||
-    url.includes("password@localhost") ||
-    url.includes("example") ||
-    url === ""
-  );
-}
 
 // 1. Export the explicit mock client (used explicitly in login route)
 export const mockClient = (globalForPrisma.mockClient ?? createMockPrismaClient()) as unknown as PrismaClient;
@@ -94,40 +86,64 @@ async function resolveClient(): Promise<PrismaClient> {
 }
 
 // 4. The Smart Proxy
+//
+// The client can only be resolved asynchronously (it depends on the request's
+// cookies), so each query is returned as a lazy, memoized thenable that picks
+// the right client on first await. Each lazy query also carries its
+// {model, method, args} so that array-form $transaction can rebuild *real*
+// PrismaPromises on the resolved client — a plain thenable is not a
+// PrismaPromise and would break (or de-atomicise) prisma.$transaction([...]).
+type LazyMeta = { model: string; method: string; args: any[] };
+
+function makeLazy(run: () => Promise<any>, meta?: LazyMeta) {
+  let p: Promise<any> | undefined;
+  const exec = () => (p ??= run()); // memoised: run the query at most once
+  return {
+    __lazyQuery: meta,
+    then: (resolve: any, reject?: any) => exec().then(resolve, reject),
+    catch: (reject: any) => exec().catch(reject),
+    finally: (cb: any) => exec().finally(cb),
+  };
+}
+
+// Rebuild array-form $transaction operations as real promises on the resolved
+// client. Exported for testing. Elements that aren't lazy queries (defensive)
+// are passed through untouched.
+export function rebuildTxOps(client: any, ops: any[]): any[] {
+  return ops.map((op) =>
+    op && op.__lazyQuery
+      ? client[op.__lazyQuery.model][op.__lazyQuery.method](...op.__lazyQuery.args)
+      : op,
+  );
+}
+
+const SPECIAL_PROPS = ["$transaction", "$connect", "$disconnect", "$queryRaw", "$executeRaw"];
+
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, modelOrProp) {
-    if (typeof modelOrProp === "string" && ["$transaction", "$connect", "$disconnect", "$queryRaw", "$executeRaw"].includes(modelOrProp)) {
-      return (...args: any[]) => {
-         return {
-           then: async (resolve: any, reject: any) => {
-             try {
-               const client = await resolveClient();
-               resolve(await (client as any)[modelOrProp](...args));
-             } catch(e) { reject(e); }
-           }
-         }
-      }
+    if (typeof modelOrProp === "string" && SPECIAL_PROPS.includes(modelOrProp)) {
+      return (...args: any[]) =>
+        makeLazy(async () => {
+          const client = (await resolveClient()) as any;
+          if (modelOrProp === "$transaction" && Array.isArray(args[0])) {
+            return client.$transaction(rebuildTxOps(client, args[0]), ...args.slice(1));
+          }
+          return client[modelOrProp](...args);
+        });
     }
 
     return new Proxy({}, {
       get(_modelTarget, method) {
-        return (...args: any[]) => {
-          return {
-            then: async (resolve: any, reject: any) => {
-              try {
-                const client = await resolveClient();
-                resolve(await (client as any)[modelOrProp][method](...args));
-              } catch(e) { reject(e); }
+        if (typeof method !== "string") return undefined;
+        return (...args: any[]) =>
+          makeLazy(
+            async () => {
+              const client = (await resolveClient()) as any;
+              return client[modelOrProp as string][method](...args);
             },
-            catch: async (reject: any) => {
-              try {
-                const client = await resolveClient();
-                await (client as any)[modelOrProp][method](...args);
-              } catch(e) { reject(e); }
-            }
-          }
-        }
-      }
+            { model: modelOrProp as string, method, args },
+          );
+      },
     });
-  }
+  },
 });
