@@ -37,6 +37,7 @@
 - `src/app/api/admin/revenue/route.ts` — count billable statuses.
 - `src/app/api/admin/overview/route.ts` — confirm-rate + active-bookings use new vocabulary.
 - `src/app/api/admin/coaches/route.ts` — `confirmedBookings` counts billable statuses.
+- `src/app/admin/page.tsx` — "Active Bookings" sublabel copy `confirmed`→`approved`.
 - `src/components/Shared.tsx` — `StatusBadge` gains `approved`/`rejected`.
 - `src/components/admin/Badge.tsx` — gains `approved`/`rejected`.
 - `src/hooks/useData.ts` — `Booking` type gains audit fields; `useCancelBooking` sends `{ id, status }`.
@@ -706,6 +707,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Modify: `src/app/api/admin/revenue/route.ts`
 - Modify: `src/app/api/admin/overview/route.ts`
 - Modify: `src/app/api/admin/coaches/route.ts`
+- Modify: `src/app/admin/page.tsx` (stale "Pending + confirmed" sublabel)
 
 - [ ] **Step 1: Review eligibility → `completed` only**
 
@@ -784,19 +786,30 @@ to:
 ```
 (Property name kept so the admin coaches UI is untouched; it now means "approved + completed".)
 
-- [ ] **Step 5: Type-check + grep for stragglers**
+- [ ] **Step 5: Fix the stale admin overview sublabel**
+
+In `src/app/admin/page.tsx`, change the Active Bookings sublabel from:
+```tsx
+            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + confirmed"  icon={CalendarCheck}  />
+```
+to:
+```tsx
+            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + approved"  icon={CalendarCheck}  />
+```
+
+- [ ] **Step 6: Type-check + grep the API layer for stragglers**
 
 Run:
 ```bash
 npx tsc --noEmit
-grep -rn '"confirmed"' src/app | grep -v node_modules
+grep -rn '"confirmed"' src/app/api
 ```
-Expected: type-check clean; the grep returns **no** matches under `src/app/api`. (UI string matches in `coach/[id]` and `coach/dashboard` are handled in Tasks 8/10.)
+Expected: type-check clean; the grep returns **no** matches. (Remaining UI string matches in `coach/[id]` pending-copy and elsewhere are intentional / handled in Tasks 8–11.)
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/app/api/coaches/[id]/reviews/route.ts src/app/api/admin/revenue/route.ts src/app/api/admin/overview/route.ts src/app/api/admin/coaches/route.ts
+git add src/app/api/coaches/[id]/reviews/route.ts src/app/api/admin/revenue/route.ts src/app/api/admin/overview/route.ts src/app/api/admin/coaches/route.ts src/app/admin/page.tsx
 git commit -m "feat: review eligibility requires completed; metrics count approved+completed
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -1241,7 +1254,7 @@ export default function PlayerBookings() {
 
 - [ ] **Step 2: Update coach detail status copy (`confirmed` → `approved`)**
 
-In `src/app/coach/[id]/page.tsx`, the booking-confirmation block (around lines 674–712) compares `bookingStatus === "confirmed"`. Replace every `bookingStatus === "confirmed"` with `bookingStatus === "approved"`, and every `bookingStatus !== "confirmed"` with `bookingStatus !== "approved"`. The user-visible strings stay sensible:
+In `src/app/coach/[id]/page.tsx`, the booking-confirmation block (around lines 674–712) compares `bookingStatus === "confirmed"`. This is the **only** place `bookingStatus` is referenced — the review form (lines ~482–549) is gated only on `user` being signed in and relies on the API's `completed`-only check (Task 7) plus the hint text (§3 below), so this replace does not affect review gating. Replace every `bookingStatus === "confirmed"` with `bookingStatus === "approved"`, and every `bookingStatus !== "confirmed"` with `bookingStatus !== "approved"`. The user-visible strings stay sensible:
 - `"Session confirmed!"` → `"Session approved!"`
 - `"Your session has been confirmed by the coach. See you on the court!"` → `"Your session has been approved. See you on the court!"`
 - The pending copy `"Waiting for confirmation from the team..."` and `"You'll be notified once confirmed"` may stay as-is (they describe the pending state).
