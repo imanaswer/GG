@@ -1,7 +1,7 @@
 // Game Ground service worker — offline-first app shell, network-first for API.
 // Versioned caches let us invalidate cleanly when we ship a new worker.
 
-const VERSION = "gg-v1";
+const VERSION = "gg-v2";
 const SHELL   = `gg-shell-${VERSION}`;
 const RUNTIME = `gg-runtime-${VERSION}`;
 

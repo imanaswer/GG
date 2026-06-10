@@ -10,7 +10,7 @@ import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { Stars, SkillBadge, SportBadge } from "@/components/Shared";
-import { useCoach, useCreateBooking } from "@/hooks/useData";
+import { useCoach, useCreateBooking, useCancelBooking } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { COACH_FALLBACKS, HERO_BACKDROPS, pickFallback } from "@/lib/premium-images";
 
@@ -48,6 +48,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const { data: coach, isLoading, error } = useCoach(id);
   const { user } = useAuth();
   const book = useCreateBooking();
+  const cancelBooking = useCancelBooking();
   const [tab, setTab] = useState<"overview" | "batches" | "photos" | "reviews">("overview");
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -58,6 +59,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const booked = hasExistingBooking || justBooked;
   const [review, setReview] = useState({ rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [phone, setPhone] = useState("");
 
   const handleReview = async () => {
     if (!user) { toast.error("Please sign in to leave a review"); return; }
@@ -75,10 +77,20 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
 
   const handleBook = (batchId?: string) => {
     if (!user) { toast.error("Please sign in to book a session"); return; }
+    const cleanedPhone = phone.trim();
+    if (!cleanedPhone) { toast.error("Please add a mobile number so the team can reach you"); return; }
+    if (!/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) { toast.error("Please enter a valid mobile number"); return; }
     book.mutate(
-      { coachId: id, batchId: batchId ?? selectedBatch ?? undefined },
+      { coachId: id, batchId: batchId ?? selectedBatch ?? undefined, phone: cleanedPhone },
       { onSuccess: () => setJustBooked(true) },
     );
+  };
+
+  const handleCancel = () => {
+    const bookingId = coach?.userBooking?.id;
+    if (!bookingId) { toast.error("No booking to cancel"); return; }
+    if (!confirm("Cancel this booking request? This cannot be undone.")) return;
+    cancelBooking.mutate(bookingId, { onSuccess: () => setJustBooked(false) });
   };
 
   if (isLoading) {
@@ -712,8 +724,55 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             <Clock size={12} /> You&apos;ll be notified once confirmed
                           </div>
                         )}
+                        {bookingStatus !== "approved" && coach.userBooking?.id && (
+                          <button
+                            onClick={handleCancel}
+                            disabled={cancelBooking.isPending}
+                            style={{
+                              marginTop: 12, width: "100%", height: 40, borderRadius: 100,
+                              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                              background: "transparent",
+                              color: "#f87171",
+                              border: "1px solid rgba(248,113,113,0.3)",
+                              cursor: cancelBooking.isPending ? "not-allowed" : "pointer",
+                              opacity: cancelBooking.isPending ? 0.6 : 1,
+                              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                            }}
+                          >
+                            <X size={13} /> {cancelBooking.isPending ? "Cancelling…" : "Cancel booking"}
+                          </button>
+                        )}
                       </div>
                     ) : (
+                      <>
+                      {coach.seatsLeft > 0 && (
+                        <div style={{ marginBottom: 4 }}>
+                          <label style={{
+                            display: "block", fontSize: 11, fontWeight: 600,
+                            color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
+                            letterSpacing: "0.06em", marginBottom: 7,
+                          }}>
+                            Mobile number
+                          </label>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={e => setPhone(e.target.value)}
+                            placeholder="e.g. +91 98765 43210"
+                            style={{
+                              width: "100%", height: 46, borderRadius: 12,
+                              padding: "0 16px", boxSizing: "border-box",
+                              fontSize: 14, fontFamily: "inherit",
+                              background: "rgba(255,255,255,0.03)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              color: "#fff", outline: "none",
+                            }}
+                          />
+                          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+                            So the team can confirm your session.
+                          </p>
+                        </div>
+                      )}
                       <Magnetic strength={6}>
                         <button
                           onClick={() => handleBook()}
@@ -738,6 +797,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               : selectedBatch ? "Book selected batch" : "Book a session"}
                         </button>
                       </Magnetic>
+                      </>
                     )}
 
                     <button

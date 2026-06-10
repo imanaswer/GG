@@ -185,11 +185,12 @@ export function useBookings() {
 }
 export function useCreateBooking() {
   const qc = useQueryClient();
-  return useMutation<Booking, Error, { coachId: string; batchId?: string; note?: string }>({
+  return useMutation<Booking, Error, { coachId: string; batchId?: string; note?: string; phone?: string }>({
     mutationFn: data => f("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: ["coach"] });
       toast.success("Booking request sent! Coach will confirm within 24h.");
     },
     onError: e => toast.error(e.message),
@@ -199,7 +200,12 @@ export function useCancelBooking() {
   const qc = useQueryClient();
   return useMutation<unknown, Error, string>({
     mutationFn: id => f("/api/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "cancelled" }) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Booking cancelled."); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: ["coach"] });
+      toast.success("Booking cancelled.");
+    },
     onError: e => toast.error(e.message),
   });
 }

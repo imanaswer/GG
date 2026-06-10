@@ -50,13 +50,22 @@ export async function POST(req: NextRequest) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const { coachId, batchId, note } = await req.json();
+    const { coachId, batchId, note, phone } = await req.json();
 
     const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true } });
     if (!coach) return fail("Coach not found", 404);
     if (coach.seatsLeft <= 0) return fail("No seats available", 400);
 
+    // Capture the player's mobile number so the team can reach them about the session.
+    const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
+    if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
+      return fail("Please enter a valid mobile number", 400);
+    }
+
     const booking = await prisma.$transaction(async tx => {
+      if (cleanedPhone) {
+        await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
+      }
       if (batchId) {
         const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
         if (batch && batch.coachId === coachId && batch.seats > 0) {
