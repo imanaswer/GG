@@ -45,19 +45,40 @@ export type Booking = {
   completedAt?: string | null; cancelledAt?: string | null;
 };
 
+export type ProfileGameItem = {
+  id: string; sport: string; title: string; location: string; scheduledAt: string;
+  status: string; role: "player" | "organizer"; groupStatus: "upcoming" | "completed" | "cancelled";
+};
+export type ProfileRegItem = {
+  id: string; title: string; startDate?: string; endDate?: string;
+  status: string; paymentStatus: string; groupStatus: "upcoming" | "completed" | "cancelled";
+};
+export type ProfileUpcoming = {
+  type: "coach" | "game" | "workshop" | "camp" | "event";
+  id: string; title: string; date: string | null; location?: string; status?: string; href: string;
+};
+export type ProfileSeason = { id: string; label: string; daysLeft: number; rep: number; rank: number };
+export type ProfileCompletion = { pct: number; items: { key: string; label: string; done: boolean }[] };
+
 export type UserProfile = {
   id: string; name: string; username: string; email?: string; location?: string;
   bio?: string; avatarUrl?: string; role: string;
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
   reputationScore: number; tier: string; tierUpdatedAt?: string;
   playerRank?: number; playerCount?: number;
-  lookingFor?: string | null;
   sports: { sport: string; games: number; level: string }[];
-  upcomingGames: Game[];
-  organizedGames: Game[];
-  achievements: { title: string; description: string; icon: string }[];
+  games: ProfileGameItem[];
+  upcoming?: ProfileUpcoming;
   bookings?: Booking[];
+  registrations?: { camps: ProfileRegItem[]; events: ProfileRegItem[]; workshops: ProfileRegItem[] };
+  profileCompletion?: ProfileCompletion;
+  season: ProfileSeason;
   createdAt: string;
+  // Retained as optional for backward-compat until the profile page rewrite (later task) removes them.
+  upcomingGames?: Game[];
+  organizedGames?: Game[];
+  achievements?: { title: string; description: string; icon: string }[];
+  lookingFor?: string | null;
 };
 
 export type AIResult = { items: Record<string, unknown>[]; poweredBy: string };
