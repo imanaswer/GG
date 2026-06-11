@@ -1,9 +1,9 @@
 "use client";
 import { Search, Download } from "lucide-react";
-import type { SortKey, DatePreset } from "@/lib/adminBookings/types";
+import type { SortKey, DatePreset, DateAxis } from "@/lib/adminBookings/types";
 
 export interface ToolbarState {
-  q: string; date: DatePreset; from: string; to: string; sort: SortKey;
+  q: string; date: DatePreset; from: string; to: string; sort: SortKey; by: DateAxis; group: "day" | "off";
 }
 
 const inputStyle = {
@@ -24,12 +24,23 @@ export function BookingsToolbar({
           style={{ ...inputStyle, width: "100%", paddingLeft: 32, boxSizing: "border-box" }} />
       </div>
       <select value={state.date} onChange={e => set({ date: e.target.value as DatePreset })} style={inputStyle}>
-        <option value="all">All dates</option>
+        <option value="upcoming">Upcoming</option>
         <option value="today">Today</option>
-        <option value="week">This week</option>
-        <option value="month">This month</option>
+        <option value="tomorrow">Tomorrow</option>
+        <option value="past">Past</option>
+        <option value="all">All dates</option>
         <option value="custom">Custom…</option>
       </select>
+      <select value={state.by} onChange={e => set({ by: e.target.value as DateAxis })} style={inputStyle} title="Which date the filter uses">
+        <option value="session">By: Session date</option>
+        <option value="booking">By: Booking date</option>
+      </select>
+      <button
+        onClick={() => set({ group: state.group === "day" ? "off" : "day" })}
+        style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", color: state.group === "day" ? "#e63946" : "#9ca3af" }}
+      >
+        {state.group === "day" ? "▼ Grouped" : "Group by date"}
+      </button>
       {state.date === "custom" && (
         <>
           <input type="date" value={state.from} onChange={e => set({ from: e.target.value })} style={inputStyle} />
