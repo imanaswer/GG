@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
+import { PaymentStatus } from "@/lib/paymentStatus";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         data: {
           workshopId: id, userId: session.id,
           participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
-          registrationType, paymentStatus: isFree ? "free" : "unpaid",
+          registrationType, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus,
         },
       }),
       prisma.workshop.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),

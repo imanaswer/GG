@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const [total, pending, paid, cancelled, refunded] = await Promise.all([
       m.count(),
       m.count({ where: { status: { not: "cancelled" }, paymentStatus: "pending" } }),
-      m.count({ where: { status: { not: "cancelled" }, paymentStatus: "paid" } }),
+      m.count({ where: { status: { not: "cancelled" }, paymentStatus: "paid", [parent]: { endDate: { gte: now } } } }),
       m.count({ where: { status: "cancelled" } }),
       m.count({ where: { status: { not: "cancelled" }, paymentStatus: "refunded" } }),
     ]);

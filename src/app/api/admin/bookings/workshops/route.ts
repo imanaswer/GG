@@ -88,7 +88,9 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { ids, id, action } = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  const { ids, id, action } = body;
   const list: string[] = Array.isArray(ids) ? ids : id ? [id] : [];
   if (!list.length || !action) return NextResponse.json({ error: "Missing ids/action" }, { status: 400 });
   if (!isActionAllowed("workshops", action as BookingAction)) return NextResponse.json({ error: "Action not allowed" }, { status: 400 });

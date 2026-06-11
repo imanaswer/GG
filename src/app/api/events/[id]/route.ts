@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
+import { PaymentStatus } from "@/lib/paymentStatus";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const isFree = event.entryFeeAmount === 0;
 
     await prisma.$transaction([
-      prisma.eventRegistration.create({ data: { eventId: id, userId: session.id, teamName, paymentStatus: isFree ? "free" : "unpaid" } }),
+      prisma.eventRegistration.create({ data: { eventId: id, userId: session.id, teamName, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus } }),
       prisma.sportEvent.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),
     ]);
 
