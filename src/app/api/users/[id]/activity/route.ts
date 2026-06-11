@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { TIER_META, type Tier } from "@/lib/reputation";
 
@@ -14,9 +15,11 @@ export type ActivityItem = {
   ts: string;
 };
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
+    const session = await getSessionFromRequest(req).catch(() => null);
+    const isOwner = !!session && session.id === id;
     const user = await prisma.user.findUnique({
       where: { id },
       select: { id: true, deletedAt: true, tier: true, tierUpdatedAt: true },
@@ -197,8 +200,13 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
     const heatmapTotal = Object.values(dayCounts).reduce((a, b) => a + b, 0);
 
+    // Registration items (camp/event/workshop sign-ups) are private; only the
+    // owner sees them. Filter before the slice so non-owners still get up to 5
+    // public items. Games and reviews stay public.
+    const publicItems = isOwner ? items : items.filter(i => i.kind !== "registration");
+
     return ok({
-      items: items.slice(0, 5),
+      items: publicItems.slice(0, 5),
       streakWeeks,
       heatmap: {
         dayCounts,
