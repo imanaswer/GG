@@ -8,31 +8,53 @@ export function parsePagination(p: URLSearchParams): Pagination {
   return { page, pageSize, skip: (page - 1) * pageSize, take: pageSize };
 }
 
-export interface DateRange { gte: Date; lte: Date; }
+export const IST_OFFSET_MIN = 330; // Asia/Kolkata, fixed +5:30, no DST
 
-/** Returns a {gte, lte?} range for the requested preset, or undefined for "all". */
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+
+/** IST weekday name for the day `offsetDays` from `now`. */
+export function istWeekday(now: Date, offsetDays = 0): string {
+  const ist = new Date(now.getTime() + IST_OFFSET_MIN * 60_000 + offsetDays * 86_400_000);
+  return WEEKDAYS[ist.getUTCDay()];
+}
+
+/** UTC instant bounds for the IST calendar day `offsetDays` from `now`. */
+export function istDayBounds(now: Date, offsetDays = 0): { gte: Date; lte: Date } {
+  const ist = new Date(now.getTime() + IST_OFFSET_MIN * 60_000);
+  const y = ist.getUTCFullYear(), mo = ist.getUTCMonth(), d = ist.getUTCDate() + offsetDays;
+  return istDayBoundsFor(y, mo, d);
+}
+
+function istDayBoundsFor(y: number, moZeroBased: number, d: number): { gte: Date; lte: Date } {
+  const startUtc = Date.UTC(y, moZeroBased, d, 0, 0, 0, 0) - IST_OFFSET_MIN * 60_000;
+  const endUtc = Date.UTC(y, moZeroBased, d, 23, 59, 59, 999) - IST_OFFSET_MIN * 60_000;
+  return { gte: new Date(startUtc), lte: new Date(endUtc) };
+}
+
+/** Both bounds optional: `upcoming` has only gte, `past` has only lte. */
+export interface DateRange { gte?: Date; lte?: Date; }
+
+/** Returns a UTC {gte?, lte?} range for the requested IST preset, or undefined for "all". */
 export function parseDateRange(p: URLSearchParams, now: Date): DateRange | undefined {
   const preset = p.get("date") ?? "all";
   if (preset === "all") return undefined;
-  const startOfDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
-  const endOfDay   = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
-  if (preset === "today") return { gte: startOfDay(now), lte: endOfDay(now) };
-  if (preset === "week") {
-    const gte = startOfDay(now); gte.setUTCDate(gte.getUTCDate() - 6);
-    return { gte, lte: endOfDay(now) };
-  }
-  if (preset === "month") {
-    const gte = startOfDay(now); gte.setUTCDate(gte.getUTCDate() - 29);
-    return { gte, lte: endOfDay(now) };
-  }
+  if (preset === "today") return istDayBounds(now, 0);
+  if (preset === "tomorrow") return istDayBounds(now, 1);
+  if (preset === "upcoming") return { gte: istDayBounds(now, 0).gte };
+  if (preset === "past") return { lte: new Date(istDayBounds(now, 0).gte.getTime() - 1) };
   if (preset === "custom") {
     const from = p.get("from"); const to = p.get("to");
     if (!from) return undefined;
-    const gte = startOfDay(new Date(from + "T00:00:00.000Z"));
-    const lte = to ? endOfDay(new Date(to + "T00:00:00.000Z")) : endOfDay(now);
-    return { gte, lte };
+    const fromBounds = istDayFromString(from);
+    const toBounds = to ? istDayFromString(to) : istDayBounds(now, 0);
+    return { gte: fromBounds.gte, lte: toBounds.lte };
   }
   return undefined;
+}
+
+function istDayFromString(s: string): { gte: Date; lte: Date } {
+  const [y, mo, d] = s.split("-").map(Number);
+  return istDayBoundsFor(y, mo - 1, d);
 }
 
 /** Maps a sort key to a Prisma orderBy. `createdField` is the row's creation
