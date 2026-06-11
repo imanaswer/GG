@@ -53,10 +53,15 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
-  const hasExistingBooking = !!coach?.userBooking;
   const bookingStatus = coach?.userBooking?.status ?? null;
   const [justBooked, setJustBooked] = useState(false);
-  const booked = hasExistingBooking || justBooked;
+  // Only pending/approved count as an active booking that blocks re-booking.
+  // Rejected/completed fall through so the player can request again.
+  const effectiveStatus =
+    bookingStatus === "approved" ? "approved"
+    : (justBooked || bookingStatus === "pending") ? "pending"
+    : bookingStatus; // "rejected" | "completed" | null
+  const activeBooking = effectiveStatus === "pending" || effectiveStatus === "approved";
   const [review, setReview] = useState({ rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [phone, setPhone] = useState("");
@@ -683,37 +688,37 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                 {/* CTAs */}
                 <Reveal>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {booked ? (
+                    {activeBooking ? (
                       <div style={{
-                        background: bookingStatus === "approved"
+                        background: effectiveStatus === "approved"
                           ? "rgba(34,197,94,0.06)" : "rgba(234,179,8,0.06)",
-                        border: `1px solid ${bookingStatus === "approved"
+                        border: `1px solid ${effectiveStatus === "approved"
                           ? "rgba(34,197,94,0.2)" : "rgba(234,179,8,0.2)"}`,
                         borderRadius: 20, padding: "22px 20px",
                         textAlign: "center",
                       }}>
                         <div style={{
                           width: 44, height: 44, borderRadius: "50%",
-                          background: bookingStatus === "approved"
+                          background: effectiveStatus === "approved"
                             ? "rgba(34,197,94,0.12)" : "rgba(234,179,8,0.12)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           margin: "0 auto 14px",
                         }}>
-                          {bookingStatus === "approved"
+                          {effectiveStatus === "approved"
                             ? <CheckCircle size={22} color="#22c55e" />
                             : <Clock size={22} color="#eab308" />
                           }
                         </div>
                         <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
-                          {bookingStatus === "approved" ? "Session approved!" : "Session booked!"}
+                          {effectiveStatus === "approved" ? "Session approved!" : "Session booked!"}
                         </p>
                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>
-                          {bookingStatus === "approved"
+                          {effectiveStatus === "approved"
                             ? "Your session has been approved. See you on the court!"
                             : "Waiting for confirmation from the team. A person will get back to you within 24 hours."
                           }
                         </p>
-                        {bookingStatus !== "approved" && (
+                        {effectiveStatus !== "approved" && (
                           <div style={{
                             marginTop: 14, padding: "8px 14px", borderRadius: 10,
                             background: "rgba(255,255,255,0.03)",
@@ -724,7 +729,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             <Clock size={12} /> You&apos;ll be notified once confirmed
                           </div>
                         )}
-                        {bookingStatus !== "approved" && coach.userBooking?.id && (
+                        {effectiveStatus === "pending" && coach.userBooking?.id && (
                           <button
                             onClick={handleCancel}
                             disabled={cancelBooking.isPending}
@@ -745,6 +750,29 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       </div>
                     ) : (
                       <>
+                      {effectiveStatus === "rejected" && (
+                        <div style={{
+                          background: "rgba(239,68,68,0.06)",
+                          border: "1px solid rgba(239,68,68,0.2)",
+                          borderRadius: 16, padding: "16px 18px", marginBottom: 4,
+                          textAlign: "center",
+                        }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: "50%",
+                            background: "rgba(239,68,68,0.12)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            margin: "0 auto 10px",
+                          }}>
+                            <X size={20} color="#f87171" />
+                          </div>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+                            Booking request declined
+                          </p>
+                          <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                            Your previous request wasn&apos;t approved. You&apos;re welcome to send a new one below.
+                          </p>
+                        </div>
+                      )}
                       {coach.seatsLeft > 0 && (
                         <div style={{ marginBottom: 4 }}>
                           <label style={{

@@ -23,6 +23,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       const booking = await prisma.booking.findFirst({
         where: { coachId: id, userId: session.id, status: { notIn: ["cancelled"] } },
         select: { id: true, status: true },
+        orderBy: { createdAt: "desc" },
       });
       if (booking) userBooking = booking;
     }
