@@ -82,6 +82,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   }
 
   const isFull      = game.slotsLeft === 0 || game.status === "full";
+  const joinable    = !["cancelled", "completed", "archived"].includes(game.status);
   const isOrganizer = user?.id === game.organizerId;
   const isJoined    = game.players?.some(p => p.userId === user?.id);
   const rules       = Array.isArray(game.rules) ? game.rules : [];
@@ -544,7 +545,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         <MessageCircle size={14} /> Message organiser
                       </a>
                     </div>
-                  ) : (
+                  ) : joinable ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <label style={{
                         display: "flex", alignItems: "flex-start", gap: 10,
@@ -589,6 +590,14 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                                 : "Join game · Free"}
                         </button>
                       </Magnetic>
+                    </div>
+                  ) : (
+                    <div style={{
+                      height: 52, borderRadius: 100, display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.55)", fontSize: 14, fontWeight: 700,
+                    }}>
+                      {game.status === "completed" ? "This game is over" : "This game is closed"}
                     </div>
                   )
                 )}

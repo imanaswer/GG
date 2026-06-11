@@ -158,6 +158,7 @@ function GameCard({ game }: { game: Game }) {
   const filled = game.slots - game.slotsLeft;
   const pct = Math.min(100, Math.round((filled / game.slots) * 100));
   const isFull = game.slotsLeft === 0 || game.status === "full";
+  const joinable = !["cancelled", "completed", "archived"].includes(game.status);
   const isFree = game.costAmount === 0;
   const img = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
 
@@ -299,7 +300,15 @@ function GameCard({ game }: { game: Game }) {
             </span>
           </div>
 
-          {user ? (
+          {!joinable ? (
+            <span style={{
+              padding: "8px 16px", borderRadius: 100, fontSize: 12, fontWeight: 700,
+              background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.5)",
+              border: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
+            }}>
+              {game.status === "completed" ? "Completed" : "Closed"}
+            </span>
+          ) : user ? (
             <button
               disabled={join.isPending}
               onClick={() => join.mutate(game.id)}
