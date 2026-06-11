@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, CheckCircle, AlertCircle, Share2, MessageCircle, MapPin, Clock, Users, Star } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle, Share2, MessageCircle, MapPin, Clock, Star, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -14,6 +14,7 @@ import { Magnetic } from "@/components/premium/Magnetic";
 import { SkillBadge, SportBadge, fmtDate } from "@/components/Shared";
 import { TierBadge } from "@/components/TierBadge";
 import { useGame, useJoinGame, useLeaveGame } from "@/hooks/useData";
+import { mapsHref, hasMapTarget } from "@/lib/maps";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { GAME_FALLBACKS, pickFallback } from "@/lib/premium-images";
@@ -493,6 +494,21 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         <MapPin size={14} color="#e63946" style={{ flexShrink: 0, marginTop: 2 }} />
                         <span>{game.address}</span>
                       </div>
+                      {hasMapTarget(game) && (
+                        <a
+                          href={mapsHref(game)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14,
+                            padding: "8px 14px", borderRadius: 10, textDecoration: "none",
+                            background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)",
+                            color: "#ff6b7a", fontSize: 12.5, fontWeight: 700,
+                          }}
+                        >
+                          <Navigation size={13} /> Get directions
+                        </a>
+                      )}
                     </div>
                   </Reveal>
                 )}

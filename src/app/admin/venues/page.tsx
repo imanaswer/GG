@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X } from "lucide-react";
+import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X, Navigation } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard } from "@/components/admin/StatCard";
 import { Badge } from "@/components/admin/Badge";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
+import { mapsHref, hasMapTarget } from "@/lib/maps";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball", "Other"];
 
@@ -93,7 +94,14 @@ export default function AdminVenues() {
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{v.name}</span>
                     {statusBadge(v.status)}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.address}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280" }}>
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.address}</span>
+                    {hasMapTarget(v) && (
+                      <a href={mapsHref(v)} target="_blank" rel="noopener noreferrer" title="Open in Google Maps" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#60a5fa", textDecoration: "none", flexShrink: 0, fontWeight: 600 }}>
+                        <Navigation size={11} /> Map
+                      </a>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
                     {v.supportedSports.map((s) => (
                       <span key={s} style={sportTag}>{s}</span>

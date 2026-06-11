@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight, Check } from "lucide-react";
+import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight, Check, Navigation } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
+import { mapsHref, hasMapTarget } from "@/lib/maps";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { STORY } from "@/lib/premium-images";
@@ -14,7 +15,7 @@ import { STORY } from "@/lib/premium-images";
 const SPORTS = ["Basketball","Football","Cricket","Badminton","Tennis","Volleyball","Other"];
 const LEVELS = ["Beginner","Intermediate","Advanced","All Levels"];
 
-type Venue = { id: string; name: string; description: string; address: string; supportedSports: string[] };
+type Venue = { id: string; name: string; description: string; address: string; supportedSports: string[]; lat?: number | null; lng?: number | null };
 type Slot = { id: string; startTime: string; endTime: string; isBlocked: boolean; blockReason: string | null; available: boolean; reason: string | null };
 
 export default function CreateGamePage() {
@@ -171,6 +172,14 @@ export default function CreateGamePage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Selected venue</div>
                 <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{selectedVenue.name}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{selectedVenue.address}</div>
+                {hasMapTarget(selectedVenue) && (
+                  <a href={mapsHref(selectedVenue)} target="_blank" rel="noopener noreferrer" style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
+                    color: "#ff6b7a", fontSize: 12, fontWeight: 600, textDecoration: "none",
+                  }}>
+                    <Navigation size={12} /> View on Google Maps
+                  </a>
+                )}
               </div>
             )}
           </SectionCard>

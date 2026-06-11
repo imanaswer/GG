@@ -32,6 +32,7 @@ export type Game = {
   organizerRating?: number; organizerGames?: number;
   cost: string; costAmount: number; description: string; rules: string[];
   imageUrl: string; status: string; createdAt: string;
+  lat?: number | null; lng?: number | null;
   players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; tier?: string; reputationScore?: number; joinedAt: string }[];
   playerCount?: number;
 };

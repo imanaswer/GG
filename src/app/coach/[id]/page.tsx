@@ -13,14 +13,7 @@ import { Stars, SkillBadge, SportBadge } from "@/components/Shared";
 import { useCoach, useCreateBooking, useCancelBooking } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { COACH_FALLBACKS, HERO_BACKDROPS, pickFallback } from "@/lib/premium-images";
-
-/** Build a Google Maps link from coordinates when available, else free-text. */
-function mapsHref(coach: { lat?: number | null; lng?: number | null; location?: string; address?: string }) {
-  const query = coach.lat != null && coach.lng != null
-    ? `${coach.lat},${coach.lng}`
-    : [coach.location, coach.address].filter(Boolean).join(", ");
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
+import { mapsHref } from "@/lib/maps";
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
