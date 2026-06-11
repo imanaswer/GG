@@ -65,6 +65,16 @@ No "Bronze III" sub-divisions exist; progression uses the real flat tiers
 - **`src/lib/profileGrouping.ts`** — small pure helpers to bucket items into
   `Upcoming | Completed | Cancelled` (Games tab) and per-type groups (Bookings
   tab). Unit-tested.
+- **`src/lib/season.ts`** — pure season helpers (§15): `currentSeason(now)` →
+  `{ id, label, startsAt, endsAt, daysLeft }` (monthly windows) and
+  `SEASON_WEIGHTS` (same per-action point weights as the base reputation
+  formula) for computing in-window season REP. Unit-tested.
+- **`src/lib/profileCompletion.ts`** — pure `computeProfileCompletion(input)`
+  → `{ pct, items: { key, label, done }[] }` (§16). Unit-tested.
+
+### Additional new components
+- **`SeasonStrip`** — compact seasonal section (§15).
+- **`ProfileCompletionCard`** — subtle completion checklist (§16, own-only).
 
 ### Removed (deleted or stopped-using)
 `TeammatesRow`, `StatsAccordion`, `LookingForBanner` (overview), `ProfileCTAs`
@@ -139,6 +149,12 @@ Shows the **single soonest upcoming item** across all five types, with a small
 - Empty state: illustration + **Find Games** button (→ `/play`).
 - Own-profile only (it is the user's personal next action).
 
+**Selection priority** (server-side, deterministic): pick the **nearest upcoming
+item by datetime**. When two items share the same datetime, break ties by type
+priority: **1) Coach Session, 2) Game, 3) Workshop, 4) Camp, 5) Event.** This
+prevents a distant event displacing an imminent coaching session. Encoded as an
+explicit `(date asc, typePriority asc)` sort.
+
 ---
 
 ## 7. ActivityTimeline
@@ -191,8 +207,10 @@ hardcoded strings tied to a specific user.
 
 In-page tabs via `ProfileTabs`. **Overview is lightweight.**
 
-- **Overview** (own): Hero → RankProgress → StatStrip → UpcomingCard → Timeline
-  (5) → Achievements rail → MotivationCard.
+- **Overview** (own): Hero → RankProgress → StatStrip → SeasonStrip →
+  UpcomingCard → ProfileCompletionCard → Timeline (5) → Achievements rail →
+  MotivationCard. (RankProgress stays the dominant element; SeasonStrip and
+  ProfileCompletionCard are compact and secondary.)
 - **Games**: cards (not a plain list) grouped **Upcoming · Completed ·
   Cancelled** (joined + organized games). Visible to any viewer.
 - **Bookings** (own only): grouped by **type** — Coach Sessions · Workshops ·
@@ -201,32 +219,113 @@ In-page tabs via `ProfileTabs`. **Overview is lightweight.**
 - **Settings** (own only): links to existing `/profile/edit` (no duplication).
 
 **Others' profile** (viewer ≠ owner): tabs = **Overview · Games · Achievements**.
-Overview for others = Hero + RankProgress + StatStrip + Achievements rail only —
-no UpcomingCard, MotivationCard, timeline of private actions, Settings, or
-Bookings.
+Overview for others = Hero + RankProgress + StatStrip + SeasonStrip +
+Achievements rail only — no UpcomingCard, ProfileCompletionCard, MotivationCard,
+timeline of private actions, Settings, or Bookings. (SeasonStrip is public
+progression data, like REP/rank.)
 
 ---
 
-## 11. API changes (`/api/users/[id]`)
+## 11. API changes
 
-Extend the existing route; **gate private data to the owner** (compare session
-user id to `[id]`):
-
-- **Always returned** (any viewer): core profile, `playerRank`, `gamesPlayed`,
-  `gamesOrganized`, `attendanceRate`, `reputationScore`, `tier`, `sports`,
-  `createdAt`, the **games list** (joined + organized, each with a derived
-  `groupStatus`: upcoming/completed/cancelled), and the **achievements catalog**
-  (unlocked + locked + progress) from `achievements.ts`.
-- **Owner only**: `upcoming` (soonest item across all 5 types), `bookings`
-  (coach), and `registrations` (camps/events/workshops, each with derived
-  status). Non-owners receive these as omitted/empty — fixing the current leak
-  where any viewer sees a user's coach bookings.
-- Streak continues to come from `/api/users/[id]/activity` (no change there).
-
-Achievement computation runs server-side via the shared lib so client and server
-agree. Keep queries efficient (no N+1 fan-out; batch with `Promise.all`).
+The authoritative, complete list of API changes is **§19**. Summary: extend
+`GET /api/users/[id]` with public `games[]`, `achievements[]`, and `season`;
+owner-only `upcoming`, `registrations[]`, `profileCompletion`; and gate the
+existing `bookings` to the owner. Achievement + season + completion computation
+runs server-side via the shared libs so client and server agree. No schema
+migration.
 
 ---
+
+## 15. Seasonal progress (compact, secondary)
+
+A small strip — **not** the focus; REP progression stays primary. Shows:
+**Current Season** label · **REP Earned This Season** · **Season Rank** ·
+**Season Ends In X Days**.
+
+Grounded honestly (no fabricated metric):
+- `src/lib/season.ts` defines seasons as **monthly windows** (`id` like
+  `2026-06`, `label` like "June 2026", `startsAt`, `endsAt`, `daysLeft`) — the
+  countdown is real.
+- **Season REP** = points from the user's **real activity within the current
+  window**, using the same per-action weights as the base reputation formula
+  (`SEASON_WEIGHTS`: game joined 10, organized 25, camp 30, event 20, workshop
+  15, review 5; no age bonus / decay since the window is fresh). Computed
+  server-side from in-window timestamps.
+- **Season Rank** = `1 + count of users whose season REP is higher`, computed
+  via grouped in-window aggregation (a few `groupBy` queries merged in memory) —
+  honest and well-defined, not a placeholder.
+
+`SeasonStrip` is public (same visibility class as REP/rank). The component is
+built so future **seasonal leaderboards / events / challenges** attach by adding
+data, not redesigning (a `season` field already flows through achievements too).
+
+## 16. Profile completion (subtle, own-only)
+
+A subtle completion loop for new users. `src/lib/profileCompletion.ts` →
+`computeProfileCompletion({ hasAvatar, hasFavoriteSport, gamesPlayed,
+hasCompletedBooking })` returns `{ pct, items }` over four real checks:
+
+- **Add profile photo** — `avatarUrl` set
+- **Add favorite sport** — `sports` non-empty
+- **Join first game** — `gamesPlayed ≥ 1`
+- **Complete first booking** — a booking with status `completed` exists
+
+`pct` = done/total. Rendered as a small ring/bar + checklist. **Owner-only**
+(personal nudge); never shown to other viewers.
+
+## 17. Privacy model (enforced server-side)
+
+| Visibility | Fields |
+|---|---|
+| **Public** (any viewer) | Profile card, tier, REP, leaderboard rank, achievements, public game history (Games tab), SeasonStrip |
+| **Owner only** | Bookings, upcoming item, private registrations (camps/events/workshops), motivation card, profile completion, activity timeline of private actions |
+
+The API compares the session user id to `[id]` and omits owner-only fields for
+non-owners. This **fixes the current leak** where any viewer sees a user's coach
+bookings.
+
+## 18. Component hierarchy
+
+```
+ProfilePage (/profile/[id])
+├── PlayerHeroCard          (avatar, name, tier badge, REP, rank, streak, joined, sport; future: banner/frame/membership slots)
+├── TierUpBanner            (subtle, one-time celebration — when tier just changed)
+└── ProfileTabs
+    ├── Overview (own)
+    │   ├── RankProgress            ← dominant hero
+    │   ├── StatStrip               (4 stats)
+    │   ├── SeasonStrip             (season REP / rank / ends-in)
+    │   ├── UpcomingCard            (owner-only; priority-sorted next item)
+    │   ├── ProfileCompletionCard   (owner-only)
+    │   ├── ActivityTimeline        (owner-only; max 5 real items)
+    │   ├── AchievementsRail        (highlights)
+    │   └── MotivationCard          (owner-only; dynamic)
+    ├── Overview (other) → RankProgress · StatStrip · SeasonStrip · AchievementsRail
+    ├── GamesTab            (cards grouped Upcoming/Completed/Cancelled)
+    ├── BookingsTab (own)   (grouped by type → Upcoming/Completed/Cancelled)
+    ├── AchievementsTab     (full categorized grid)
+    └── Settings (own) → links to /profile/edit
+```
+
+## 19. API changes (complete list)
+
+`GET /api/users/[id]` (extend; detect `isOwner = session.id === id`):
+- **Add (public):** `games[]` (joined + organized, each with derived
+  `groupStatus: upcoming|completed|cancelled`); `achievements[]` (full catalog
+  unlocked + locked + progress, from `achievements.ts`); `season`
+  (`{ id, label, daysLeft, rep, rank }` from `season.ts` + in-window aggregation).
+- **Add (owner only):** `upcoming` (single nearest item across all 5 types,
+  priority-tie-broken per §6); `registrations[]` (camps/events/workshops with
+  derived status); `profileCompletion` (`{ pct, items }`). Keep existing
+  `bookings` (coach) but **gate to owner** (currently leaked).
+- **Gate existing private data:** `bookings` returned only when `isOwner`.
+- Streak unchanged (continues from `GET /api/users/[id]/activity`).
+- Performance: all additions via batched `Promise.all`; no per-row N+1. Season
+  rank uses `groupBy` aggregation, not per-user loops.
+
+No schema migration required — all new values are derived from existing tables
+and timestamps. (Documented under "migration steps: none.")
 
 ## 12. Visual style & mobile
 
@@ -258,12 +357,15 @@ Design so these slot in by adding data/props, not restructuring:
 ## 14. Verification
 
 - Unit tests (vitest): `achievements.ts` (`computeAchievements`),
-  `profileGrouping.ts` (bucketing), `motivationFor` (priority logic).
+  `profileGrouping.ts` (bucketing), `motivationFor` (priority logic),
+  `season.ts` (window + daysLeft + season-REP weighting), `profileCompletion.ts`
+  (pct + items).
 - `tsc --noEmit` clean; `npm run build` green.
 - Manual check on own + other-user profiles at mobile / tablet / desktop widths
   (noting the local Upstash 500 caveat for authed routes).
-- Deliverables on completion: screenshots (desktop + mobile), and the
-  components changed / removed / added list.
+- **Deliverables on completion:** before/after screenshots (desktop + mobile),
+  components removed, components added, **bundle impact** (route size delta from
+  the build output), and **migration steps** (expected: none — all derived).
 
 ## Out of scope (YAGNI)
 - Building a daily streak (real weekly streak is used).
