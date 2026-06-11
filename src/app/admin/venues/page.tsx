@@ -7,6 +7,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard } from "@/components/admin/StatCard";
 import { Badge } from "@/components/admin/Badge";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
+import { VenueLocationPicker } from "@/components/admin/VenueLocationPicker";
 import { mapsHref, hasMapTarget } from "@/lib/maps";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball", "Other"];
@@ -173,11 +174,23 @@ function VenueFormModal({ venue, onClose, onSaved }: { venue: VenueRow | null; o
     <Modal title={venue ? "Edit venue" : "Add venue"} onClose={onClose}>
       {err && <div style={errBox}>{err}</div>}
       <Field label="Name"><input style={input} value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="EMS Turf A" /></Field>
-      <Field label="Address"><input style={input} value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="EMS Stadium, Kozhikode" /></Field>
+      <Field label="Address & map">
+        <VenueLocationPicker
+          address={form.address}
+          lat={form.lat ? Number(form.lat) : null}
+          lng={form.lng ? Number(form.lng) : null}
+          onChange={(n) => setForm((p) => ({
+            ...p,
+            ...(n.address !== undefined ? { address: n.address } : {}),
+            ...(n.lat !== undefined ? { lat: n.lat == null ? "" : String(n.lat) } : {}),
+            ...(n.lng !== undefined ? { lng: n.lng == null ? "" : String(n.lng) } : {}),
+          }))}
+        />
+      </Field>
       <Field label="Description"><textarea style={{ ...input, minHeight: 70, resize: "vertical" }} value={form.description} onChange={(e) => set("description", e.target.value)} /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Latitude (optional)"><input style={input} value={form.lat} onChange={(e) => set("lat", e.target.value)} placeholder="11.2588" /></Field>
-        <Field label="Longitude (optional)"><input style={input} value={form.lng} onChange={(e) => set("lng", e.target.value)} placeholder="75.7804" /></Field>
+        <Field label="Latitude (auto · editable)"><input style={input} value={form.lat} onChange={(e) => set("lat", e.target.value)} placeholder="11.2588" /></Field>
+        <Field label="Longitude (auto · editable)"><input style={input} value={form.lng} onChange={(e) => set("lng", e.target.value)} placeholder="75.7804" /></Field>
       </div>
       <Field label="Supported sports">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>

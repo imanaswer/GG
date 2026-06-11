@@ -418,3 +418,22 @@ img {
 @media (max-width: 640px) {
   button, a { -webkit-tap-highlight-color: transparent; }
 }
+
+/* Google Places Autocomplete dropdown must sit above the admin venue modal
+   (z-index 200). The .pac-container is appended to <body>, outside the modal. */
+.pac-container {
+  z-index: 10000 !important;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  margin-top: 2px;
+  font-family: inherit;
+}
+.pac-item {
+  color: #d1d5db;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 10px;
+}
+.pac-item:hover { background: rgba(255, 255, 255, 0.05); }
+.pac-item-query { color: #fff; }
+.pac-matched { color: #ff6b7a; }
