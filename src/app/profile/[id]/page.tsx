@@ -44,7 +44,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const info = tierLevelInfo(profile.reputationScore);
   const nearestLocked = achievements
-    .filter(a => !a.unlocked && (a.category === "sports" || a.category === "community") && a.progress)
+    .filter(a => !a.unlocked && a.progress && ["first-match", "regular", "veteran", "team-player"].includes(a.id))
     .sort((a, b) => (a.progress!.target - a.progress!.current) - (b.progress!.target - b.progress!.current))[0];
   const motivation = motivationFor({
     pointsToNext: info.next?.pointsToNext ?? 0,

@@ -116,7 +116,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     const profileCompletion = isOwner ? computeProfileCompletion({
       hasAvatar: !!user.avatarUrl,
-      hasFavoriteSport: sports.length > 0,
+      hasFavoriteSport: (user.sports?.length ?? 0) > 0,
       gamesPlayed,
       hasCompletedBooking: completedBookingCount > 0,
     }) : undefined;
@@ -133,6 +133,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
+      googleId: undefined, reputationOverride: undefined,
       email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
       gamesPlayed, gamesOrganized, sports, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
