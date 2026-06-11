@@ -5,7 +5,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
+import { toast } from "sonner";
 import { Input, Label, Textarea } from "@/components/ui";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { validateGameSchedule } from "@/lib/gameTime";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { STORY } from "@/lib/premium-images";
@@ -28,6 +31,8 @@ export default function CreateGamePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.sport || !form.title || !form.location || !form.date || !form.time || !form.slots || !form.skillLevel) return;
+    const schedule = validateGameSchedule(new Date(`${form.date}T${form.time}:00`).toISOString(), new Date());
+    if (!schedule.ok) { toast.error(schedule.message); return; }
     await createGame.mutateAsync({
       sport: form.sport, title: form.title, location: form.location,
       address: form.address || undefined,
@@ -134,14 +139,14 @@ export default function CreateGamePage() {
 
           {/* Schedule */}
           <SectionCard Icon={CalendarClock} title="When">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col">
-              <FieldRow label="Date" required>
-                <Input type="date" value={form.date} min={new Date().toISOString().split("T")[0]} onChange={e => set("date", e.target.value)} required />
-              </FieldRow>
-              <FieldRow label="Start time" required>
-                <Input type="time" value={form.time} onChange={e => set("time", e.target.value)} required />
-              </FieldRow>
-            </div>
+            <FieldRow label="Date & start time" required>
+              <DateTimePicker
+                date={form.date}
+                time={form.time}
+                onDateChange={d => set("date", d)}
+                onTimeChange={t => set("time", t)}
+              />
+            </FieldRow>
             <FieldRow label="Duration">
               <PillSelect
                 options={DURATIONS.map(d => ({ l: d.l, v: d.v }))}
