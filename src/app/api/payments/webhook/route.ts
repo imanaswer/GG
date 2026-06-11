@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { PaymentStatus } from "@/lib/paymentStatus";
 
 export const runtime = "nodejs";
 
@@ -59,9 +60,10 @@ export async function POST(req: NextRequest) {
           if (existing.status !== "paid") {
             await prisma.payment.update({
               where: { id: existing.id },
-              data: { status: "paid", paidAt: new Date(), razorpayPaymentId },
+              data: { status: "paid" satisfies PaymentStatus, paidAt: new Date(), razorpayPaymentId },
             });
-            await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "paid");
+            // refund events are handled by admin "Mark refunded" action, not the webhook
+            await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "paid" satisfies PaymentStatus);
           }
         }
         // If the Payment row doesn't exist yet, the client verify endpoint will create it
@@ -75,9 +77,9 @@ export async function POST(req: NextRequest) {
         if (existing && existing.status !== "paid") {
           await prisma.payment.update({
             where: { id: existing.id },
-            data: { status: "failed", razorpayPaymentId },
+            data: { status: "failed" satisfies PaymentStatus, razorpayPaymentId },
           });
-          await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "failed");
+          await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "failed" satisfies PaymentStatus);
         }
         return NextResponse.json({ ok: true, event: body.event });
       }
@@ -96,7 +98,7 @@ async function syncRegistrationStatus(
   entityType: string,
   entityId: string,
   userId: string,
-  status: "paid" | "failed",
+  status: Extract<PaymentStatus, "paid" | "failed">,
 ): Promise<void> {
   if (entityType === "camp") {
     await prisma.campRegistration.updateMany({

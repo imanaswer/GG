@@ -1,0 +1,16 @@
+import { describe, it, expect } from "vitest";
+import { toCsv } from "./csv";
+
+describe("toCsv", () => {
+  it("emits header then rows", () => {
+    const csv = toCsv(["ID", "Name"], [["1", "Asha"], ["2", "Ben"]]);
+    expect(csv).toBe("ID,Name\r\n1,Asha\r\n2,Ben");
+  });
+  it("escapes commas, quotes, and newlines", () => {
+    const csv = toCsv(["A"], [['he said "hi", ok\nbye']]);
+    expect(csv).toBe('A\r\n"he said ""hi"", ok\nbye"');
+  });
+  it("renders null/undefined as empty", () => {
+    expect(toCsv(["A", "B"], [[null as unknown as string, undefined as unknown as string]])).toBe("A,B\r\n,");
+  });
+});

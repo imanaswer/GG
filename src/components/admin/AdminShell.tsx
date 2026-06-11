@@ -2,11 +2,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CalendarCheck, Gamepad2, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Gamepad2, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu, ChevronDown } from "lucide-react";
+
+const BOOKING_CHILDREN = [
+  { href: "/admin/bookings/coaches",       label: "Coaches" },
+  { href: "/admin/bookings/play-sessions", label: "Play Sessions" },
+  { href: "/admin/bookings/workshops",     label: "Workshops" },
+  { href: "/admin/bookings/camps",         label: "Camps" },
+  { href: "/admin/bookings/events",        label: "Events" },
+];
 
 const NAV = [
   { href: "/admin",          label: "Overview",  icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Bookings",  icon: CalendarCheck },
+  { href: "/admin/bookings", label: "Bookings",  icon: CalendarCheck, children: BOOKING_CHILDREN },
   { href: "/admin/games",    label: "Games",     icon: Gamepad2 },
   { href: "/admin/camps",      label: "Camps",      icon: Tent },
   { href: "/admin/workshops", label: "Workshops",  icon: Wrench },
@@ -32,20 +40,39 @@ function Sidebar({
         <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin Dashboard</div>
       </div>
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map(({ href, label, icon: Icon, children }: { href: string; label: string; icon: any; children?: { href: string; label: string }[] }) => {
           const active = activeHref(href);
           return (
-            <Link key={href} href={href} onClick={onNavigate} style={{
-              display: "flex", alignItems: "center", gap: 11, padding: "9px 12px",
-              borderRadius: 9, marginBottom: 3, textDecoration: "none", fontSize: 13,
-              fontWeight: active ? 700 : 500,
-              background: active ? "rgba(230,57,70,0.12)" : "transparent",
-              color: active ? "#fff" : "#6b7280",
-              borderLeft: active ? "2px solid #e63946" : "2px solid transparent",
-              transition: "all 0.15s",
-            }}>
-              <Icon size={16} />{label}
-            </Link>
+            <div key={href}>
+              <Link href={href} onClick={onNavigate} style={{
+                display: "flex", alignItems: "center", gap: 11, padding: "9px 12px",
+                borderRadius: 9, marginBottom: 3, textDecoration: "none", fontSize: 13,
+                fontWeight: active ? 700 : 500,
+                background: active ? "rgba(230,57,70,0.12)" : "transparent",
+                color: active ? "#fff" : "#6b7280",
+                borderLeft: active ? "2px solid #e63946" : "2px solid transparent",
+                transition: "all 0.15s",
+              }}>
+                <Icon size={16} />{label}
+                {children && <ChevronDown size={13} style={{ marginLeft: "auto", transform: active ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform .15s" }} />}
+              </Link>
+              {children && active && (
+                <div style={{ marginLeft: 12, marginBottom: 4, borderLeft: "1px solid rgba(255,255,255,0.07)", paddingLeft: 6 }}>
+                  {children.map(c => {
+                    const cActive = activeHref(c.href);
+                    return (
+                      <Link key={c.href} href={c.href} onClick={onNavigate} style={{
+                        display: "block", padding: "7px 12px", borderRadius: 8, marginBottom: 2,
+                        textDecoration: "none", fontSize: 12.5,
+                        fontWeight: cActive ? 700 : 500,
+                        color: cActive ? "#fff" : "#6b7280",
+                        background: cActive ? "rgba(230,57,70,0.10)" : "transparent",
+                      }}>{c.label}</Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
