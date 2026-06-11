@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parsePagination, parseDateRange, orderByFor, istWeekday } from "./query";
+import { buildDateQuery, coachDateWhere } from "./query";
 
 describe("parsePagination", () => {
   it("defaults to page 1 size 25 and clamps", () => {
@@ -70,5 +71,54 @@ describe("orderByFor", () => {
     expect(orderByFor("oldest", "createdAt", "sessionDate")).toEqual({ createdAt: "asc" });
     expect(orderByFor("upcoming", "createdAt", "sessionDate")).toEqual({ sessionDate: "asc" });
     expect(orderByFor("updated", "createdAt", "sessionDate")).toEqual({ updatedAt: "desc" });
+  });
+});
+
+describe("buildDateQuery", () => {
+  const now = new Date("2026-06-11T15:00:00.000Z");
+  const AXIS = { sessionRelation: "camp", sessionField: "startDate", bookingField: "registeredAt" };
+
+  it("session axis (default) filters + orders on the related date field", () => {
+    const { where, orderBy } = buildDateQuery(new URLSearchParams("date=upcoming"), now, AXIS);
+    expect(where).toEqual({ camp: { startDate: { gte: new Date("2026-06-10T18:30:00.000Z") } } });
+    expect(orderBy).toEqual({ camp: { startDate: "asc" } }); // default sort = upcoming
+  });
+
+  it("newest sort on session axis orders the related field desc", () => {
+    const { orderBy } = buildDateQuery(new URLSearchParams("date=all&sort=newest"), now, AXIS);
+    expect(orderBy).toEqual({ camp: { startDate: "desc" } });
+  });
+
+  it("booking axis filters + orders on the booking field", () => {
+    const { where, orderBy } = buildDateQuery(new URLSearchParams("by=booking&date=today&sort=oldest"), now, AXIS);
+    expect(where).toEqual({ registeredAt: { gte: new Date("2026-06-10T18:30:00.000Z"), lte: new Date("2026-06-11T18:29:59.999Z") } });
+    expect(orderBy).toEqual({ registeredAt: "asc" });
+  });
+
+  it("no range (all) yields empty where", () => {
+    const { where } = buildDateQuery(new URLSearchParams("date=all"), now, AXIS);
+    expect(where).toEqual({});
+  });
+});
+
+describe("coachDateWhere", () => {
+  // 2026-06-11T15:00Z → IST Thursday Jun 11
+  const now = new Date("2026-06-11T15:00:00.000Z");
+
+  it("today matches the IST weekday on the batch relation (case-insensitive)", () => {
+    expect(coachDateWhere(new URLSearchParams("date=today"), now))
+      .toEqual({ batch: { is: { day: { equals: "Thursday", mode: "insensitive" } } } });
+  });
+  it("tomorrow matches the next IST weekday", () => {
+    expect(coachDateWhere(new URLSearchParams("date=tomorrow"), now))
+      .toEqual({ batch: { is: { day: { equals: "Friday", mode: "insensitive" } } } });
+  });
+  it("upcoming / all apply no weekday filter", () => {
+    expect(coachDateWhere(new URLSearchParams("date=upcoming"), now)).toEqual({});
+    expect(coachDateWhere(new URLSearchParams("date=all"), now)).toEqual({});
+  });
+  it("booking axis falls back to createdAt range", () => {
+    expect(coachDateWhere(new URLSearchParams("by=booking&date=today"), now))
+      .toEqual({ createdAt: { gte: new Date("2026-06-10T18:30:00.000Z"), lte: new Date("2026-06-11T18:29:59.999Z") } });
   });
 });

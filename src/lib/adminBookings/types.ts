@@ -44,4 +44,5 @@ export interface LandingMetrics {
 }
 
 export type SortKey = "newest" | "oldest" | "upcoming" | "updated";
-export type DatePreset = "all" | "today" | "week" | "month" | "custom";
+export type DatePreset = "all" | "today" | "tomorrow" | "upcoming" | "past" | "custom";
+export type DateAxis = "session" | "booking";

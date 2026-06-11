@@ -1,4 +1,4 @@
-import type { SortKey } from "./types";
+import type { SortKey, DateAxis } from "./types";
 
 export interface Pagination { page: number; pageSize: number; skip: number; take: number; }
 
@@ -72,4 +72,63 @@ export function orderByFor(sort: SortKey, createdField: string, sessionField: st
 export function parseSort(p: URLSearchParams): SortKey {
   const s = p.get("sort");
   return (s === "oldest" || s === "upcoming" || s === "updated") ? s : "newest";
+}
+
+export interface AxisOpts {
+  /** to-one relation holding the session date, e.g. "camp" (omit for coaches). */
+  sessionRelation?: string;
+  /** date field on that relation, e.g. "startDate". */
+  sessionField?: string;
+  /** booking/creation timestamp scalar, e.g. "registeredAt" | "joinedAt". */
+  bookingField: string;
+}
+
+/** Builds the Prisma where-fragment + orderBy for the date axis (`by=session|booking`). */
+export function buildDateQuery(p: URLSearchParams, now: Date, opts: AxisOpts): {
+  where: Record<string, unknown>;
+  orderBy: Record<string, unknown>;
+} {
+  const by: DateAxis = p.get("by") === "booking" ? "booking" : "session";
+  // No explicit sort => default to "upcoming" (soonest session first), not parseSort's "newest".
+  const sort: SortKey = p.get("sort") ? parseSort(p) : "upcoming";
+  const useSession = by === "session" && !!opts.sessionRelation && !!opts.sessionField;
+
+  const range = parseDateRange(p, now);
+  let where: Record<string, unknown> = {};
+  if (range) {
+    const f: Record<string, Date> = {};
+    if (range.gte) f.gte = range.gte;
+    if (range.lte) f.lte = range.lte;
+    where = useSession
+      ? { [opts.sessionRelation!]: { [opts.sessionField!]: f } }
+      : { [opts.bookingField]: f };
+  }
+
+  let orderBy: Record<string, unknown>;
+  if (sort === "updated") {
+    orderBy = { updatedAt: "desc" };
+  } else if (useSession) {
+    const dir = sort === "newest" ? "desc" : "asc"; // upcoming & oldest → asc
+    orderBy = { [opts.sessionRelation!]: { [opts.sessionField!]: dir } };
+  } else {
+    orderBy = { [opts.bookingField]: sort === "oldest" ? "asc" : "desc" };
+  }
+  return { where, orderBy };
+}
+
+/** Coach bookings have no calendar date — match the recurring batch weekday instead. */
+export function coachDateWhere(p: URLSearchParams, now: Date): Record<string, unknown> {
+  const by: DateAxis = p.get("by") === "booking" ? "booking" : "session";
+  if (by === "booking") {
+    const range = parseDateRange(p, now);
+    if (!range) return {};
+    const f: Record<string, Date> = {};
+    if (range.gte) f.gte = range.gte;
+    if (range.lte) f.lte = range.lte;
+    return { createdAt: f };
+  }
+  const preset = p.get("date") ?? "all";
+  if (preset === "today") return { batch: { is: { day: { equals: istWeekday(now, 0), mode: "insensitive" } } } };
+  if (preset === "tomorrow") return { batch: { is: { day: { equals: istWeekday(now, 1), mode: "insensitive" } } } };
+  return {}; // upcoming / all / past / custom → no weekday filter
 }
