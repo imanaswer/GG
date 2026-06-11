@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest, clearCookie } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { gameGroupStatus, registrationGroupStatus, selectUpcoming, type GroupStatus } from "@/lib/profileGrouping";
+import { computeProfileCompletion } from "@/lib/profileCompletion";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user || user.deletedAt) return fail("User not found", 404);
+
+    const session = await getSessionFromRequest(req).catch(() => null);
+    const isOwner = !!session && session.id === id;
 
     const now = new Date();
 
@@ -18,8 +23,9 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     // the perf migration. The streak compute moved to the activity endpoint
     // where the same 84-day slice already feeds the heatmap.
     const [
-      gamesPlayed, gamesOrganized, bookingsRows, sportTallyRows, upcomingPlayerRows,
+      gamesPlayed, gamesOrganized, bookingsRows, sportTallyRows,
       higherRanked, playerCount,
+      joinedRows, organizedRows, campRegs, eventRegs, workshopRegs, completedBookingCount,
     ] = await Promise.all([
       // Cancelled games never count toward a user's stats.
       prisma.gamePlayer.count({ where: { userId: id, game: { status: { not: "cancelled" } } } }),
@@ -33,14 +39,6 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
         where: { userId: id, game: { status: { not: "cancelled" } } },
         select: { game: { select: { sport: true } } },
       }),
-      prisma.gamePlayer.findMany({
-        where: {
-          userId: id,
-          game: { scheduledAt: { gt: now }, status: { not: "cancelled" } },
-        },
-        include: { game: true },
-        orderBy: { joinedAt: "desc" },
-      }),
       user.role === "admin"
         ? Promise.resolve(0)
         : prisma.user.count({
@@ -51,6 +49,12 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
             },
           }),
       prisma.user.count({ where: { deletedAt: null, role: { not: "admin" } } }),
+      prisma.gamePlayer.findMany({ where: { userId: id }, include: { game: true }, orderBy: { joinedAt: "desc" } }),
+      prisma.game.findMany({ where: { organizerId: id }, orderBy: { scheduledAt: "desc" } }),
+      isOwner ? prisma.campRegistration.findMany({ where: { userId: id }, include: { camp: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
+      isOwner ? prisma.eventRegistration.findMany({ where: { userId: id }, include: { event: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
+      isOwner ? prisma.workshopRegistration.findMany({ where: { userId: id }, include: { workshop: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
+      isOwner ? prisma.booking.count({ where: { userId: id, status: "completed" } }) : Promise.resolve(0),
     ]);
 
     const sportMap: Record<string, number> = {};
@@ -61,13 +65,40 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       .sort((a, b) => b[1] - a[1])
       .map(([sport, games]) => ({ sport, games, level: "Intermediate" }));
 
-    const upcomingGames = upcomingPlayerRows.map(gp => gp.game).filter(Boolean);
+    const joined = joinedRows.map(gp => gp.game).filter(Boolean);
+    const gameList = [
+      ...joined.map(g => ({ ...g, role: "player" as const })),
+      ...organizedRows.map(g => ({ ...g, role: "organizer" as const })),
+    ].map(g => ({
+      id: g.id, sport: g.sport, title: g.title, location: g.location, scheduledAt: g.scheduledAt,
+      status: g.status, role: g.role,
+      groupStatus: gameGroupStatus({ scheduledAt: g.scheduledAt.toISOString(), status: g.status }, now) as GroupStatus,
+    }));
 
-    const achievements: { icon: string; title: string; description: string }[] = [];
-    if (gamesPlayed >= 1)    achievements.push({ icon: "🏃", title: "First Game",  description: "Played your first pickup game" });
-    if (gamesPlayed >= 10)   achievements.push({ icon: "⭐", title: "Regular",     description: "Joined 10+ games" });
-    if (gamesOrganized >= 1) achievements.push({ icon: "🎯", title: "Organiser",   description: "Organised your first game" });
-    if (user.attendanceRate >= 95) achievements.push({ icon: "💯", title: "Reliable", description: "95%+ attendance rate" });
+    const registrations = isOwner ? {
+      camps: campRegs.map(r => ({ id: r.id, title: r.camp?.title ?? "Camp", startDate: r.camp?.startDate, endDate: r.camp?.endDate, status: r.status, paymentStatus: r.paymentStatus, groupStatus: registrationGroupStatus(r.status, (r.camp?.endDate ?? r.camp?.startDate ?? new Date()).toISOString(), now) })),
+      events: eventRegs.map(r => ({ id: r.id, title: r.event?.title ?? "Event", startDate: r.event?.startDate, endDate: r.event?.endDate, status: r.status, paymentStatus: r.paymentStatus, groupStatus: registrationGroupStatus(r.status, (r.event?.endDate ?? r.event?.startDate ?? new Date()).toISOString(), now) })),
+      workshops: workshopRegs.map(r => ({ id: r.id, title: r.workshop?.title ?? "Workshop", startDate: r.workshop?.startDate, endDate: r.workshop?.endDate, status: r.status, paymentStatus: r.paymentStatus, groupStatus: registrationGroupStatus(r.status, (r.workshop?.endDate ?? r.workshop?.startDate ?? new Date()).toISOString(), now) })),
+    } : undefined;
+
+    let upcoming: { type: string; id: string; title: string; date: string | null; location?: string; status?: string; href: string } | undefined = undefined;
+    if (isOwner) {
+      const candidates = [
+        ...joined.filter(g => g.scheduledAt > now && g.status !== "cancelled").map(g => ({ type: "game" as const, id: g.id, date: g.scheduledAt.toISOString(), title: g.title, location: g.location, status: g.status, href: `/game/${g.id}` })),
+        ...campRegs.filter(r => r.camp && r.status !== "cancelled" && r.camp.startDate > now).map(r => ({ type: "camp" as const, id: r.id, date: r.camp!.startDate.toISOString(), title: r.camp!.title, href: `/camps/${r.campId}` })),
+        ...eventRegs.filter(r => r.event && r.status !== "cancelled" && r.event.startDate > now).map(r => ({ type: "event" as const, id: r.id, date: r.event!.startDate.toISOString(), title: r.event!.title, href: `/events/${r.eventId}` })),
+        ...workshopRegs.filter(r => r.workshop && r.status !== "cancelled" && r.workshop.startDate > now).map(r => ({ type: "workshop" as const, id: r.id, date: r.workshop!.startDate.toISOString(), title: r.workshop!.title, href: `/workshops/${r.workshopId}` })),
+        ...bookingsRows.filter(b => b.status === "approved").map(b => ({ type: "coach" as const, id: b.id, date: null, title: b.coach?.name ? `Coaching with ${b.coach.name}` : "Coaching session", href: `/bookings` })),
+      ];
+      upcoming = selectUpcoming(candidates) ?? undefined;
+    }
+
+    const profileCompletion = isOwner ? computeProfileCompletion({
+      hasAvatar: !!user.avatarUrl,
+      hasFavoriteSport: sports.length > 0,
+      gamesPlayed,
+      hasCompletedBooking: completedBookingCount > 0,
+    }) : undefined;
 
     const bookings = bookingsRows.map(b => ({
       ...b,
@@ -81,8 +112,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
-      gamesPlayed, gamesOrganized, sports, upcomingGames, bookings, achievements,
-      playerRank, playerCount,
+      gamesPlayed, gamesOrganized, sports, playerRank, playerCount,
+      games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
     });
   } catch (e) { return handleErr(e); }
 }
