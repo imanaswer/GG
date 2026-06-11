@@ -66,7 +66,8 @@ export type UserProfile = {
   reliabilityScore: number; gamesPlayed: number; gamesOrganized: number; attendanceRate: number;
   reputationScore: number; tier: string; tierUpdatedAt?: string;
   playerRank?: number; playerCount?: number;
-  sports: { sport: string; games: number; level: string }[];
+  sports: string[];
+  sportActivity: { sport: string; games: number; level: string }[];
   games: ProfileGameItem[];
   upcoming?: ProfileUpcoming;
   bookings?: Booking[];

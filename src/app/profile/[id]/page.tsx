@@ -51,7 +51,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     nextTierLabel: info.next?.label ?? null,
     streakWeeks,
     nearestLocked: nearestLocked ? { title: nearestLocked.title, current: nearestLocked.progress!.current, target: nearestLocked.progress!.target } : null,
-    topSport: profile.sports[0]?.sport ?? null,
+    topSport: profile.sportActivity[0]?.sport ?? null,
   });
 
   return (
@@ -62,7 +62,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <PlayerHeroCard
             name={profile.name} username={profile.username} avatarUrl={profile.avatarUrl}
             tier={profile.tier} reputationScore={profile.reputationScore} rank={profile.playerRank}
-            streakWeeks={streakWeeks} joinedAt={profile.createdAt} favoriteSport={profile.sports[0]?.sport}
+            streakWeeks={streakWeeks} joinedAt={profile.createdAt} favoriteSport={profile.sportActivity[0]?.sport}
           />
           {isOwn && <TierUpBanner tier={profile.tier} tierUpdatedAt={profile.tierUpdatedAt} isOwn={isOwn} />}
 

@@ -12,7 +12,7 @@ const TAGS = {
 };
 
 export function pickIdentityTag(profile: UserProfile): IdentityTag {
-  const sportsCount = profile.sports?.length ?? 0;
+  const sportsCount = profile.sportActivity?.length ?? 0;
   const created = new Date(profile.createdAt);
   const ageMonths = Math.max(0, (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24 * 30.4375));
 
@@ -22,8 +22,8 @@ export function pickIdentityTag(profile: UserProfile): IdentityTag {
   if (sportsCount >= 3) return TAGS.multiSport;
   if (ageMonths < 2 && profile.gamesPlayed >= 3) return TAGS.rising;
 
-  if (profile.sports?.[0]) {
-    return { label: `${profile.sports[0].sport} Player`, color: "#e63946" };
+  if (profile.sportActivity?.[0]) {
+    return { label: `${profile.sportActivity[0].sport} Player`, color: "#e63946" };
   }
   return TAGS.player;
 }

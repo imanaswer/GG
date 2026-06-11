@@ -82,7 +82,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     for (const gp of sportTallyRows) {
       if (gp.game) sportMap[gp.game.sport] = (sportMap[gp.game.sport] ?? 0) + 1;
     }
-    const sports = Object.entries(sportMap)
+    const sportActivity = Object.entries(sportMap)
       .sort((a, b) => b[1] - a[1])
       .map(([sport, games]) => ({ sport, games, level: "Intermediate" }));
 
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
       googleId: undefined, reputationOverride: undefined,
       email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
-      gamesPlayed, gamesOrganized, sports, playerRank, playerCount,
+      gamesPlayed, gamesOrganized, sportActivity, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
       season: { id: season.id, label: season.label, daysLeft: season.daysLeft, rep: mySeasonRep, rank: seasonRank },
     });
