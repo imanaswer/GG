@@ -84,7 +84,21 @@ export const CreateVenueSchema = z.object({
   status: VenueStatusEnum.optional().default("ACTIVE"),
 });
 
-export const UpdateVenueSchema = CreateVenueSchema.partial();
+// NB: must NOT be `CreateVenueSchema.partial()` — the `.default()`s on
+// description/images/status get re-injected for omitted keys, so a status-only
+// PATCH (Enable/Disable/Archive) would blank description + images. Declared
+// explicitly with all-optional, no-default fields so omitted keys stay
+// undefined and Prisma leaves them untouched.
+export const UpdateVenueSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  description: z.string().max(2000).optional(),
+  address: z.string().min(2).max(300).optional(),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  images: z.array(z.string().url()).optional(),
+  supportedSports: z.array(z.string().min(1)).min(1).optional(),
+  status: VenueStatusEnum.optional(),
+});
 
 export const CreateSlotSchema = z
   .object({

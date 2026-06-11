@@ -4,6 +4,21 @@ import {
   slotAvailability, isSlotBookable, slotDurationMinutes,
   canDeleteVenue, canDeleteSlot, generateSlots,
 } from "./venues";
+import { UpdateVenueSchema } from "./api";
+
+describe("UpdateVenueSchema (partial PATCH must not inject defaults)", () => {
+  it("a status-only PATCH touches only status — never blanks description/images/sports", () => {
+    const parsed = UpdateVenueSchema.parse({ status: "ARCHIVED" });
+    expect(parsed).toEqual({ status: "ARCHIVED" });
+    expect("description" in parsed).toBe(false);
+    expect("images" in parsed).toBe(false);
+    expect("supportedSports" in parsed).toBe(false);
+  });
+  it("still validates fields that ARE provided", () => {
+    expect(() => UpdateVenueSchema.parse({ name: "x" })).toThrow(); // too short
+    expect(UpdateVenueSchema.parse({ name: "EMS Turf B" })).toEqual({ name: "EMS Turf B" });
+  });
+});
 
 describe("venue status", () => {
   it("has exactly the three documented statuses", () => {
