@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
-import { parsePagination, parseDateRange, parseSort, orderByFor } from "@/lib/adminBookings/query";
+import { Prisma } from "@prisma/client";
+import { parsePagination, buildDateQuery } from "@/lib/adminBookings/query";
 import { gamePlayerWhereForStatus, deriveGamePlayerStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
@@ -12,7 +13,7 @@ const INCLUDE = {
   game: { select: { title: true, sport: true, scheduledAt: true } },
 } as const;
 
-function toRow(p: any): BookingRow {
+function toRow(p: Prisma.GamePlayerGetPayload<{ include: typeof INCLUDE }>): BookingRow {
   return {
     id: p.id, userId: p.userId, userName: p.user?.name ?? "—", userEmail: p.user?.email ?? "—",
     userPhone: p.user?.phone ?? null, entityName: p.game?.title ?? "—",
@@ -23,12 +24,13 @@ function toRow(p: any): BookingRow {
   };
 }
 
+const AXIS = { sessionRelation: "game", sessionField: "scheduledAt", bookingField: "joinedAt" };
+
 function buildWhere(p: URLSearchParams, now: Date) {
   const status = p.get("status") ?? "all";
   const q = p.get("q")?.trim();
-  const range = parseDateRange(p, now);
-  const where: Record<string, unknown> = { ...gamePlayerWhereForStatus(status) };
-  if (range) where.joinedAt = { gte: range.gte, ...(range.lte ? { lte: range.lte } : {}) };
+  const { where: dateWhere } = buildDateQuery(p, now, AXIS);
+  const where: Record<string, unknown> = { ...gamePlayerWhereForStatus(status), ...dateWhere };
   if (q) where.OR = [
     { id: { contains: q, mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
@@ -39,7 +41,7 @@ function buildWhere(p: URLSearchParams, now: Date) {
 }
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
-  const base = { ...countWhere }; delete (base as any).status; delete (base as any).attended;
+  const base = { ...countWhere }; delete base.status; delete base.attended;
   const [cancelled, attended, noShow, joined] = await Promise.all([
     prisma.gamePlayer.count({ where: { ...base, status: "cancelled" } }),
     prisma.gamePlayer.count({ where: { ...base, status: { not: "cancelled" }, attended: true } }),
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { skip, take, page, pageSize } = parsePagination(p);
-  const orderBy = orderByFor(parseSort(p), "joinedAt", "joinedAt"); // GamePlayer has no own session date; "upcoming" falls back to joinedAt
+  const { orderBy } = buildDateQuery(p, now, AXIS);
 
   const countWhere = buildWhere(new URLSearchParams({ ...Object.fromEntries(p), status: "all" }), now);
   const [rows, total, counts] = await Promise.all([

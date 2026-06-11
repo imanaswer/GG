@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
-import { parsePagination, parseDateRange, parseSort, orderByFor } from "@/lib/adminBookings/query";
+import { Prisma } from "@prisma/client";
+import { parsePagination, buildDateQuery } from "@/lib/adminBookings/query";
 import { registrationWhereForStatus, deriveRegistrationStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
@@ -17,7 +18,7 @@ async function paymentFor(campId: string, userId: string): Promise<PaymentInfo |
   return pay ? { amount: pay.amount, currency: pay.currency, status: pay.status, razorpayPaymentId: pay.razorpayPaymentId, paidAt: pay.paidAt?.toISOString() ?? null } : null;
 }
 
-function toRow(r: any, payment: PaymentInfo | null): BookingRow {
+function toRow(r: Prisma.CampRegistrationGetPayload<{ include: typeof INCLUDE }>, payment: PaymentInfo | null): BookingRow {
   return {
     id: r.id, userId: r.userId, userName: r.user?.name ?? "—", userEmail: r.user?.email ?? "—",
     userPhone: r.user?.phone ?? null, entityName: r.camp?.title ?? "—",
@@ -28,12 +29,13 @@ function toRow(r: any, payment: PaymentInfo | null): BookingRow {
   };
 }
 
+const AXIS = { sessionRelation: "camp", sessionField: "startDate", bookingField: "registeredAt" };
+
 function buildWhere(p: URLSearchParams, now: Date) {
   const status = p.get("status") ?? "all";
   const q = p.get("q")?.trim();
-  const range = parseDateRange(p, now);
-  const where: Record<string, unknown> = { ...registrationWhereForStatus(status) };
-  if (range) where.registeredAt = { gte: range.gte, ...(range.lte ? { lte: range.lte } : {}) };
+  const { where: dateWhere } = buildDateQuery(p, now, AXIS);
+  const where: Record<string, unknown> = { ...registrationWhereForStatus(status), ...dateWhere };
   if (q) where.OR = [
     { id: { contains: q, mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
@@ -44,7 +46,7 @@ function buildWhere(p: URLSearchParams, now: Date) {
 }
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
-  const base = { ...countWhere }; delete (base as any).status; delete (base as any).paymentStatus;
+  const base = { ...countWhere }; delete base.status; delete base.paymentStatus;
   const [cancelled, pending, paid, failed, refunded] = await Promise.all([
     prisma.campRegistration.count({ where: { ...base, status: "cancelled" } }),
     prisma.campRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "pending" } }),
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { skip, take, page, pageSize } = parsePagination(p);
-  const orderBy = orderByFor(parseSort(p), "registeredAt", "registeredAt");
+  const { orderBy } = buildDateQuery(p, now, AXIS);
   const countWhere = buildWhere(new URLSearchParams({ ...Object.fromEntries(p), status: "all" }), now);
   const [rows, total, counts] = await Promise.all([
     prisma.campRegistration.findMany({ where, include: INCLUDE, orderBy, skip, take }),
