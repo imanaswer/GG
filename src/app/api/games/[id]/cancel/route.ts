@@ -34,7 +34,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     // Cancellation grants no rewards and triggers no leaderboard/reputation
     // updates. Because rewards are only ever granted at admin finalization, a
     // cancelled game can never have earned credit, so there is nothing to reverse.
-    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
+    // Releasing slotId frees the venue slot so it can be booked again — the
+    // @unique constraint would otherwise keep it permanently consumed.
+    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date(), slotId: null } });
     return ok({ cancelled: true });
   } catch (e) { return handleErr(e); }
 }

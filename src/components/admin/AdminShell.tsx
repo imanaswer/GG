@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CalendarCheck, Gamepad2, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu, ChevronDown } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Gamepad2, MapPin, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu, ChevronDown, type LucideIcon } from "lucide-react";
 
 const BOOKING_CHILDREN = [
   { href: "/admin/bookings/coaches",       label: "Coaches" },
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/admin",          label: "Overview",  icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Bookings",  icon: CalendarCheck, children: BOOKING_CHILDREN },
   { href: "/admin/games",    label: "Games",     icon: Gamepad2 },
+  { href: "/admin/venues",   label: "Venues",    icon: MapPin },
   { href: "/admin/camps",      label: "Camps",      icon: Tent },
   { href: "/admin/workshops", label: "Workshops",  icon: Wrench },
   { href: "/admin/events",    label: "Events",     icon: Trophy },
@@ -40,7 +41,7 @@ function Sidebar({
         <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin Dashboard</div>
       </div>
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
-        {NAV.map(({ href, label, icon: Icon, children }: { href: string; label: string; icon: any; children?: { href: string; label: string }[] }) => {
+        {NAV.map(({ href, label, icon: Icon, children }: { href: string; label: string; icon: LucideIcon; children?: { href: string; label: string }[] }) => {
           const active = activeHref(href);
           return (
             <div key={href}>

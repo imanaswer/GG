@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
 import { validateGameSchedule } from "@/lib/gameTime";
+import { isBookableVenue, venueSupportsSport, slotAvailability, slotDurationMinutes } from "@/lib/venues";
 
 const SPORT_IMAGES: Record<string, string> = {
   Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
@@ -82,29 +83,65 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const input = CreateGameSchema.parse(body);
 
-    const schedule = validateGameSchedule(input.scheduledAt, new Date());
+    // Resolve the chosen slot + its venue. Everything about *where* and *when*
+    // the game happens is derived from these — the host never types it.
+    const slot = await prisma.venueSlot.findUnique({
+      where: { id: input.slotId },
+      include: { venue: true, game: { select: { id: true } } },
+    });
+    if (!slot) return fail("This slot is no longer available.", 400);
+
+    const venue = slot.venue;
+    if (!isBookableVenue(venue.status)) return fail("This venue is not available for booking.", 400);
+    if (!venueSupportsSport(venue.supportedSports, input.sport)) {
+      return fail("This venue does not support the selected sport.", 400);
+    }
+
+    // Block/booked/expired check (a non-cancelled game holds the slot; cancelling
+    // a game releases its slotId, so slot.game present ⇒ genuinely booked).
+    const avail = slotAvailability(
+      { startTime: slot.startTime, isBlocked: slot.isBlocked, booked: !!slot.game },
+      new Date(),
+    );
+    if (!avail.available) return fail(avail.message, 400);
+
+    // Authoritative scheduling rule (past + 15-min buffer), derived from the slot.
+    const schedule = validateGameSchedule(slot.startTime.toISOString(), new Date());
     if (!schedule.ok) return fail(schedule.message, 400);
+
+    const duration = slotDurationMinutes(slot.startTime, slot.endTime);
 
     // Creating a game does not touch any permanent counter and triggers no
     // reputation recompute. The organizing credit is granted exactly once, only
     // when an admin finalizes the completed game, so cancelled games never earn
-    // leaderboard/reputation credit.
-    const game = await prisma.game.create({
-      data: {
-        sport: input.sport, title: input.title,
-        location: input.location, address: input.address ?? input.location,
-        scheduledAt: new Date(input.scheduledAt),
-        duration: input.duration,
-        slots: input.slots, slotsLeft: input.slots,
-        skillLevel: input.skillLevel, organizerId: session.id,
-        cost: input.cost, costAmount: input.costAmount,
-        description: input.description ?? "",
-        rules: input.rules ?? [],
-        imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
-        status: "open",
-      },
-    });
-
-    return ok(game, 201);
+    // leaderboard/reputation credit. location/address/lat/lng are snapshotted
+    // from the venue so the game survives the venue being archived later.
+    try {
+      const game = await prisma.game.create({
+        data: {
+          sport: input.sport, title: input.title,
+          location: venue.name, address: venue.address,
+          lat: venue.lat, lng: venue.lng,
+          venueId: venue.id, slotId: slot.id,
+          scheduledAt: slot.startTime, duration,
+          slots: input.slots, slotsLeft: input.slots,
+          skillLevel: input.skillLevel, organizerId: session.id,
+          cost: input.cost, costAmount: input.costAmount,
+          description: input.description ?? "",
+          rules: input.rules ?? [],
+          imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
+          status: "open",
+        },
+      });
+      return ok(game, 201);
+    } catch (e) {
+      // CRITICAL double-booking guard: Game.slotId is @unique, so two concurrent
+      // bookings of the same slot race to INSERT — exactly one wins, the loser
+      // hits P2002. Map it to the friendly message rather than leaking Prisma.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        return fail("This slot is no longer available.", 409);
+      }
+      throw e;
+    }
   } catch (e) { return handleErr(e); }
 }

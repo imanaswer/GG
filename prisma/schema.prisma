@@ -102,6 +102,52 @@ model Batch {
   bookings Booking[]
 }
 
+// A GameGround-approved place to play. Hosts can only book ACTIVE venues whose
+// supportedSports include their chosen sport. Designed so a future `Court` layer
+// (Venue → Court → Slot → Game) drops in without redesign: VenueSlot already
+// carries a nullable courtId placeholder comment and games snapshot venue text.
+model Venue {
+  id              String   @id @default(cuid())
+  name            String
+  description     String   @default("")
+  address         String
+  lat             Float?
+  lng             Float?
+  images          String[] @default([])
+  supportedSports String[] @default([])
+  // ACTIVE = bookable, INACTIVE = hidden from new bookings, ARCHIVED = historical only.
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  slots VenueSlot[]
+  games Game[]
+
+  @@index([status])
+}
+
+// A concrete, dated time window at a venue. Not a recurring template — startTime
+// and endTime are real DateTimes, so "expired" (startTime past) and "booked"
+// (a Game references it) are unambiguous. One slot maps to at most one Game.
+model VenueSlot {
+  id         String   @id @default(cuid())
+  venueId    String
+  // courtId String?  // future: Venue → Court → Slot. Nullable add, no redesign.
+  startTime  DateTime
+  endTime    DateTime
+  isBlocked  Boolean  @default(false)
+  blockReason String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  game  Game?
+
+  // Idempotent bulk generation + no duplicate windows at a venue.
+  @@unique([venueId, startTime])
+  @@index([venueId, startTime])
+}
+
 model Game {
   id            String   @id @default(cuid())
   sport         String
@@ -122,6 +168,10 @@ model Game {
   status        String   @default("open")
   lat           Float?
   lng           Float?
+  // Structured venue booking. Nullable so legacy free-text games stay valid;
+  // location/address remain as denormalized snapshots that survive venue archival.
+  venueId       String?
+  slotId        String?  @unique
   attendanceRecorded Boolean @default(false)
   completedAt   DateTime?
   cancelledAt   DateTime?
@@ -129,6 +179,8 @@ model Game {
   pointsAwarded Boolean  @default(false)
   createdAt     DateTime @default(now())
   organizer   User            @relation(fields: [organizerId], references: [id])
+  venue       Venue?          @relation(fields: [venueId], references: [id])
+  slot        VenueSlot?      @relation(fields: [slotId], references: [id])
   players     GamePlayer[]
   waitlist    WaitlistEntry[]
 

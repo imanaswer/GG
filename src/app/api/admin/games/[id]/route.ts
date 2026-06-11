@@ -29,7 +29,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   if (action === "cancel") {
     if (game.status === "completed" || game.status === "archived") return bad("Cannot cancel a completed game");
     if (game.status === "cancelled") return bad("Game is already cancelled");
-    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
+    // Release slotId so the venue slot frees up — Game.slotId is @unique, so a
+    // cancelled game must let go of it or that future slot is booked forever.
+    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date(), slotId: null } });
     return good({ cancelled: true });
   }
 

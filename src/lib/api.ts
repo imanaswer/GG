@@ -53,19 +53,67 @@ export const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+// Games are now booked against a structured venue slot. The host picks a sport
+// (filters venues), a venue, then a concrete slot; scheduledAt, duration,
+// location and address are all derived server-side from the slot + venue, so
+// hosts can no longer type venue details. `slots` here is PLAYER capacity —
+// unrelated to the VenueSlot time window.
 export const CreateGameSchema = z.object({
   sport: z.string().min(1),
   title: z.string().min(3).max(80),
-  location: z.string().min(2),
-  address: z.string().optional(),
-  scheduledAt: z.string().datetime(),
-  duration: z.coerce.number().min(15).max(480),
+  slotId: z.string().min(1),
   slots: z.coerce.number().min(2).max(100),
   skillLevel: z.enum(["Beginner", "Intermediate", "Advanced", "All Levels"]),
   cost: z.string().default("Free"),
   costAmount: z.coerce.number().default(0),
   description: z.string().max(1000).optional(),
   rules: z.array(z.string()).optional(),
+});
+
+// ─── Venue & slot schemas (admin-managed) ───────────────────────────────────
+export const VenueStatusEnum = z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]);
+
+export const CreateVenueSchema = z.object({
+  name: z.string().min(2).max(100),
+  description: z.string().max(2000).optional().default(""),
+  address: z.string().min(2).max(300),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  images: z.array(z.string().url()).optional().default([]),
+  supportedSports: z.array(z.string().min(1)).min(1, "Add at least one supported sport"),
+  status: VenueStatusEnum.optional().default("ACTIVE"),
+});
+
+export const UpdateVenueSchema = CreateVenueSchema.partial();
+
+export const CreateSlotSchema = z
+  .object({
+    startTime: z.string().datetime(),
+    endTime: z.string().datetime(),
+  })
+  .refine((d) => new Date(d.endTime) > new Date(d.startTime), {
+    message: "End time must be after start time",
+    path: ["endTime"],
+  });
+
+export const BulkSlotSchema = z.object({
+  fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  dayStart: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM"),
+  dayEnd: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM"),
+  slotMinutes: z.coerce.number().min(15).max(480),
+});
+
+export const BlockSlotSchema = z.object({
+  isBlocked: z.boolean(),
+  blockReason: z.string().max(200).optional(),
+});
+
+export const UpdateSlotSchema = z.object({
+  startTime: z.string().datetime().optional(),
+  endTime: z.string().datetime().optional(),
+  isBlocked: z.boolean().optional(),
+  blockReason: z.string().max(200).nullable().optional(),
 });
 
 export const BookingSchema = z.object({

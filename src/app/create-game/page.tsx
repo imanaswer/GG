@@ -3,43 +3,55 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight, Check } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
-import { toast } from "sonner";
 import { Input, Label, Textarea } from "@/components/ui";
-import { DateTimePicker } from "@/components/ui/DateTimePicker";
-import { validateGameSchedule } from "@/lib/gameTime";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { STORY } from "@/lib/premium-images";
 
 const SPORTS = ["Basketball","Football","Cricket","Badminton","Tennis","Volleyball","Other"];
 const LEVELS = ["Beginner","Intermediate","Advanced","All Levels"];
-const DURATIONS = [{ l:"30 min",v:30},{l:"1 hour",v:60},{l:"90 min",v:90},{l:"2 hours",v:120},{l:"3 hours",v:180},{l:"4 hours",v:240}];
+
+type Venue = { id: string; name: string; description: string; address: string; supportedSports: string[] };
+type Slot = { id: string; startTime: string; endTime: string; isBlocked: boolean; blockReason: string | null; available: boolean; reason: string | null };
 
 export default function CreateGamePage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const createGame = useCreateGame();
   const [form, setForm] = useState({
-    sport: "", title: "", location: "", address: "",
-    date: "", time: "", duration: "90",
+    sport: "", title: "", venueId: "", slotId: "",
     slots: "", skillLevel: "", cost: "Free", costAmount: "0", description: "",
   });
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+  // Sport drives the venue list; changing it clears the downstream choices so a
+  // host can never submit a venue/slot that no longer matches their sport.
+  const selectSport = (v: string) => setForm(p => ({ ...p, sport: v, venueId: "", slotId: "" }));
+  const selectVenue = (id: string) => setForm(p => ({ ...p, venueId: id, slotId: "" }));
+
+  // Only ACTIVE venues that support the chosen sport; only bookable slots.
+  const { data: venues = [] } = useQuery<Venue[]>({
+    queryKey: ["venues", form.sport],
+    queryFn: () => fetch(`/api/venues?sport=${encodeURIComponent(form.sport)}`).then(r => r.json()).then(j => j.data ?? []),
+    enabled: !!form.sport,
+  });
+  const { data: slots = [] } = useQuery<Slot[]>({
+    queryKey: ["venue-slots", form.venueId],
+    queryFn: () => fetch(`/api/venues/${form.venueId}/slots?all=1`).then(r => r.json()).then(j => j.data ?? []),
+    enabled: !!form.venueId,
+  });
+
+  const selectedVenue = venues.find(v => v.id === form.venueId) ?? null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.sport || !form.title || !form.location || !form.date || !form.time || !form.slots || !form.skillLevel) return;
-    const schedule = validateGameSchedule(new Date(`${form.date}T${form.time}:00`).toISOString(), new Date());
-    if (!schedule.ok) { toast.error(schedule.message); return; }
+    if (!canSubmit) return;
     await createGame.mutateAsync({
-      sport: form.sport, title: form.title, location: form.location,
-      address: form.address || undefined,
-      scheduledAt: new Date(`${form.date}T${form.time}:00`).toISOString(),
-      duration: parseInt(form.duration), slots: parseInt(form.slots),
-      skillLevel: form.skillLevel, cost: form.cost || "Free",
-      costAmount: parseInt(form.costAmount) || 0,
+      sport: form.sport, title: form.title, slotId: form.slotId,
+      slots: parseInt(form.slots), skillLevel: form.skillLevel,
+      cost: form.cost || "Free", costAmount: parseInt(form.costAmount) || 0,
       description: form.description || undefined,
     });
     router.push("/play");
@@ -47,7 +59,7 @@ export default function CreateGamePage() {
 
   if (!loading && !user) return <AuthGate />;
 
-  const canSubmit = form.sport && form.skillLevel && form.title && form.location && form.date && form.time && form.slots;
+  const canSubmit = !!(form.sport && form.skillLevel && form.title && form.venueId && form.slotId && form.slots);
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
@@ -112,7 +124,7 @@ export default function CreateGamePage() {
               <PillSelect
                 options={SPORTS.map(s => ({ l: s, v: s }))}
                 value={form.sport}
-                onChange={v => set("sport", v)}
+                onChange={selectSport}
               />
             </FieldRow>
             <FieldRow label="Skill level" required>
@@ -127,33 +139,51 @@ export default function CreateGamePage() {
             </FieldRow>
           </SectionCard>
 
-          {/* Location */}
-          <SectionCard Icon={MapPin} title="Where you&rsquo;re playing">
-            <FieldRow label="Venue name" required>
-              <Input placeholder="e.g. SM Street Court, EMS Stadium" value={form.location} onChange={e => set("location", e.target.value)} required />
-            </FieldRow>
-            <FieldRow label="Full address" hint="Helps first-timers find the gate.">
-              <Input placeholder="e.g. SM Street, Kozhikode 673001" value={form.address} onChange={e => set("address", e.target.value)} />
-            </FieldRow>
+          {/* Venue — only GameGround-approved venues, filtered by sport */}
+          <SectionCard Icon={MapPin} title="Pick a venue" hint="Only GameGround-approved venues for your sport. Address fills in automatically.">
+            {!form.sport ? (
+              <EmptyHint>Choose a sport above to see approved venues.</EmptyHint>
+            ) : venues.length === 0 ? (
+              <EmptyHint>No approved {form.sport} venues are available yet. Please check back soon.</EmptyHint>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+                {venues.map(v => {
+                  const active = form.venueId === v.id;
+                  return (
+                    <button key={v.id} type="button" onClick={() => selectVenue(v.id)} style={{
+                      textAlign: "left", padding: "13px 15px", borderRadius: 12, cursor: "pointer",
+                      fontFamily: "inherit",
+                      background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
+                      border: active ? "1px solid #e63946" : "1px solid rgba(255,255,255,0.08)",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{v.name}</span>
+                        {active && <Check size={15} color="#e63946" />}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.4 }}>{v.address}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {selectedVenue && (
+              <div style={{ marginTop: 4, padding: "11px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Selected venue</div>
+                <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{selectedVenue.name}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{selectedVenue.address}</div>
+              </div>
+            )}
           </SectionCard>
 
-          {/* Schedule */}
-          <SectionCard Icon={CalendarClock} title="When">
-            <FieldRow label="Date & start time" required>
-              <DateTimePicker
-                date={form.date}
-                time={form.time}
-                onDateChange={d => set("date", d)}
-                onTimeChange={t => set("time", t)}
-              />
-            </FieldRow>
-            <FieldRow label="Duration">
-              <PillSelect
-                options={DURATIONS.map(d => ({ l: d.l, v: d.v }))}
-                value={form.duration}
-                onChange={v => set("duration", v)}
-              />
-            </FieldRow>
+          {/* Available slot — concrete, bookable windows only */}
+          <SectionCard Icon={CalendarClock} title="Pick an available slot" hint="Times are set by the venue. Blocked or booked slots can’t be selected.">
+            {!form.venueId ? (
+              <EmptyHint>Select a venue to see its available slots.</EmptyHint>
+            ) : slots.length === 0 ? (
+              <EmptyHint>No open slots for this venue right now. Try another venue.</EmptyHint>
+            ) : (
+              <SlotPicker slots={slots} value={form.slotId} onChange={id => set("slotId", id)} />
+            )}
           </SectionCard>
 
           {/* Players & Cost */}
@@ -378,6 +408,66 @@ function PillSelect({ options, value, onChange }: { options: { l: string; v: str
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function EmptyHint({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ padding: "18px 16px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.1)", fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
+      {children}
+    </div>
+  );
+}
+
+function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; onChange: (id: string) => void }) {
+  // Group concrete slots by their local calendar day for a tidy day-by-day picker.
+  const groups: { day: string; label: string; items: Slot[] }[] = [];
+  for (const s of slots) {
+    const d = new Date(s.startTime);
+    const key = d.toDateString();
+    let g = groups.find(x => x.day === key);
+    if (!g) {
+      g = { day: key, label: d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" }), items: [] };
+      groups.push(g);
+    }
+    g.items.push(s);
+  }
+  const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {groups.map(g => (
+        <div key={g.day}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: "#9ca3af", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>{g.label}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {g.items.map(s => {
+              const active = value === s.id;
+              const disabled = !s.available; // blocked slots show but can't be picked
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => !disabled && onChange(s.id)}
+                  title={disabled ? (s.reason === "blocked" ? `Blocked${s.blockReason ? `: ${s.blockReason}` : ""}` : "Unavailable") : undefined}
+                  style={{
+                    padding: "8px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                    color: active ? "#fff" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.8)",
+                    border: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
+                    textDecoration: disabled ? "line-through" : "none",
+                    opacity: disabled ? 0.6 : 1,
+                  }}
+                >
+                  {time(s.startTime)}–{time(s.endTime)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
