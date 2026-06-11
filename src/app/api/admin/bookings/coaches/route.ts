@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
-import { parsePagination, parseDateRange, parseSort, orderByFor } from "@/lib/adminBookings/query";
+import { Prisma } from "@prisma/client";
+import { parsePagination, parseSort, orderByFor, coachDateWhere } from "@/lib/adminBookings/query";
 import { coachWhereForStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
@@ -10,9 +11,7 @@ import type { BookingRow, ListResponse, StatusCount } from "@/lib/adminBookings/
 function buildWhere(p: URLSearchParams, now: Date) {
   const status = p.get("status") ?? "all";
   const q = p.get("q")?.trim();
-  const range = parseDateRange(p, now);
-  const where: Record<string, unknown> = { ...coachWhereForStatus(status) };
-  if (range) where.createdAt = { gte: range.gte, ...(range.lte ? { lte: range.lte } : {}) };
+  const where: Record<string, unknown> = { ...coachWhereForStatus(status), ...coachDateWhere(p, now) };
   if (q) where.OR = [
     { id: { contains: q, mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
@@ -28,7 +27,7 @@ const INCLUDE = {
   batch: { select: { day: true, time: true } },
 } as const;
 
-function toRow(b: any): BookingRow {
+function toRow(b: Prisma.BookingGetPayload<{ include: typeof INCLUDE }>): BookingRow {
   return {
     id: b.id, userId: b.userId, userName: b.user?.name ?? "—", userEmail: b.user?.email ?? "—",
     userPhone: b.user?.phone ?? null, entityName: b.coach?.name ?? "—", status: b.status,
@@ -37,6 +36,7 @@ function toRow(b: any): BookingRow {
     extra: {
       sport: b.coach?.sport ?? "—",
       session: b.batch ? `${b.batch.day} ${b.batch.time}` : "1:1",
+      weekday: b.batch?.day ?? "",
       rejectionReason: b.rejectionReason ?? "",
       coachNote: b.coachNote ?? "",
       note: b.note ?? "",
