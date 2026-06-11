@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
+import { validateGameSchedule } from "@/lib/gameTime";
 
 const SPORT_IMAGES: Record<string, string> = {
   Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
@@ -80,6 +81,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const input = CreateGameSchema.parse(body);
+
+    const schedule = validateGameSchedule(input.scheduledAt, new Date());
+    if (!schedule.ok) return fail(schedule.message, 400);
 
     // Creating a game does not touch any permanent counter and triggers no
     // reputation recompute. The organizing credit is granted exactly once, only
