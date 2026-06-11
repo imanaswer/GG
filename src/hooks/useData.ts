@@ -74,11 +74,6 @@ export type UserProfile = {
   profileCompletion?: ProfileCompletion;
   season: ProfileSeason;
   createdAt: string;
-  // Retained as optional for backward-compat until the profile page rewrite (later task) removes them.
-  upcomingGames?: Game[];
-  organizedGames?: Game[];
-  achievements?: { title: string; description: string; icon: string }[];
-  lookingFor?: string | null;
 };
 
 export type AIResult = { items: Record<string, unknown>[]; poweredBy: string };
