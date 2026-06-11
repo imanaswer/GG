@@ -10,10 +10,11 @@ Operational visibility for admins: organize each booking module by the **actual
 session/event date** so an admin can immediately see **what is happening Today,
 Tomorrow, and Upcoming** — instead of a flat list sorted by booking-creation date.
 
-This is the foundation slice. It deliberately **defers** the calendar view,
+This is the foundation slice. It covers the five unified booking tabs **and** the
+standalone `/admin/games` page. It deliberately **defers** the calendar view,
 analytics/reporting, the dashboard "today" widget, structured Sport/Venue/
-Coach/Organizer filters, and folding the standalone Games/Venues admin pages
-into the unified system. Those come in later cycles.
+Coach/Organizer filters, the `/admin/venues` page, and any deeper refactor of the
+Games page to share components. Those come in later cycles.
 
 ## Context: what already exists
 
@@ -55,13 +56,22 @@ real event instant or a midnight value. No per-module timezone special-casing.
    The legacy rolling `week` / `month` presets are replaced. `Completed` and
    `Cancelled` remain **status** filters (existing `SummaryCards`) — they are NOT
    duplicated as date presets.
-3. **Default view per tab:** preset `upcoming`, sorted soonest-first, grouped by day.
-4. **Group by calendar day**, client-side, with a `Group by date` toggle. Day
-   headers show `Wed, Jun 10, 2026` with relative `Today` / `Tomorrow` labels on
-   matching days. Server still does all filtering/sorting/pagination; grouping is
-   pure presentation over the returned page (a day may straddle a page edge — fine).
-5. **Coaches use weekday matching** (recurrence, not calendar dates) — see below.
+3. **Default view per tab:** preset `upcoming` (session ≥ start of today),
+   sorted soonest-first, grouped into the three relative buckets below.
+4. **Group into three relative buckets — `Today` / `Tomorrow` / `Upcoming`** —
+   rendered as collapsible sections (▼), client-side. `Today` = session falls on
+   the current IST calendar day; `Tomorrow` = next IST day; `Upcoming` = everything
+   later. (NOT per-calendar-day headers — the admin examples show exactly these three
+   collapsible sections.) Within `Upcoming`, rows stay sorted soonest-first and each
+   row shows its own date. Server still does all filtering/sorting/pagination;
+   bucketing is pure presentation over the returned page.
+5. **Coaches use weekday matching** (recurrence, not calendar dates): `Today` =
+   batch meets today's weekday, `Tomorrow` = tomorrow's weekday, `Upcoming` = all
+   other batches; batch-less bookings → `Unscheduled`. See below.
 6. **Keep** existing search, pagination, status filters, CSV export, bulk actions.
+7. **Standalone `/admin/games` page is in scope** — it gets the same
+   Today/Tomorrow/Upcoming bucketing (most operationally important: "what matches
+   are on today"), reusing the shared IST date core. See its own section.
 
 ## Architecture
 
@@ -108,10 +118,11 @@ e.g. `"Monday"`) and `time`. Operational meaning of "today's coach bookings" =
   - `tomorrow` → `where.batch = { day: <tomorrowWeekdayIST> }`
   - `upcoming` / `all` → no weekday filter (batches recur indefinitely)
 - Bookings with `batchId = null` → treated as **"Unscheduled"** (excluded from
-  today/tomorrow; surfaced under an "Unscheduled" group).
-- Grouping for coaches is **by weekday** (Mon…Sun + Unscheduled), not calendar day,
-  because the records recur. `toRow` sets `sessionDate = null` for coaches; the row
-  carries the weekday in `extra` (already has batch info via `extra.session`).
+  today/tomorrow; surfaced under an "Unscheduled" bucket below `Upcoming`).
+- The three-bucket view still applies to coaches: a row goes to `Today` if its batch
+  weekday is today's, `Tomorrow` if tomorrow's, `Upcoming` otherwise, `Unscheduled`
+  if no batch. `toRow` sets `sessionDate = null` for coaches and carries the weekday
+  in `extra` (already has batch info via `extra.session`) so the client can bucket it.
 - `by=booking` for coaches falls back to the normal calendar presets on `createdAt`.
 
 ### 4. Toolbar — `src/components/admin/bookings/BookingsToolbar.tsx`
@@ -126,14 +137,33 @@ e.g. `"Monday"`) and `time`. Operational meaning of "today's coach bookings" =
 
 ### 5. Grouped rendering — `BookingsCategoryView`
 
-- When `group="day"`, group the returned page's rows:
-  - date modules → bucket by IST calendar day of `sessionDate`; header text
-    `formatDayHeader(date)` → `Today` / `Tomorrow` / `Wed, Jun 10, 2026`.
-  - coaches → bucket by weekday (from `extra`), plus an `Unscheduled` bucket.
-  - Rows with null session date (date modules) sink into an `Unscheduled` bucket.
+- When `group="day"` (default), bucket the returned page's rows into the three
+  collapsible sections **Today / Tomorrow / Upcoming** (+ **Unscheduled** when any
+  row lacks a date), via a shared helper `bucketRows(rows, dateMode, now)`:
+  - `dateMode="calendar"` (the four date modules) → compare each row's `sessionDate`
+    against IST today/tomorrow bounds; later → `Upcoming`; null → `Unscheduled`.
+  - `dateMode="weekday"` (coaches) → compare each row's batch weekday to
+    today's/tomorrow's IST weekday; else `Upcoming`; no batch → `Unscheduled`.
+  - Empty buckets are hidden. Each section header shows its label + a count and is
+    collapsible (▼/▶). `Upcoming` rows show their own date inline.
 - When `group="off"`, render the existing flat table.
-- A new small presentational helper (e.g. `groupRowsByDay` in a `grouping.ts`)
-  keeps the view component lean and unit-testable.
+- The helper lives in a new `src/lib/adminBookings/grouping.ts`, pure + unit-tested.
+
+### 5b. Standalone Games page — `/admin/games`
+
+The Games Tracker (`src/app/admin/games/page.tsx` + `api/admin/games/route.ts`) is a
+single un-paginated fetch, flat table, sorted by `createdAt desc`. Bring it into the
+same operational model with minimal churn:
+
+- Route: order by `scheduledAt asc` instead of `createdAt desc` (stats unchanged).
+- Page: reuse the shared IST date core + `bucketRows(..., "calendar", now)` to render
+  the games table as **Today / Tomorrow / Upcoming** collapsible sections (with a
+  `Past` section, collapsed by default, for older/cancelled/completed games so the
+  drawer/finalize flow stays reachable). The existing row markup, detail drawer, and
+  admin actions are unchanged — only the list is wrapped in date sections.
+- No pagination is added this slice (the list is bounded); grouping is client-side
+  over the fetched set, consistent with the page's current shape. If volume grows, a
+  server-side date filter can be added later without changing the UI contract.
 
 ### 6. Types — `src/lib/adminBookings/types.ts`
 
@@ -175,10 +205,13 @@ Extend `src/lib/adminBookings/query.test.ts` (TDD, before route changes):
 
 Add `grouping.test.ts`:
 
-- `groupRowsByDay` buckets calendar rows by IST day with correct Today/Tomorrow labels;
-- coach rows bucket by normalized weekday; null/odd values → "Unscheduled".
+- `bucketRows(..., "calendar", now)` sorts calendar rows into Today / Tomorrow /
+  Upcoming / Unscheduled correctly across the IST midnight + 00:00–05:30 edge;
+- `bucketRows(..., "weekday", now)` buckets coach rows by normalized weekday;
+  batch-less / unparseable → "Unscheduled".
 
-Existing route/status/csv tests must stay green.
+Existing route/status/csv tests must stay green. Manually verify the
+standalone `/admin/games` page renders the three sections after the reorder.
 
 ## Out of scope (deferred — stated so "across all modules" is managed)
 
@@ -186,7 +219,7 @@ Existing route/status/csv tests must stay green.
 - Dashboard "Today's sessions / upcoming actions" widget.
 - Structured Sport / Venue / Coach / Organizer filters.
 - Date-range reporting / analytics / revenue-by-period.
-- Folding the standalone `/admin/games` and `/admin/venues` pages into the unified
-  bookings system (Games are covered here via the `play-sessions` tab; the separate
-  games admin page is unchanged this slice).
+- Folding the standalone `/admin/venues` page into the unified system, and
+  refactoring `/admin/games` to share the `BookingsCategoryView` component (this
+  slice only adds date sections to the existing Games page in place).
 - Deriving full calendar occurrences for coach batches (we use weekday match only).
