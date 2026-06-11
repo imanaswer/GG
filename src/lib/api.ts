@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
+import { Prisma } from "@prisma/client";
 
 export const ok = <T>(data: T, status = 200) =>
   NextResponse.json({ ok: true, data }, { status });
@@ -7,10 +8,35 @@ export const ok = <T>(data: T, status = 200) =>
 export const fail = (message: string, status = 400, details?: unknown) =>
   NextResponse.json({ ok: false, error: message, details }, { status });
 
+/** Thrown by routes for user-facing errors that handleErr should surface verbatim. */
+export class ApiError extends Error {
+  status: number;
+  constructor(userMessage: string, status = 400) {
+    super(userMessage);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+const PRISMA_MESSAGES: Record<string, string> = {
+  P2002: "This conflicts with an existing record.",
+  P2025: "The requested item no longer exists.",
+  P2011: "Missing required information.",
+  P2012: "Missing required information.",
+  P2003: "Missing required information.",
+};
+
 export function handleErr(e: unknown) {
+  if (e instanceof ApiError) return fail(e.message, e.status);
   if (e instanceof ZodError) return fail("Validation error", 422, e.flatten().fieldErrors);
-  if (e instanceof Error) return fail(e.message, 400);
-  return fail("Internal server error", 500);
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    console.error("[prisma]", e.code, e.message);
+    return fail(PRISMA_MESSAGES[e.code] ?? "Something went wrong. Please try again.", 400);
+  }
+  // Anything else — including PrismaClientValidationError and unknown failures —
+  // is logged server-side and returned as a generic message. Never echo e.message.
+  console.error("[unhandled]", e);
+  return fail("Something went wrong. Please try again.", 500);
 }
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
