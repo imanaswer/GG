@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { joinability } from "@/lib/gameTime";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -44,38 +45,59 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
     const session = await getSessionFromRequest(req);
-    if (!session) return fail("Authentication required", 401);
+    if (!session?.id) return fail("Authentication required", 401);
 
-    const game = await prisma.game.findUnique({ where: { id }, select: { organizerId: true, slotsLeft: true, status: true } });
+    const game = await prisma.game.findUnique({
+      where: { id },
+      select: { organizerId: true, status: true, scheduledAt: true, duration: true, slotsLeft: true },
+    });
     if (!game) return fail("Game not found", 404);
-    if (game.organizerId === session.id) return fail("You cannot join your own game", 400);
-    if (["cancelled", "completed", "archived"].includes(game.status)) return fail("This game is no longer open to join", 400);
 
-    const already = await prisma.gamePlayer.findUnique({ where: { gameId_userId: { gameId: id, userId: session.id } }, select: { id: true } });
-    if (already) return fail("Already joined this game", 409);
+    // Host / status / start-and-end-time checks (shared rules).
+    const reason = joinability(game, new Date(), session.id);
+    if (reason) return fail(reason, 400);
 
-    if (game.slotsLeft <= 0 || game.status === "full") {
+    // Already joined?
+    const already = await prisma.gamePlayer.findUnique({
+      where: { gameId_userId: { gameId: id, userId: session.id } },
+      select: { id: true },
+    });
+    if (already) return fail("You have already joined this game.", 409);
+
+    // Race-safe capacity claim: the conditional decrement is atomic in Postgres,
+    // so two concurrent joins on the last slot can't both succeed. The loser falls
+    // through to the waitlist. (Same pattern as the finalize handler's award claim.)
+    // Joining only creates participation records — no permanent counters/reputation
+    // are touched here; that happens exclusively at admin finalization.
+    const claim = await prisma.game.updateMany({
+      where: { id, status: "open", slotsLeft: { gt: 0 } },
+      data: { slotsLeft: { decrement: 1 } },
+    });
+
+    if (claim.count === 0) {
       const onWaitlist = await prisma.waitlistEntry.findFirst({ where: { gameId: id, userId: session.id }, select: { id: true } });
       if (onWaitlist) return fail("Already on waitlist", 409);
-      const position = await prisma.waitlistEntry.count({ where: { gameId: id } }) + 1;
+      const position = (await prisma.waitlistEntry.count({ where: { gameId: id } })) + 1;
       await prisma.waitlistEntry.create({ data: { gameId: id, userId: session.id, position } });
       return ok({ waitlisted: true, position });
     }
 
-    const newSlotsLeft = game.slotsLeft - 1;
-    // Joining only creates participation records (GamePlayer + slot count).
-    // No permanent counters are touched and no reputation recompute runs here —
-    // every reward/stat update happens exclusively at admin finalization
-    // (see /api/admin/games/[id] finalize).
-    await prisma.$transaction([
-      prisma.gamePlayer.create({ data: { gameId: id, userId: session.id } }),
-      prisma.game.update({
-        where: { id },
-        data: { slotsLeft: { decrement: 1 }, status: newSlotsLeft === 0 ? "full" : undefined },
-      }),
-    ]);
+    // Slot claimed — create participation. If create fails, release the slot so the
+    // count stays correct, then let handleErr map the error to a friendly message.
+    try {
+      await prisma.gamePlayer.create({ data: { gameId: id, userId: session.id } });
+    } catch (createErr) {
+      await prisma.game.update({ where: { id }, data: { slotsLeft: { increment: 1 } } });
+      throw createErr;
+    }
 
-    return ok({ joined: true, slotsLeft: newSlotsLeft, status: newSlotsLeft === 0 ? "full" : game.status });
+    // Flip to "full" if we took the last slot.
+    const after = await prisma.game.findUnique({ where: { id }, select: { slotsLeft: true, status: true } });
+    if (after && after.slotsLeft === 0 && after.status === "open") {
+      await prisma.game.update({ where: { id }, data: { status: "full" } });
+    }
+
+    return ok({ joined: true, slotsLeft: after?.slotsLeft ?? 0, status: after?.slotsLeft === 0 ? "full" : "open" });
   } catch (e) { return handleErr(e); }
 }
 
