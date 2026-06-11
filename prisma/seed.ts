@@ -15,6 +15,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { generateSlots } from "../src/lib/venues";
 
 // Every seeded player gets this password — documented in README.
 // Admin login uses ADMIN_PASSWORD env (or "admin123" fallback), so the admin
@@ -50,7 +51,8 @@ function loadDb(): DbFile {
 }
 
 async function wipe() {
-  // Delete in reverse FK order.
+  // Delete in reverse FK order. Games are deleted before slots/venues so the
+  // SetNull FKs never block; VenueSlot before Venue (or rely on the cascade).
   await prisma.$transaction([
     prisma.payment.deleteMany(),
     prisma.eventRegistration.deleteMany(),
@@ -62,6 +64,8 @@ async function wipe() {
     prisma.waitlistEntry.deleteMany(),
     prisma.gamePlayer.deleteMany(),
     prisma.game.deleteMany(),
+    prisma.venueSlot.deleteMany(),
+    prisma.venue.deleteMany(),
     prisma.batch.deleteMany(),
     prisma.coach.deleteMany(),
     prisma.user.deleteMany(),
@@ -170,6 +174,8 @@ async function seed() {
       },
     });
   }
+
+  await seedVenues();
 
   if (db.gamePlayers.length) {
     console.log(`→ Seeding ${db.gamePlayers.length} game players…`);
@@ -296,6 +302,35 @@ async function seed() {
   if (db.payments.length) {
     console.log(`→ Seeding ${db.payments.length} payments…`);
     await prisma.payment.createMany({ data: db.payments as never });
+  }
+}
+
+// GameGround-approved venues + a week of upcoming bookable slots, so the
+// create-game flow (Sport → Venue → Slot) works out of the box after a seed.
+async function seedVenues() {
+  const VENUES = [
+    { name: "EMS Turf A",        address: "EMS Stadium, Kozhikode 673001",     supportedSports: ["Football", "Cricket"],     status: "ACTIVE",   lat: 11.2588, lng: 75.7804 },
+    { name: "SM Street Court",   address: "SM Street, Kozhikode 673001",        supportedSports: ["Basketball", "Volleyball"], status: "ACTIVE",   lat: 11.2510, lng: 75.7750 },
+    { name: "Smash Arena",       address: "Mavoor Road, Kozhikode 673004",      supportedSports: ["Badminton", "Tennis"],      status: "ACTIVE",   lat: 11.2620, lng: 75.7900 },
+    { name: "Corniche Ground",   address: "Beach Road, Kozhikode 673032",       supportedSports: ["Football", "Cricket"],      status: "INACTIVE", lat: 11.2490, lng: 75.7720 },
+  ];
+
+  const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  const today = new Date();
+  const weekOut = new Date(today.getTime() + 6 * 24 * 60 * 60_000);
+  const windows = generateSlots({ fromDate: fmt(today), toDate: fmt(weekOut), dayStart: "18:00", dayEnd: "22:00", slotMinutes: 60 });
+
+  console.log(`→ Seeding ${VENUES.length} venues (+ slots for ACTIVE ones)…`);
+  for (const v of VENUES) {
+    const venue = await prisma.venue.create({
+      data: { name: v.name, address: v.address, supportedSports: v.supportedSports, status: v.status, lat: v.lat, lng: v.lng, description: `${v.supportedSports.join(" / ")} at ${v.name}.` },
+    });
+    if (v.status === "ACTIVE") {
+      await prisma.venueSlot.createMany({
+        data: windows.map(w => ({ venueId: venue.id, startTime: w.startTime, endTime: w.endTime })),
+        skipDuplicates: true,
+      });
+    }
   }
 }
 

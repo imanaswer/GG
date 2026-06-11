@@ -4,7 +4,18 @@ import {
   slotAvailability, isSlotBookable, slotDurationMinutes,
   canDeleteVenue, canDeleteSlot, generateSlots,
 } from "./venues";
-import { UpdateVenueSchema } from "./api";
+import { UpdateVenueSchema, UpdateSlotSchema } from "./api";
+
+describe("UpdateSlotSchema (slot-time editing)", () => {
+  it("rejects an inverted window when both times are edited together", () => {
+    expect(() => UpdateSlotSchema.parse({ startTime: "2026-06-12T20:00:00.000Z", endTime: "2026-06-12T19:00:00.000Z" })).toThrow();
+  });
+  it("accepts a valid window and one-sided/block-only edits", () => {
+    expect(UpdateSlotSchema.parse({ startTime: "2026-06-12T18:00:00.000Z", endTime: "2026-06-12T19:00:00.000Z" })).toBeTruthy();
+    expect(UpdateSlotSchema.parse({ isBlocked: true, blockReason: "Maintenance" })).toEqual({ isBlocked: true, blockReason: "Maintenance" });
+    expect(UpdateSlotSchema.parse({ endTime: "2026-06-12T21:00:00.000Z" })).toBeTruthy(); // one-sided → route validates vs existing
+  });
+});
 
 describe("UpdateVenueSchema (partial PATCH must not inject defaults)", () => {
   it("a status-only PATCH touches only status — never blanks description/images/sports", () => {

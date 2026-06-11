@@ -123,12 +123,20 @@ export const BlockSlotSchema = z.object({
   blockReason: z.string().max(200).optional(),
 });
 
-export const UpdateSlotSchema = z.object({
-  startTime: z.string().datetime().optional(),
-  endTime: z.string().datetime().optional(),
-  isBlocked: z.boolean().optional(),
-  blockReason: z.string().max(200).nullable().optional(),
-});
+export const UpdateSlotSchema = z
+  .object({
+    startTime: z.string().datetime().optional(),
+    endTime: z.string().datetime().optional(),
+    isBlocked: z.boolean().optional(),
+    blockReason: z.string().max(200).nullable().optional(),
+  })
+  // When BOTH times are edited at once, reject an inverted window early. The
+  // one-sided case (only start or only end) is validated in the route against
+  // the slot's existing other endpoint, where both values are known.
+  .refine((d) => !(d.startTime && d.endTime) || new Date(d.endTime) > new Date(d.startTime), {
+    message: "End time must be after start time",
+    path: ["endTime"],
+  });
 
 export const BookingSchema = z.object({
   coachId: z.string().min(1),

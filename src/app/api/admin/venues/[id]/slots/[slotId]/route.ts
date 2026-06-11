@@ -19,8 +19,14 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const { slotId } = await params;
     const input = UpdateSlotSchema.parse(await req.json());
 
-    const existing = await prisma.venueSlot.findUnique({ where: { id: slotId }, select: { id: true } });
+    const existing = await prisma.venueSlot.findUnique({ where: { id: slotId }, select: { startTime: true, endTime: true } });
     if (!existing) return fail("Slot not found", 404);
+
+    // Authoritative end-after-start guard. Covers one-sided edits too, by
+    // comparing the incoming endpoint against the slot's existing other one.
+    const effStart = input.startTime ? new Date(input.startTime) : existing.startTime;
+    const effEnd = input.endTime ? new Date(input.endTime) : existing.endTime;
+    if (effEnd.getTime() <= effStart.getTime()) return fail("End time must be after start time.", 400);
 
     const data: Prisma.VenueSlotUpdateInput = {};
     if (input.startTime !== undefined) data.startTime = new Date(input.startTime);
