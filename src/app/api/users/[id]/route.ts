@@ -4,6 +4,7 @@ import { getSessionFromRequest, clearCookie } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { gameGroupStatus, registrationGroupStatus, selectUpcoming, type GroupStatus } from "@/lib/profileGrouping";
 import { computeProfileCompletion } from "@/lib/profileCompletion";
+import { currentSeason, seasonRep } from "@/lib/season";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -56,6 +57,26 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       isOwner ? prisma.workshopRegistration.findMany({ where: { userId: id }, include: { workshop: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
       isOwner ? prisma.booking.count({ where: { userId: id, status: "completed" } }) : Promise.resolve(0),
     ]);
+
+    const season = currentSeason(now);
+    const since = season.startsAt;
+
+    const [sGames, sOrganized, sCamps, sEvents, sWorkshops, sReviews, seasonGameGroups] = await Promise.all([
+      prisma.gamePlayer.count({ where: { userId: id, joinedAt: { gte: since }, game: { status: { not: "cancelled" } } } }),
+      prisma.game.count({ where: { organizerId: id, createdAt: { gte: since }, status: { not: "cancelled" } } }),
+      prisma.campRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
+      prisma.eventRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
+      prisma.workshopRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
+      prisma.review.count({ where: { userId: id, createdAt: { gte: since } } }),
+      // season rank driver: per-user in-window game activity
+      prisma.gamePlayer.groupBy({ by: ["userId"], where: { joinedAt: { gte: since }, game: { status: { not: "cancelled" } } }, _count: { _all: true } }),
+    ]);
+
+    const mySeasonRep = seasonRep({ games: sGames, organized: sOrganized, camps: sCamps, events: sEvents, workshops: sWorkshops, reviews: sReviews });
+
+    const myGameRep = sGames * 10;
+    const higherSeason = seasonGameGroups.filter(g => g.userId !== id && g._count._all * 10 > myGameRep).length;
+    const seasonRank = higherSeason + 1;
 
     const sportMap: Record<string, number> = {};
     for (const gp of sportTallyRows) {
@@ -115,6 +136,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
       gamesPlayed, gamesOrganized, sports, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
+      season: { id: season.id, label: season.label, daysLeft: season.daysLeft, rep: mySeasonRep, rank: seasonRank },
     });
   } catch (e) { return handleErr(e); }
 }
