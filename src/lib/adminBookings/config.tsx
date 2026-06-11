@@ -8,6 +8,7 @@ export interface CategoryConfig {
   key: CategoryKey;
   label: string;
   apiPath: string;
+  dateMode: "calendar" | "weekday";
   columns: ColumnDef[];
   rowActions: RowActionDef[];
   bulkActions: BulkActionDef[];
@@ -18,6 +19,7 @@ const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("
 export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   coaches: {
     key: "coaches", label: "Coaches", apiPath: "/api/admin/bookings/coaches",
+    dateMode: "weekday",
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
@@ -39,6 +41,7 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   },
   "play-sessions": {
     key: "play-sessions", label: "Play Sessions", apiPath: "/api/admin/bookings/play-sessions",
+    dateMode: "calendar",
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
@@ -58,6 +61,7 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   },
   workshops: {
     key: "workshops", label: "Workshops", apiPath: "/api/admin/bookings/workshops",
+    dateMode: "calendar",
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
@@ -78,6 +82,7 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   },
   camps: {
     key: "camps", label: "Camps", apiPath: "/api/admin/bookings/camps",
+    dateMode: "calendar",
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
@@ -98,6 +103,7 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   },
   events: {
     key: "events", label: "Events", apiPath: "/api/admin/bookings/events",
+    dateMode: "calendar",
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
