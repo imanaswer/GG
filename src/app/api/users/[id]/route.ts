@@ -30,11 +30,11 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       // Cancelled games never count toward a user's stats.
       prisma.gamePlayer.count({ where: { userId: id, game: { status: { not: "cancelled" } } } }),
       prisma.game.count({ where: { organizerId: id, status: { not: "cancelled" } } }),
-      prisma.booking.findMany({
+      isOwner ? prisma.booking.findMany({
         where: { userId: id },
         include: { coach: { select: { name: true, sport: true, location: true, imageUrl: true } } },
         orderBy: { createdAt: "desc" },
-      }),
+      }) : Promise.resolve([]),
       prisma.gamePlayer.findMany({
         where: { userId: id, game: { status: { not: "cancelled" } } },
         select: { game: { select: { sport: true } } },
@@ -112,6 +112,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
+      email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
       gamesPlayed, gamesOrganized, sports, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
     });
