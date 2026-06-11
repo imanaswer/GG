@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useUserActivity } from "@/hooks/useData";
 
 function ago(ts: string): string {
