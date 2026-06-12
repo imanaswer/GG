@@ -128,6 +128,15 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
 
   const spotsLeft    = event.maxParticipants - event.participants;
   const pct          = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
+  const cardStyle: React.CSSProperties = { background: "rgba(13,13,13,0.7)", backdropFilter: "blur(18px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, padding: "24px 28px" };
+
+  type SchedRow = { title: string; date: string; time: string; location: string };
+  const scheduleRows: SchedRow[] = (event.schedule ?? []).map((s: Record<string, string>) =>
+    "title" in s
+      ? { title: s.title, date: s.date ?? "", time: s.time ?? "", location: s.location ?? "" }
+      : { title: s.event ?? "", date: s.day ?? "", time: s.time ?? "", location: "" }
+  );
+  const hasFormatSpecs = !!(event.matchFormat || event.teamSize || event.numRounds || event.structure || event.eligibility);
   const regClosed    = new Date(event.registrationDeadline) < new Date();
   const isLive       = event.status === "Live";
   const isTeam       = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
@@ -369,9 +378,9 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                 <Reveal>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
                     <TabButton id="overview" active={tab} onClick={setTab} label="Overview" />
-                    <TabButton id="format"   active={tab} onClick={setTab} label="Format"   count={event.format.length} />
+                    <TabButton id="format"   active={tab} onClick={setTab} label="Format"   count={event.format.length + (event.rules?.length ?? 0)} />
                     <TabButton id="prizes"   active={tab} onClick={setTab} label="Prizes"   count={event.prizes.length} />
-                    <TabButton id="schedule" active={tab} onClick={setTab} label="Schedule" count={event.schedule.length} />
+                    <TabButton id="schedule" active={tab} onClick={setTab} label="Schedule" count={scheduleRows.length} />
                   </div>
                 </Reveal>
 
@@ -379,12 +388,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                 {tab === "overview" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     <Reveal>
-                      <div style={{
-                        background: "rgba(13,13,13,0.7)",
-                        backdropFilter: "blur(18px)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 20, padding: "24px 28px",
-                      }}>
+                      <div style={cardStyle}>
                         <h3 className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
                           <Award size={14} color="#e63946" /> About this event
                         </h3>
@@ -393,6 +397,36 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         </p>
                       </div>
                     </Reveal>
+                    {!!event.aboutLong && event.aboutLong !== event.description && (
+                      <Reveal>
+                        <div style={cardStyle}>
+                          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.72)", lineHeight: 1.75, whiteSpace: "pre-line" }}>
+                            {event.aboutLong}
+                          </p>
+                        </div>
+                      </Reveal>
+                    )}
+                    {!!event.whatYouGet?.length && (
+                      <Reveal>
+                        <div style={cardStyle}>
+                          <h3 className="eyebrow" style={{ marginBottom: 16 }}>What you get</h3>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            {event.whatYouGet.map((x, i) => (
+                              <div key={i} style={{ display: "flex", gap: 10 }}>
+                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#e63946", flexShrink: 0, marginTop: 7 }} />
+                                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{x}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </Reveal>
+                    )}
+                    {!!event.venueInfo && (
+                      <Reveal><div style={cardStyle}>
+                        <h3 className="eyebrow" style={{ marginBottom: 12 }}>Venue information</h3>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>{event.venueInfo}</p>
+                      </div></Reveal>
+                    )}
                     <Reveal>
                       <div style={{
                         background: "rgba(13,13,13,0.7)",
@@ -422,6 +456,34 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                 {/* Format */}
                 {tab === "format" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {hasFormatSpecs && (
+                      <div style={cardStyle}>
+                        {([["Match format", event.matchFormat], ["Team size", event.teamSize], ["Rounds", event.numRounds], ["Structure", event.structure], ["Eligibility", event.eligibility]] as const)
+                          .filter(([, v]) => !!v)
+                          .map(([k, v]) => (
+                            <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{k}</span>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", textAlign: "right" }}>{v}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                    {!!event.rules?.length && (
+                      <div style={cardStyle}>
+                        <h3 className="eyebrow" style={{ marginBottom: 12 }}>Rules</h3>
+                        {event.rules.map((r, i) => (
+                          <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                            <span style={{ color: "#ff6b74", fontWeight: 800, fontSize: 13 }}>{i + 1}.</span>
+                            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{r}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!hasFormatSpecs && event.format.length === 0 && !event.rules?.length && (
+                      <div style={cardStyle}>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>No format details yet.</p>
+                      </div>
+                    )}
                     {event.format.map((item, i) => (
                       <Reveal key={i}>
                         <div style={{
@@ -476,13 +538,28 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         </div>
                       </Reveal>
                     ))}
+                    {!!event.additionalRewards?.length && (
+                      <div style={cardStyle}>
+                        <h3 className="eyebrow" style={{ marginBottom: 12 }}>Additional rewards</h3>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {event.additionalRewards.map((x, i) => (
+                            <span key={i} style={{ fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 100, background: "rgba(234,179,8,0.1)", color: "#fbbf24", border: "1px solid rgba(234,179,8,0.25)" }}>{x}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Schedule */}
                 {tab === "schedule" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {event.schedule.map((item, i) => (
+                    {scheduleRows.length === 0 && (
+                      <div style={cardStyle}>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>Schedule to be announced.</p>
+                      </div>
+                    )}
+                    {scheduleRows.map((item, i) => (
                       <Reveal key={i}>
                         <div style={{
                           background: "rgba(13,13,13,0.7)",
@@ -491,22 +568,32 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                           borderRadius: 18, padding: "18px 22px",
                           display: "flex", alignItems: "flex-start", gap: 16,
                         }}>
-                          <div style={{
-                            padding: "6px 14px", borderRadius: 100,
-                            background: "rgba(230,57,70,0.12)",
-                            border: "1px solid rgba(230,57,70,0.25)",
-                            flexShrink: 0,
-                          }}>
-                            <p style={{ fontWeight: 800, color: "#ff6b74", fontSize: 12, letterSpacing: "0.04em" }}>
-                              {item.day}
-                            </p>
-                          </div>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-                              <Calendar size={13} color="#e63946" />
-                              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{item.time}</span>
+                          {!!item.date && (
+                            <div style={{
+                              padding: "6px 14px", borderRadius: 100,
+                              background: "rgba(230,57,70,0.12)",
+                              border: "1px solid rgba(230,57,70,0.25)",
+                              flexShrink: 0,
+                            }}>
+                              <p style={{ fontWeight: 800, color: "#ff6b74", fontSize: 12, letterSpacing: "0.04em" }}>
+                                {item.date}
+                              </p>
                             </div>
-                            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{item.event}</p>
+                          )}
+                          <div>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 5 }}>{item.title}</p>
+                            {!!item.time && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: item.location ? 5 : 0 }}>
+                                <Calendar size={13} color="#e63946" />
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>{item.time}</span>
+                              </div>
+                            )}
+                            {!!item.location && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                                <MapPin size={13} color="#e63946" />
+                                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{item.location}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </Reveal>
