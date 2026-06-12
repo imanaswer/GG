@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Badge } from "@/components/admin/Badge";
 import { SummaryCards } from "./SummaryCards";
 import { BookingsToolbar, type ToolbarState } from "./BookingsToolbar";
 import { BulkActionBar } from "./BulkActionBar";
@@ -10,6 +9,8 @@ import { BookingDrawer } from "./BookingDrawer";
 import type { CategoryConfig } from "@/lib/adminBookings/config";
 import type { BookingRow, ListResponse } from "@/lib/adminBookings/types";
 import type { BookingAction } from "@/lib/adminBookings/actions";
+import { BookingsTable } from "./BookingsTable";
+import { bucketRows, BUCKET_ORDER, BUCKET_LABELS } from "@/lib/adminBookings/grouping";
 
 const PAGE_SIZE = 25;
 
@@ -17,12 +18,13 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
   const qc = useQueryClient();
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [tb, setTb] = useState<ToolbarState>({ q: "", date: "all", from: "", to: "", sort: "newest" });
+  const [tb, setTb] = useState<ToolbarState>({ q: "", date: "upcoming", from: "", to: "", sort: "upcoming", by: "session", group: "day" });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<BookingRow | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set(["past"]));
 
   const params = new URLSearchParams({
-    status, page: String(page), pageSize: String(PAGE_SIZE), sort: tb.sort, date: tb.date,
+    status, page: String(page), pageSize: String(PAGE_SIZE), sort: tb.sort, date: tb.date, by: tb.by,
     ...(tb.q ? { q: tb.q } : {}), ...(tb.date === "custom" ? { from: tb.from, to: tb.to } : {}),
   });
   const queryKey = ["admin", "bookings", config.key, params.toString()];
@@ -39,7 +41,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
     });
     const body = await r.json();
     if (!r.ok) { toast.error(body.error ?? "Action failed"); return; }
-    const failed = (body.results ?? []).filter((x: any) => !x.ok);
+    const failed = (body.results ?? []).filter((x: { ok: boolean; error?: string }) => !x.ok);
     if (failed.length) toast.error(`${failed.length} failed: ${failed[0].error}`);
     else toast.success("Done.");
     setSelected(new Set()); refresh();
@@ -56,9 +58,6 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(r => r.id)));
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  const th = { padding: "10px 12px", fontSize: 10, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", textAlign: "left" as const };
-  const td = { padding: "11px 12px", fontSize: 13, color: "#e5e7eb", borderTop: "1px solid rgba(255,255,255,0.05)" };
-
   return (
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 2 }}>{config.label} Bookings</h1>
@@ -67,32 +66,46 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
       <SummaryCards counts={data?.counts ?? []} active={status} onPick={s => { setStatus(s); setPage(1); }} />
       <BookingsToolbar state={tb} onChange={s => { setTb(s); setPage(1); }} onExport={exportCsv} />
 
-      <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ ...th, width: 36 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
-              {config.columns.map(c => <th key={c.key} style={th}>{c.header}</th>)}
-              <th style={th}>Status</th>
-              <th style={th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && <tr><td style={td} colSpan={config.columns.length + 3}>Loading…</td></tr>}
-            {!isLoading && rows.length === 0 && <tr><td style={td} colSpan={config.columns.length + 3}>No bookings.</td></tr>}
-            {rows.map(r => (
-              <tr key={r.id}>
-                <td style={td}><input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} /></td>
-                {config.columns.map(c => <td key={c.key} style={td}>{c.render(r)}</td>)}
-                <td style={td}><Badge status={r.status} /></td>
-                <td style={td}>
-                  <button onClick={() => setDrawer(r)} style={{ fontSize: 12, color: "#e63946", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {tb.group === "off" ? (
+        <BookingsTable
+          rows={rows} config={config} selected={selected} onToggle={toggle}
+          onView={setDrawer} loading={isLoading}
+          allSelected={allSelected} onToggleAll={toggleAll}
+        />
+      ) : (
+        (() => {
+          const buckets = bucketRows(rows, config.dateMode, new Date());
+          const visible = BUCKET_ORDER.filter(b => buckets[b].length > 0);
+          if (!isLoading && visible.length === 0) {
+            return <BookingsTable rows={[]} config={config} selected={selected} onToggle={toggle} onView={setDrawer} loading={isLoading} showSelectAll={false} />;
+          }
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {visible.map(b => {
+                const isOpen = !collapsed.has(b);
+                return (
+                  <div key={b}>
+                    <button
+                      onClick={() => setCollapsed(s => { const n = new Set(s); if (n.has(b)) n.delete(b); else n.add(b); return n; })}
+                      style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: 6 }}
+                    >
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>{isOpen ? "▼" : "▶"}</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{BUCKET_LABELS[b]}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{buckets[b].length}</span>
+                    </button>
+                    {isOpen && (
+                      <BookingsTable
+                        rows={buckets[b]} config={config} selected={selected}
+                        onToggle={toggle} onView={setDrawer} showSelectAll={false}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()
+      )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
         <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ fontSize: 12, color: page <= 1 ? "#4b5563" : "#e5e7eb", background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 12px", cursor: page <= 1 ? "default" : "pointer" }}>Prev</button>
