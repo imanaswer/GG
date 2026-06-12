@@ -1,182 +1,179 @@
-# Event System Slice 2 — Registration Approval + Admin Management
+# Event System Slice 2 — Registration Approval (extend `adminBookings`)
 
 **Date:** 2026-06-12
-**Status:** Approved (design)
+**Status:** Approved (design) — revised after discovering the existing `adminBookings` framework
 **Slice:** 2 of the incremental event-system rebuild (Slice 1 = authoring + content model, shipped)
 
-## Context
+## Context & the pivot
 
-Slice 1 shipped the authoring wizard, content model, Draft/Publish, and added
-`approvalMode` (`auto`/`manual`) to `SportEvent` — **captured but not enforced**.
-This slice enforces it and turns registration management into a real workflow.
+Slice 1 added `approvalMode` (`auto`/`manual`) to `SportEvent` — captured but not
+enforced. Mid-design we found the codebase **already has a unified registration
+manager**: `src/app/admin/bookings/[category]/page.tsx` + the per-category route
+`/api/admin/bookings/events` + the `src/lib/adminBookings/*` toolkit
+(`actions.ts`, `status.ts`, `config.tsx`, `csv.ts`, `types.ts`, `query.ts`). The
+**coaches** category already implements a full approve/reject/cancel approval
+workflow inside this framework via the pure `bookingStatus.ts` machine +
+`bookings.ts` service. The **events** category is wired payment-only today
+(`cancel` / `mark-paid` / `mark-refunded`; status buckets pending/paid/failed/
+refunded/cancelled).
 
-Existing pieces this slice builds on / mirrors:
+**Therefore Slice 2 extends the events category inside `adminBookings` — it does
+NOT build a parallel service, route, or admin table.** This is smaller and more
+correct than the first draft of this spec (which has been replaced).
 
-- **`EventRegistration`**: `status` (free string, default `"registered"`),
-  `paymentStatus` (canonical lib), `cancelledAt`. No approval audit columns yet.
-- **Two registration creation paths**: free `POST /api/events/[id]` and the paid
-  `payments/verify` event branch — both currently create an immediately-active
-  registration and `participants++`.
-- **Coach-booking approval** (`src/lib/bookingStatus.ts` pure state machine +
-  `src/lib/bookings.ts` service) — the proven pattern to mirror for events:
-  status vocab, terminal states, allowed transitions, audit timestamps,
-  seat-release rules.
-- **`src/lib/paymentStatus.ts`**: canonical `pending|paid|failed|refunded` with
-  label/color maps. Reused as-is for the payment axis.
-- **Admin table** (`/admin/events`): read-only; payment column hardcodes
-  "Pending" (a bug); the admin GET already returns the real `paymentStatus`.
+Confirmed product decisions (unchanged from earlier): pay-first-then-approve;
+refunds are bookkeeping (mark `refunded`, manual money-back); pending holds a
+seat; **Reject** declines a `pending` application (refunds if a paid `Payment`
+row exists); **Refund** returns money on an already-`approved` paid spot (cancels
+it); CSV already exists in the route; no email notifications this slice.
 
-Confirmed product decisions:
+New decisions from the pivot:
+- **Remove** the Slice-1 read-only registrations table from `/admin/events` (it's
+  redundant with the bookings tab and hardcodes a wrong "Pending" payment). All
+  registration management lives in the `/admin/bookings` **Events** tab.
+- The Events tab filter becomes **approval-centric** (Pending / Approved /
+  Rejected / Cancelled); payment status shows as a separate column.
 
-1. **Paid + manual approval = pay first, then approve.** User pays → registration
-   sits `pending` → admin approves or rejects; rejecting refunds.
-2. **Refunds are bookkeeping** — mark `refunded`; the actual money-back is done in
-   the Razorpay dashboard. No live refund API call this slice.
-3. **Pending holds a seat** — pending + approved both consume capacity;
-   reject/cancel/refund release it.
-4. **Reject vs Refund split**: Reject declines a `pending` application (refunds if
-   already paid); Refund returns money on an already-`approved` paid spot
-   (cancels it).
-5. **CSV export is client-side** (no new endpoint).
-6. **No email notifications** this slice (in-app status only).
+## ⚠️ Critical coupling
 
-## Scope
+The migration (status normalization) and the events status-display logic **must
+ship and be tested together**. `deriveRegistrationStatus(status, paymentStatus)`
+returns `paymentStatus` for any non-cancelled row. The moment the migration sets
+a paid registration's `status` to `rejected`, the *current* logic would still
+show/count it as **paid** (active) in the Events tab. The events-specific status
+helpers (below) must land in the same change as the migration, with a regression
+test asserting a `rejected` row is excluded from the paid bucket and renders as
+"rejected."
 
-**In scope**
+## Status model — two axes, events-specific helpers
 
-- Approval state machine for event registrations (mirrors coach bookings).
-- Enforce `approvalMode` at both registration creation paths.
-- Admin approve / reject / refund (transactional, admin-only).
-- Real payment + approval status in the admin table; row actions; status filter;
-  client-side CSV export; a view-details drawer.
-- User-facing approval status on the event detail registration card.
+`EventRegistration` has two independent axes:
+- **Approval** (the `status` column): `pending | approved | rejected | cancelled`.
+- **Payment** (`paymentStatus`): canonical `pending | paid | failed | refunded`.
 
-**Out of scope (later / deferred)**
+**Do NOT mutate the shared `status.ts` functions** (`deriveRegistrationStatus`,
+`registrationWhereForStatus`, `CATEGORY_STATUSES`) — camps/workshops depend on
+them. Mirror the precedent set by `coachWhereForStatus` (which already diverges
+from the payment-bucket model) and add **events-specific** helpers in
+`src/lib/adminBookings/status.ts`:
 
-- Email / push notifications on status change.
-- Real Razorpay refund-API integration.
-- Participant "My Registrations" dashboard (Slice 3).
-- Reputation recompute on reject/cancel (left as-is).
+- `CATEGORY_STATUSES.events` → `["pending", "approved", "rejected", "cancelled"]`
+  (approval buckets).
+- `eventWhereForStatus(bucket)` → `{}` for all; otherwise `{ status: bucket }`.
+- `EVENT_STATUS_LABELS` / `EVENT_STATUS_COLORS` for the approval axis — note the
+  collision: shared `STATUS_LABELS.pending = "Pending payment"`, but the events
+  approval **pending** must read **"Pending approval."** Use the events map for
+  the events tab's status chip + filter chips.
+- Payment continues to surface via `BookingRow.payment` (already fetched by the
+  route's `paymentFor`).
 
-## 1. Status model — `src/lib/eventRegistrationStatus.ts`
-
-A new pure, unit-tested module mirroring `bookingStatus.ts`:
-
-```
-EVENT_REG_STATUSES = ["pending", "approved", "rejected", "cancelled"]
-```
-
-- **Transitions:** `pending → approved | rejected | cancelled`;
-  `approved → cancelled`; `rejected` and `cancelled` are terminal.
-- **Seat release:** `releasesSeat(to)` → true for `rejected` and `cancelled`.
-- **Audit timestamp map:** `approved→approvedAt`, `rejected→rejectedAt`,
-  `cancelled→cancelledAt`, `pending→null`.
-- `assertTransition(from,to)` throws a typed `EventRegTransitionError` on an
-  illegal move.
-
-This is a *second axis*, independent of `paymentStatus` (pending/paid/failed/
-refunded), which stays as the canonical `paymentStatus.ts` lib.
-
-## 2. Migration `add_event_registration_approval`
+## 1. Migration `add_event_registration_approval`
 
 On `EventRegistration` add (all optional): `approvedAt DateTime?`,
-`rejectedAt DateTime?`, `rejectionReason String?`. (`cancelledAt` already exists.)
-
-**Data normalization** in the same migration:
+`rejectedAt DateTime?`, `rejectionReason String?`. (`cancelledAt` exists.)
+Normalize in the same migration:
 `UPDATE "EventRegistration" SET status='approved' WHERE status='registered';`
-(old auto-accepted rows become `approved`; `cancelled` rows unchanged). After
-this, `status` only ever holds the new vocab.
+After this, `status` holds only `pending|approved|rejected|cancelled`.
 
-## 3. Enforce approval mode at creation
+## 2. Enforce approval mode at creation
 
-Both creation paths look up `event.approvalMode` and set the new registration's
-`status`:
+Both creation paths read `event.approvalMode` and set the new registration's
+`status`: `auto → "approved"` (today's effective behavior), `manual → "pending"`.
+Both still `participants++` (pending holds a seat).
 
-- `auto` → `status='approved'` (today's effective behavior).
-- `manual` → `status='pending'`.
+- Free path: `src/app/api/events/[id]/route.ts` POST.
+- Paid path: the `event` branch of `src/app/api/payments/verify/route.ts`
+  (creates `{paymentStatus:"paid", status: auto?"approved":"pending"}`).
 
-Both still `participants++` (pending holds a seat). Paths changed:
-`src/app/api/events/[id]/route.ts` (free POST) and the `event` branch of
-`src/app/api/payments/verify/route.ts` (paid). So **paid + manual**: the verify
-route creates `{paymentStatus:'paid', status:'pending'}`; the admin decides later.
+## 3. Actions — extend `src/lib/adminBookings/actions.ts`
 
-## 4. Service + admin API
+- `ALLOWED_ACTIONS.events` → add `"approve"`, `"reject"`, `"refund"` (keep
+  `cancel`; `mark-paid`/`mark-refunded` may remain for back-compat but are not
+  surfaced as primary event actions).
+- `applyAction` gains an **events approval branch** (before the generic
+  registration branch), all transactional:
+  - **approve**: load reg; `assert` from `pending`; set `status="approved"`,
+    `approvedAt=now`. No counter change (seat already held). Idempotent if
+    already approved.
+  - **reject**: load reg (`status`, `eventId`, `paymentStatus`); idempotent if
+    already `rejected`; set `status="rejected"`, `rejectedAt=now`,
+    `rejectionReason=meta?.rejectionReason`; **release seat** (decrement event
+    `participants`, flip `Full → Registration Open` — replicate the existing
+    shared `cancel` branch's decrement logic); **refund only if a paid `Payment`
+    row exists** (`findFirst {entityType:"event", entityId, userId,
+    status:"paid"}`) → set that `Payment.status="refunded"` and the reg
+    `paymentStatus="refunded"`. Free events (no `Payment` row) are NOT marked
+    refunded.
+  - **refund**: require `status==="approved"` AND a paid `Payment` row → set
+    `status="cancelled"`, reg `paymentStatus="refunded"`, `Payment.status=
+    "refunded"`, release seat.
+- `meta.rejectionReason` is already plumbed `applyBulk → applyAction`; the route's
+  PATCH passes the body through (verify it forwards `reason`/`meta`).
 
-New `src/lib/eventRegistrations.ts` service (mirrors `bookings.ts`), each function
-transactional and admin-gated by the caller:
+The generic `cancel` events branch (shared) stays as-is (status→cancelled +
+seat release, no refund) for plain cancellations.
 
-- **`approveRegistration(id)`**: `pending → approved`, stamp `approvedAt`.
-- **`rejectRegistration(id, reason?)`**: `pending → rejected`, stamp `rejectedAt`
-  + `rejectionReason`; release seat (`participants--`, flip event `Full →
-  Registration Open` if applicable). **Refund marking is keyed off an actual paid
-  `Payment` row**, not the `paymentStatus` string — free events store
-  `paymentStatus='paid'` with no money/`Payment` row, so they must NOT be marked
-  refunded. If a `Payment` row exists (by `entityType='event'`, `entityId`,
-  `userId`, `status='paid'`), set both it and the registration's `paymentStatus`
-  to `refunded`; otherwise leave `paymentStatus` untouched.
-- **`refundRegistration(id)`**: requires `approved` AND a paid `Payment` row
-  (i.e. a genuinely paid spot) → `cancelled`, registration `paymentStatus` +
-  `Payment` row `refunded`, release seat. Not applicable to free registrations.
+## 4. Route — `/api/admin/bookings/events`
 
-Each validates the current state via `assertTransition` and is a no-op-safe
-single transaction.
+- GET: swap `registrationWhereForStatus` → `eventWhereForStatus`, and compute
+  **approval-axis** status counts (pending/approved/rejected/cancelled) instead
+  of the payment-bucket counts; `toRow` sets `status =
+  deriveEventRegistrationStatus(r.status)` (the approval value) while `payment`
+  keeps the payment info. CSV export already works; add an "Approval"/"Payment"
+  split to its columns.
+- PATCH: already dispatches `applyBulk("events", ids, action)`; confirm it
+  forwards `reason` into `meta.rejectionReason`. No structural change.
 
-**Routes:**
+## 5. Admin UI — `src/lib/adminBookings/config.tsx` (events block)
 
-- `POST /api/admin/events/registrations/[id]` — body `{action, reason?}` where
-  `action ∈ {approve, reject, refund}`; admin-guarded
-  (`getAdminSessionFromRequest`); dispatches to the service; returns the updated
-  registration. 422 on an invalid transition.
-- Extend `GET /api/admin/events`: each registration row also returns `status`,
-  `approvedAt`, `rejectedAt`, `rejectionReason`, and `paymentStatus` (already
-  fetched — stop hardcoding "Pending" downstream), plus `playerPhone`.
+- `rowActions`: `Approve`, `Reject` (`danger`, `needsReason`), `Refund`
+  (`danger`), `Cancel` (`danger`) — mirror the coaches block. `RowActionDef` has
+  no conditional-display predicate, so (like coaches) all are shown and the
+  backend enforces validity (invalid transition → `ok:false`, surfaced as a
+  per-row error). *Optional polish:* add an optional `show?(row)` predicate to
+  `RowActionDef` to hide inapplicable actions; not required for correctness.
+- `bulkActions`: `Approve`, `Reject`, `Cancel`.
+- `columns`: add a **Payment** column (`r.payment?.status ?? "—"`). The status
+  chip/filter use `EVENT_STATUS_LABELS`/`COLORS`.
+- Surface the events approval label/color map wherever the shared page renders
+  the status chip and the filter chips (locate the chip renderer; pass a
+  category-aware label map rather than reusing `STATUS_LABELS` verbatim).
 
-## 5. Admin UI — `/admin/events`
+## 6. Remove the redundant `/admin/events` table
 
-- Replace the hardcoded "Pending" payment cell with the real `paymentStatus`
-  rendered via `PAYMENT_STATUS_LABELS`/`PAYMENT_STATUS_COLORS`.
-- Add an **Approval** column using a parallel label/color map from the new status
-  lib.
-- **Row actions**, conditional on state: **Approve** + **Reject** when `pending`;
-  **Refund** when `approved` && `paymentStatus==='paid'` && `entryFee > 0` (the
-  `entryFee>0` proxy keeps free registrations out; the service still does the
-  authoritative paid-`Payment`-row check); **View details** opens
-  a drawer/modal with full registrant info (name, email, phone, team, timestamps,
-  rejection reason). Actions call the new route via a React Query mutation and
-  invalidate `["admin-events"]`.
-- **Status filter** chips: All / Pending / Approved / Rejected.
-- **Export CSV** button: client-side `buildCsv(rows)` util → Blob download.
-  Columns: Event, Name, Email, Phone, Team, Registered, Payment, Approval.
+Delete the read-only registrations table (and its `Reg` type, the `registrations`
+half of the admin-events query, and the now-unused table styles) from
+`src/app/admin/events/page.tsx`. Keep the event overview cards + the authoring
+wizard. The admin events GET (`/api/admin/events`) may keep returning
+registrations or drop them — drop the `registrations` fetch if nothing else uses
+it (check first).
 
-## 6. User-facing detail card
+## 7. User-facing detail card
 
-Extend the detail `GET` `userRegistration` payload with `status` and
+Extend the detail `GET` `userRegistration` payload with `status` +
 `rejectionReason`. The registration card in `src/app/events/[id]/page.tsx` then
-distinguishes:
+shows: `pending → "Pending approval"`, `approved (+paid/free) →` existing
+"Registered", `rejected → "Registration declined"` (+ reason). Payment-pending/
+failed states unchanged.
 
-- `pending` → "Pending approval" (awaiting organizer review).
-- `approved` (+ paid/free) → existing "Registered" confirmation.
-- `rejected` → "Registration declined" + `rejectionReason` if present.
-- payment-pending / failed states stay as they are today.
+## 8. Testing
 
-## 7. Testing
-
-- `eventRegistrationStatus.test.ts` — every legal/illegal transition, terminal
-  states, `releasesSeat`, audit-timestamp map.
-- Service behavior: seat release on reject, `Payment`-row refund marking, and the
-  `Full → Registration Open` flip, validated with the existing test approach.
+- Events status helpers (`eventWhereForStatus`, `deriveEventRegistrationStatus`,
+  label/color maps) — unit tests, including the **regression**: a `rejected` paid
+  row is NOT in the paid/approved bucket and renders as "rejected."
+- `applyAction` events branch — approve (no counter change), reject (seat
+  release + refund-mark only when a paid `Payment` row exists; free event NOT
+  refunded), refund (cancel + refund + seat release), and idempotency.
 
 ## Component boundaries
 
-- `eventRegistrationStatus.ts` — pure state machine; no IO. Knows nothing about
-  Prisma or payments.
-- `eventRegistrations.ts` — orchestrates a transition + side effects (seat,
-  payment row) in one transaction. Depends on the state machine + Prisma.
-- Admin route — thin: auth + parse + delegate to the service.
-- Admin page / detail page — presentational; call APIs, render canonical
-  status maps.
+- `adminBookings/status.ts` — pure where/derive/label helpers; events helpers
+  added alongside (not replacing) the shared/coach ones.
+- `adminBookings/actions.ts` — the only place that mutates registrations; events
+  approval transitions live in its events branch, transactional.
+- Route/config/pages — thin: auth + delegate + render via config.
 
-## Later slices (reference)
+## Out of scope (later)
 
-3. Participant "My Registrations" dashboard. 4. Event updates / announcements.
-5. Payment fee math. (Notifications may fold into a cross-cutting slice.)
+Email/push notifications; real Razorpay refund API; participant "My
+Registrations" dashboard (Slice 3); reputation recompute on reject/cancel.
