@@ -13,9 +13,12 @@ const inputStyle = {
 } as const;
 
 export function BookingsToolbar({
-  state, onChange, onExport,
-}: { state: ToolbarState; onChange: (s: ToolbarState) => void; onExport: () => void }) {
+  state, onChange, onExport, dateMode = "calendar",
+}: { state: ToolbarState; onChange: (s: ToolbarState) => void; onExport: () => void; dateMode?: "calendar" | "weekday" }) {
   const set = (patch: Partial<ToolbarState>) => onChange({ ...state, ...patch });
+  // Coaches (weekday) on the session axis have no calendar date, so Past/Custom would
+  // be silent no-ops — hide them. They reappear on the booking-date axis (real createdAt).
+  const weekdayMode = dateMode === "weekday" && state.by === "session";
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16, alignItems: "center" }}>
       <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
@@ -27,14 +30,27 @@ export function BookingsToolbar({
         <option value="upcoming">Upcoming</option>
         <option value="today">Today</option>
         <option value="tomorrow">Tomorrow</option>
-        <option value="past">Past</option>
+        {!weekdayMode && <option value="past">Past</option>}
         <option value="all">All dates</option>
-        <option value="custom">Custom…</option>
+        {!weekdayMode && <option value="custom">Custom…</option>}
       </select>
-      <select value={state.by} onChange={e => set({ by: e.target.value as DateAxis })} style={inputStyle} title="Which date the filter uses">
+      <select
+        value={state.by}
+        onChange={e => {
+          const by = e.target.value as DateAxis;
+          // Leaving the booking axis back to weekday-session: drop Past/Custom (now hidden)
+          // so the select never shows a stale, unselectable value.
+          const reset = (dateMode === "weekday" && by === "session" && (state.date === "past" || state.date === "custom"))
+            ? { date: "upcoming" as DatePreset } : {};
+          set({ by, ...reset });
+        }}
+        style={inputStyle}
+        title="Which date the filter uses"
+      >
         <option value="session">By: Session date</option>
         <option value="booking">By: Booking date</option>
       </select>
+      {weekdayMode && <span style={{ fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>weekly schedule</span>}
       <button
         onClick={() => set({ group: state.group === "day" ? "off" : "day" })}
         style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", color: state.group === "day" ? "#e63946" : "#9ca3af" }}

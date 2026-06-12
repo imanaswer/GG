@@ -64,7 +64,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
       <p style={{ fontSize: 12.5, color: "#6b7280", marginBottom: 18 }}>Showing {data?.total ?? 0} bookings</p>
 
       <SummaryCards counts={data?.counts ?? []} active={status} onPick={s => { setStatus(s); setPage(1); }} />
-      <BookingsToolbar state={tb} onChange={s => { setTb(s); setPage(1); }} onExport={exportCsv} />
+      <BookingsToolbar state={tb} onChange={s => { setTb(s); setPage(1); }} onExport={exportCsv} dateMode={config.dateMode} />
 
       {tb.group === "off" ? (
         <BookingsTable
