@@ -35,10 +35,18 @@ batch's `seats`. The missing piece is purely the **admin authoring side**.
   flow decrements it, public page treats `seats === 0` as "Full"). There is no
   separate capacity field; we work with this as-is and do **not** introduce a
   capacity/remaining split.
-- **Seat reconciliation:** when a coach has ≥1 batch, derive
-  `Coach.totalSeats = seatsLeft = sumSeats(batches)` so the two seat systems
-  can't drift. When a coach has no batches, the manual coach-level seat fields
-  stay editable as today. (This matches the rule registration already uses.)
+- **Seat reconciliation:** at **creation** (POST), with batches present, set
+  `Coach.totalSeats = seatsLeft = sumSeats(batches)` (no bookings exist yet, so
+  this is correct — matches the rule registration already uses). On **edit**
+  (PUT), do NOT reset the counters to the batch-seat sum: `Batch.seats` is
+  *remaining* availability (the booking flow decrements `batch.seats` and
+  `coach.seatsLeft` in lockstep, `bookings/route.ts:72-73`), so resetting would
+  wipe booking history and corrupt capacity on every unrelated save. Instead
+  apply the **net change** in batch seats as a delta to both coach counters, so
+  an unrelated edit is a no-op and added/removed batches adjust availability
+  correctly. A coach with no batches keeps using the manual seat fields. Because
+  the backend owns the counters whenever batches exist, the edit modal shows a
+  read-only hint (not editable seat inputs) in that case.
 
 ## Approach
 
