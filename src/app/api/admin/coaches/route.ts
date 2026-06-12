@@ -94,7 +94,8 @@ export async function PUT(req: NextRequest) {
   const coach = await prisma.$transaction(async (tx) => {
     let seatOverride: { totalSeats: number; seatsLeft: number } | object = {};
     if (hasBatchField) {
-      const existing = await tx.batch.findMany({ where: { coachId: id }, select: { id: true } });
+      const existing = await tx.batch.findMany({ where: { coachId: id }, select: { id: true, seats: true } });
+      const oldSum = sumSeats(existing);
       const { toCreate, toUpdate, toDeleteIds } = reconcileBatches(existing.map(b => b.id), batches);
 
       if (toDeleteIds.length) {
@@ -108,9 +109,20 @@ export async function PUT(req: NextRequest) {
       if (toCreate.length) {
         await tx.batch.createMany({ data: toCreate.map(b => ({ coachId: id, day: b.day, time: b.time, level: b.level, seats: b.seats })) });
       }
-      if (batches.length) {
-        const total = sumSeats(batches);
-        seatOverride = { totalSeats: total, seatsLeft: total };
+      // Keep the coach-level seat counters in lockstep with batch seats, mirroring
+      // how the booking flow decrements batch.seats and coach.seatsLeft together
+      // (bookings/route.ts:72-73). Apply the NET change in batch seats as a delta:
+      // an unrelated edit (no batch change -> delta 0) leaves counters untouched,
+      // and non-batch bookings already reflected in seatsLeft are preserved rather
+      // than re-inflated. Only when batches are in play now or were before this
+      // edit; a coach with no batches keeps using the manual seat fields below.
+      if (batches.length > 0 || oldSum > 0) {
+        const current = await tx.coach.findUnique({ where: { id }, select: { totalSeats: true, seatsLeft: true } });
+        const delta = sumSeats(batches) - oldSum;
+        seatOverride = {
+          totalSeats: Math.max(0, (current?.totalSeats ?? 0) + delta),
+          seatsLeft: Math.max(0, (current?.seatsLeft ?? 0) + delta),
+        };
       }
     }
 
