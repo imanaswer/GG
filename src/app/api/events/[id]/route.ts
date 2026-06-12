@@ -26,11 +26,11 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const now = new Date();
     const status = deriveEventStatus(event, now);
 
-    let userRegistration: { id: string; paymentStatus: string; teamName: string | null } | null = null;
+    let userRegistration: { id: string; paymentStatus: string; teamName: string | null; status: string; rejectionReason: string | null } | null = null;
     const session = await getSessionFromRequest(req);
     if (session) {
       const reg = event.registrations.find(r => r.userId === session.id);
-      if (reg) userRegistration = { id: reg.id, paymentStatus: reg.paymentStatus, teamName: reg.teamName };
+      if (reg) userRegistration = { id: reg.id, paymentStatus: reg.paymentStatus, teamName: reg.teamName, status: reg.status, rejectionReason: reg.rejectionReason };
     }
 
     return ok({ ...event, status, registeredCount: event.registrations.length, userRegistration });

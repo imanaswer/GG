@@ -383,7 +383,7 @@ export type SportEvent = {
   approvalMode?: string; currency?: string; gstPercent?: number; convenienceFeePct?: number;
   registrations?: { id: string; teamName?: string }[];
   registeredCount?: number;
-  userRegistration?: { id: string; paymentStatus: string; teamName?: string | null } | null;
+  userRegistration?: { id: string; paymentStatus: string; teamName?: string | null; status?: string; rejectionReason?: string | null } | null;
 };
 
 export type EventFilters = { q?: string; sport?: string; type?: string; difficulty?: string; when?: string };

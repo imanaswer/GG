@@ -143,6 +143,9 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const hasPrize     = event.prizePool && event.prizePool !== "Prizes & Trophies";
   const img          = event.imageUrl || EVENT_IMAGE.src;
   const isRegistered = !!event.userRegistration;
+  const regStatus = event.userRegistration?.status;
+  const isPendingApproval = regStatus === "pending";
+  const isRejected = regStatus === "rejected";
   const regPaid      = event.userRegistration?.paymentStatus === "paid" || event.userRegistration?.paymentStatus === "free";
   const canCancel    = new Date(event.startDate).getTime() - Date.now() >= 90 * 60000;
 
@@ -677,7 +680,19 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   )}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                    {isRegistered && regPaid ? (
+                    {isRegistered && isRejected ? (
+                      <div style={{ padding: "16px", borderRadius: 16, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", textAlign: "center" }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>Registration declined</p>
+                        {event.userRegistration?.rejectionReason && (
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{event.userRegistration.rejectionReason}</p>
+                        )}
+                      </div>
+                    ) : isRegistered && isPendingApproval ? (
+                      <div style={{ padding: "16px", borderRadius: 16, background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", textAlign: "center" }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", marginBottom: 4 }}>Pending approval</p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>The organizer is reviewing your registration</p>
+                      </div>
+                    ) : isRegistered && regPaid ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <div style={{
                           padding: "16px", borderRadius: 16,
