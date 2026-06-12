@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const coach = await prisma.$transaction(async (tx) => {
-    let seatOverride: { totalSeats: number; seatsLeft: number } | object = {};
+    let seatOverride: Partial<{ totalSeats: number; seatsLeft: number }> = {};
     if (hasBatchField) {
       const existing = await tx.batch.findMany({ where: { coachId: id }, select: { id: true, seats: true } });
       const oldSum = sumSeats(existing);
