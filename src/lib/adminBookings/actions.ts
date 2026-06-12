@@ -12,7 +12,7 @@ export const ALLOWED_ACTIONS: Record<CategoryKey, BookingAction[]> = {
   "play-sessions": ["mark-attended", "mark-no-show", "cancel"],
   workshops:       ["cancel", "mark-paid", "mark-refunded"],
   camps:           ["cancel", "mark-paid", "mark-refunded"],
-  events:          ["approve", "reject", "refund", "cancel", "mark-paid", "mark-refunded"],
+  events:          ["approve", "reject", "refund", "cancel"],
 };
 
 export function isActionAllowed(category: CategoryKey, action: BookingAction): boolean {
@@ -50,7 +50,7 @@ export async function applyAction(
 
   // NOTE: future audit log goes here — record (category, id, action, actor, ts).
 
-  if (category === "events" && (action === "approve" || action === "reject" || action === "refund")) {
+  if (category === "events" && (action === "approve" || action === "reject" || action === "refund" || action === "cancel")) {
     await prisma.$transaction(async (tx) => {
       const reg = await tx.eventRegistration.findUnique({
         where: { id },
@@ -65,21 +65,22 @@ export async function applyAction(
         return;
       }
 
-      if (action === "reject") {
-        if (reg.status === "rejected") return;                 // idempotent
-        if (reg.status !== "pending") throw new Error(`Cannot reject a ${reg.status} registration`);
-      } else { // refund
-        if (reg.status === "cancelled") return;                // idempotent
-        if (reg.status !== "approved") throw new Error("Can only refund an approved registration");
-      }
+      // reject / refund / cancel all release the held seat exactly once.
+      // rejected & cancelled are terminal + already seat-released → idempotent no-op.
+      if (reg.status === "rejected" || reg.status === "cancelled") return;
+      if (action === "reject" && reg.status !== "pending") throw new Error(`Cannot reject a ${reg.status} registration`);
+      if (action === "refund" && reg.status !== "approved") throw new Error("Can only refund an approved registration");
+      // cancel is allowed from pending or approved (the only states left here).
 
-      // Refund ONLY a genuinely paid Payment row (free events store paymentStatus
-      // "paid" with no Payment row — they must not be marked refunded).
-      const paid = await tx.payment.findFirst({
-        where: { entityType: "event", entityId: reg.eventId, userId: reg.userId, status: "paid" },
-        select: { id: true },
-      });
-      if (paid) await tx.payment.update({ where: { id: paid.id }, data: { status: "refunded" satisfies PaymentStatus } });
+      // Refund a genuinely paid Payment row (free events have none) — but NOT for plain cancel.
+      let paid: { id: string } | null = null;
+      if (action === "reject" || action === "refund") {
+        paid = await tx.payment.findFirst({
+          where: { entityType: "event", entityId: reg.eventId, userId: reg.userId, status: "paid" },
+          select: { id: true },
+        });
+        if (paid) await tx.payment.update({ where: { id: paid.id }, data: { status: "refunded" satisfies PaymentStatus } });
+      }
 
       await tx.eventRegistration.update({
         where: { id },
@@ -92,7 +93,7 @@ export async function applyAction(
         },
       });
 
-      // Release the held seat (mirror the generic cancel branch).
+      // Release the held seat.
       const event = await tx.sportEvent.findUnique({ where: { id: reg.eventId }, select: { status: true } });
       await tx.sportEvent.update({
         where: { id: reg.eventId },

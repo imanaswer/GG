@@ -146,6 +146,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const regStatus = event.userRegistration?.status;
   const isPendingApproval = regStatus === "pending";
   const isRejected = regStatus === "rejected";
+  const isCancelledReg = regStatus === "cancelled";
   const regPaid      = event.userRegistration?.paymentStatus === "paid" || event.userRegistration?.paymentStatus === "free";
   const canCancel    = new Date(event.startDate).getTime() - Date.now() >= 90 * 60000;
 
@@ -680,7 +681,14 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   )}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-                    {isRegistered && isRejected ? (
+                    {isRegistered && isCancelledReg ? (
+                      <div style={{ padding: "16px", borderRadius: 16, background: "rgba(107,114,128,0.1)", border: "1px solid rgba(107,114,128,0.25)", textAlign: "center" }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#9ca3af", marginBottom: 4 }}>Registration cancelled</p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                          {event.userRegistration?.paymentStatus === "refunded" ? "Your payment has been refunded" : "This registration is no longer active"}
+                        </p>
+                      </div>
+                    ) : isRegistered && isRejected ? (
                       <div style={{ padding: "16px", borderRadius: 16, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", textAlign: "center" }}>
                         <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>Registration declined</p>
                         {event.userRegistration?.rejectionReason && (

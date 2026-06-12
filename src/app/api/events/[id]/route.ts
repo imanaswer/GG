@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const reg = await prisma.eventRegistration.findFirst({ where: { eventId: id, userId: session.id }, select: { id: true } });
+    const reg = await prisma.eventRegistration.findFirst({ where: { eventId: id, userId: session.id, status: { in: ["pending", "approved"] } }, select: { id: true } });
     if (!reg) return fail("Not registered for this event", 400);
 
     const event = await prisma.sportEvent.findUnique({ where: { id }, select: { startDate: true, status: true } });

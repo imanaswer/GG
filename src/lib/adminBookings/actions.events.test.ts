@@ -61,4 +61,20 @@ describe("events approval actions", () => {
     prismaMock.eventRegistration.findUnique.mockResolvedValue({ status: "pending", eventId: "e1", userId: "u1" });
     await expect(applyAction("events", "r1", "refund")).rejects.toThrow();
   });
+
+  it("cancel: a rejected row is an idempotent no-op (NO second seat decrement)", async () => {
+    prismaMock.eventRegistration.findUnique.mockResolvedValue({ status: "rejected", eventId: "e1", userId: "u1" });
+    await applyAction("events", "r1", "cancel");
+    expect(prismaMock.eventRegistration.update).not.toHaveBeenCalled();
+    expect(prismaMock.sportEvent.update).not.toHaveBeenCalled();
+  });
+
+  it("cancel: an approved row releases the seat without refunding", async () => {
+    prismaMock.eventRegistration.findUnique.mockResolvedValue({ status: "approved", eventId: "e1", userId: "u1" });
+    prismaMock.sportEvent.findUnique.mockResolvedValue({ status: "Full" });
+    await applyAction("events", "r1", "cancel");
+    expect(prismaMock.payment.update).not.toHaveBeenCalled();
+    expect(prismaMock.eventRegistration.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "cancelled" }) }));
+    expect(prismaMock.sportEvent.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ participants: { decrement: 1 } }) }));
+  });
 });
