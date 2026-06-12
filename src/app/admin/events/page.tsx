@@ -3,37 +3,14 @@ import { useState, useCallback } from "react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { Badge }       from "@/components/admin/Badge";
-import { AdminModal, FormInput, FormTextarea, FormSelect, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { AdminModal, DeleteConfirm } from "@/components/admin/AdminModal";
+import { EventWizard, EMPTY_EVENT, type EventForm } from "@/components/admin/EventWizard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { EVENT_TYPES, EVENT_DIFFICULTIES, EVENT_STATUSES } from "@/lib/taxonomy";
+import type { SportEvent } from "@/hooks/useData";
 
 type Reg = { id: string; playerName?: string; playerEmail?: string; teamName?: string; eventTitle?: string; eventType?: string; entryFee: number; registeredAt: string };
-type Ev = {
-  id: string; title: string; sport: string; type: string; date: string;
-  startDate: string; endDate: string; registrationDeadline: string;
-  location: string; address: string;
-  participants: number; maxParticipants: number;
-  prizePool: string; entryFee: string; entryFeeAmount: number;
-  difficulty: string; imageUrl: string; featured: boolean;
-  status: string; description: string;
-  format: string[]; prizes: string[]; requirements: string[];
-  organizer: string; organizerContact: string; tags: string[];
-};
-
-const EMPTY: Partial<Ev> = {
-  title: "", sport: "Football", type: "Tournament", date: "",
-  startDate: "", endDate: "", registrationDeadline: "",
-  location: "", address: "",
-  maxParticipants: 100, prizePool: "", entryFee: "Free", entryFeeAmount: 0,
-  difficulty: "All Levels", imageUrl: "", featured: false,
-  status: "Registration Open", description: "",
-  format: [], prizes: [], requirements: [],
-  organizer: "", organizerContact: "", tags: [],
-};
-
-const SPORTS = ["Football", "Cricket", "Basketball", "Badminton", "Tennis", "Swimming", "Table Tennis", "Volleyball", "Athletics", "E-Sports"];
+type Ev = SportEvent;
 
 function toDateInput(d: string | undefined) {
   if (!d) return "";
@@ -45,19 +22,45 @@ function toDateInput(d: string | undefined) {
   return `${y}-${m}-${day}`;
 }
 
+function toForm(e: Ev): EventForm {
+  return {
+    ...EMPTY_EVENT, ...e,
+    paid: (e.entryFeeAmount ?? 0) > 0,
+    startDate: toDateInput(e.startDate), endDate: toDateInput(e.endDate), registrationDeadline: toDateInput(e.registrationDeadline),
+    approvalMode: e.approvalMode === "manual" ? "manual" : "auto",
+    schedule: Array.isArray(e.schedule)
+      ? e.schedule.map((s) => ("title" in s
+          ? { title: s.title ?? "", date: s.date ?? "", time: s.time ?? "", location: s.location ?? "" }
+          : { title: (s as { event?: string }).event ?? "", date: (s as { day?: string }).day ?? "", time: s.time ?? "", location: "" }))
+      : [],
+    lat: e.lat ?? null, lng: e.lng ?? null,
+  } as EventForm;
+}
+
+const EMPTY_EV: Ev = { ...EMPTY_EVENT, id: "", distance: "", participants: 0, status: "Registration Open" };
+
+function toPayload(form: EventForm, published: boolean, id?: string) {
+  return {
+    ...form, id,
+    entryFee: form.paid ? form.entryFee : "Free",
+    entryFeeAmount: form.paid ? Number(form.entryFeeAmount) : 0,
+    published,
+  };
+}
+
 export default function AdminEvents() {
   const qc = useQueryClient();
   const { data } = useQuery<{ registrations: Reg[]; events: Ev[] }>({ queryKey: ["admin-events"], queryFn: () => fetch("/api/admin/events").then(r => r.json()), refetchInterval: 30_000 });
 
   const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
-  const [form, setForm] = useState<Partial<Ev>>(EMPTY);
+  const [form, setForm] = useState<Ev>(EMPTY_EV);
   const [deleteTarget, setDeleteTarget] = useState<Ev | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onError = useCallback(() => setError("Something went wrong. Please try again."), []);
 
   const save = useMutation({
-    mutationFn: (d: Partial<Ev>) => {
+    mutationFn: (d: Record<string, unknown>) => {
       const isEdit = !!d.id;
       return fetch("/api/admin/events", {
         method: isEdit ? "PUT" : "POST",
@@ -80,20 +83,10 @@ export default function AdminEvents() {
     onError,
   });
 
-  const openAdd = () => { setForm({ ...EMPTY }); setModal("add"); };
-  const openEdit = (e: Ev) => {
-    setForm({
-      ...e,
-      startDate: toDateInput(e.startDate),
-      endDate: toDateInput(e.endDate),
-      registrationDeadline: toDateInput(e.registrationDeadline),
-    });
-    setModal("edit");
-  };
+  const openAdd = () => { setForm(EMPTY_EV); setModal("add"); };
+  const openEdit = (e: Ev) => { setForm(e); setModal("edit"); };
   const openDelete = (e: Ev) => { setDeleteTarget(e); setModal("delete"); };
   const closeModal = () => { setModal(null); setDeleteTarget(null); };
-
-  const update = <K extends keyof Ev>(key: K, val: Ev[K]) => setForm(f => ({ ...f, [key]: val }));
 
   const td: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#d1d5db", borderTop: "1px solid rgba(255,255,255,0.05)" };
   const th: React.CSSProperties = { padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" };
@@ -158,54 +151,15 @@ export default function AdminEvents() {
         </div>
 
         {/* Add / Edit Modal */}
-        <AdminModal open={modal === "add" || modal === "edit"} onClose={closeModal} title={modal === "add" ? "Add New Event" : "Edit Event"} width={620}>
-          <form onSubmit={e => { e.preventDefault(); save.mutate(form); }}>
-            <FormInput label="Title" value={form.title ?? ""} onChange={v => update("title", v)} required />
-            <FormRow>
-              <FormSelect label="Sport" value={form.sport ?? "Football"} onChange={v => update("sport", v)} options={SPORTS.map(s => ({ value: s, label: s }))} />
-              <FormSelect label="Type" value={form.type ?? "Tournament"} onChange={v => update("type", v)} options={EVENT_TYPES.map(t => ({ value: t, label: t }))} />
-            </FormRow>
-            <FormRow>
-              <FormSelect label="Difficulty" value={form.difficulty ?? "All Levels"} onChange={v => update("difficulty", v)} options={EVENT_DIFFICULTIES.map(d => ({ value: d, label: d }))} />
-              <FormSelect label="Status" value={form.status ?? "Registration Open"} onChange={v => update("status", v)} options={EVENT_STATUSES.filter(s => s !== "Full" && s !== "Archived").map(s => ({ value: s, label: s }))} />
-            </FormRow>
-            <FormRow>
-              <FormInput label="Start Date" value={form.startDate ?? ""} onChange={v => update("startDate", v)} type="date" required />
-              <FormInput label="End Date" value={form.endDate ?? ""} onChange={v => update("endDate", v)} type="date" required />
-            </FormRow>
-            <FormRow>
-              <FormInput label="Registration Deadline" value={form.registrationDeadline ?? ""} onChange={v => update("registrationDeadline", v)} type="date" required />
-              <FormInput label="Date (display text)" value={form.date ?? ""} onChange={v => update("date", v)} placeholder="e.g. April 25-27, 2026" />
-            </FormRow>
-            <FormInput label="Location" value={form.location ?? ""} onChange={v => update("location", v)} />
-            <FormInput label="Address" value={form.address ?? ""} onChange={v => update("address", v)} />
-            <FormRow>
-              <FormInput label="Max Participants" value={form.maxParticipants ?? 100} onChange={v => update("maxParticipants", Number(v) as never)} type="number" />
-              <FormInput label="Prize Pool" value={form.prizePool ?? ""} onChange={v => update("prizePool", v)} placeholder="e.g. ₹50,000" />
-            </FormRow>
-            <FormRow>
-              <FormInput label="Entry Fee (display)" value={form.entryFee ?? "Free"} onChange={v => update("entryFee", v)} placeholder="e.g. ₹500/team or Free" />
-              <FormInput label="Entry Fee Amount (₹)" value={form.entryFeeAmount ?? 0} onChange={v => update("entryFeeAmount", Number(v) as never)} type="number" />
-            </FormRow>
-            <FormRow>
-              <FormInput label="Organizer" value={form.organizer ?? ""} onChange={v => update("organizer", v)} />
-              <FormInput label="Organizer Contact" value={form.organizerContact ?? ""} onChange={v => update("organizerContact", v)} />
-            </FormRow>
-            <FormTextarea label="Description" value={form.description ?? ""} onChange={v => update("description", v)} rows={3} />
-            <ImageUpload value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
-            <FormTextarea label="Format (one per line)" value={(form.format ?? []).join("\n")} onChange={v => update("format", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="Group stage + Knockouts&#10;Best of 3 sets" />
-            <FormTextarea label="Prizes (one per line)" value={(form.prizes ?? []).join("\n")} onChange={v => update("prizes", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="1st: ₹25,000&#10;2nd: ₹15,000&#10;3rd: ₹10,000" />
-            <FormTextarea label="Requirements (one per line)" value={(form.requirements ?? []).join("\n")} onChange={v => update("requirements", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="Valid ID&#10;Sports attire" />
-            <FormTextarea label="Tags (one per line)" value={(form.tags ?? []).join("\n")} onChange={v => update("tags", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="popular&#10;weekend&#10;team" />
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d1d5db", cursor: "pointer" }}>
-                <input type="checkbox" checked={form.featured ?? false} onChange={e => update("featured", e.target.checked as never)} style={{ accentColor: "#e63946" }} />
-                Featured event (shown on homepage)
-              </label>
-            </div>
-            {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}
-            <FormActions onCancel={closeModal} submitLabel={modal === "add" ? "Add Event" : "Save Changes"} loading={save.isPending} />
-          </form>
+        <AdminModal open={modal === "add" || modal === "edit"} onClose={closeModal} title={modal === "add" ? "Add New Event" : "Edit Event"} width={720}>
+          <EventWizard
+            mode={modal === "add" ? "add" : "edit"}
+            initial={modal === "edit" ? toForm(form as Ev) : EMPTY_EVENT}
+            saving={save.isPending}
+            error={error}
+            onCancel={closeModal}
+            onSubmit={(f, published) => save.mutate(toPayload(f, published, (form as Ev).id))}
+          />
         </AdminModal>
 
         {/* Delete Confirmation */}
