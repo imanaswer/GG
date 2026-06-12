@@ -361,7 +361,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
 
 function CompactCard({ event }: { event: SportEvent }) {
   const pct = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
-  const img = event.imageUrl || EVENT_IMAGE.src;
+  const img = event.thumbnailUrl || event.imageUrl || EVENT_IMAGE.src;
   const isLive = event.status === "Live";
   const hasPrize = event.prizePool && event.prizePool !== "Prizes & Trophies";
 

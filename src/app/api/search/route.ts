@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         take: 2,
       }),
       prisma.sportEvent.findMany({
-        where: { status: { not: "Completed" }, OR: [{ title: insensitive }, { sport: insensitive }] },
+        where: { published: true, status: { not: "Completed" }, OR: [{ title: insensitive }, { sport: insensitive }] },
         take: 2,
       }),
     ]);

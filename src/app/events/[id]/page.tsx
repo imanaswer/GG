@@ -198,7 +198,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
     { Icon: DollarSign, label: "Entry fee",   value: event.entryFee,   emphasis: event.entryFeeAmount === 0 ? undefined : "red" },
     { Icon: Trophy,     label: "Prize pool",  value: event.prizePool,  emphasis: hasPrize ? "gold" : undefined },
     { Icon: Users,      label: "Participants", value: `${event.participants}/${event.maxParticipants}` },
-    { Icon: MapPin,     label: "Location",    value: event.address,    sub: `${event.distance} away` },
+    { Icon: MapPin,     label: "Location",    value: event.address,    sub: [event.city, event.state].filter(Boolean).join(", ") || `${event.distance} away` },
   ];
 
   return (
@@ -656,6 +656,12 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                       </div>
                     ))}
                   </div>
+
+                  {event.mapsLink && (
+                    <a href={event.mapsLink} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 14, height: 40, borderRadius: 100, background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.08)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                      <MapPin size={13} /> View on Google Maps
+                    </a>
+                  )}
 
                   {!regClosed && spotsLeft > 0 && (
                     <div style={{

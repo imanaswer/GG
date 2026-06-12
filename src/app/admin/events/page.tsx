@@ -114,7 +114,12 @@ export default function AdminEvents() {
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, paddingRight: 50 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", flex: 1, paddingRight: 8 }}>{e.title}</span>
                 </div>
-                <Badge status={e.status} />
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                  <Badge status={e.status} />
+                  {e.published === false && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308", textTransform: "uppercase", letterSpacing: "0.05em" }}>Draft</span>
+                  )}
+                </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6, marginBottom: 8 }}>{e.type} · {e.prizePool}</div>
                 <div style={{ fontSize: 20, fontWeight: 900, color: e.status === "Live" ? "#ef4444" : "#e63946" }}>{e.participants}/{e.maxParticipants}</div>
                 {e.status === "Live" && (
@@ -153,7 +158,6 @@ export default function AdminEvents() {
         {/* Add / Edit Modal */}
         <AdminModal open={modal === "add" || modal === "edit"} onClose={closeModal} title={modal === "add" ? "Add New Event" : "Edit Event"} width={720}>
           <EventWizard
-            mode={modal === "add" ? "add" : "edit"}
             initial={modal === "edit" ? toForm(form as Ev) : EMPTY_EVENT}
             saving={save.isPending}
             error={error}

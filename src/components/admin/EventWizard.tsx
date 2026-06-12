@@ -90,10 +90,9 @@ function ScheduleEditor({ rows, onChange }: { rows: EventForm["schedule"]; onCha
 }
 
 export function EventWizard({
-  initial, mode, saving, error, onCancel, onSubmit,
+  initial, saving, error, onCancel, onSubmit,
 }: {
   initial: EventForm;
-  mode: "add" | "edit";
   saving: boolean;
   error: string | null;
   onCancel: () => void;
