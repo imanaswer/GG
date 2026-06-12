@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       prisma.gamePlayer.count({ where: { userId: id, joinedAt: { gte: since }, game: { status: { not: "cancelled" } } } }),
       prisma.game.count({ where: { organizerId: id, createdAt: { gte: since }, status: { not: "cancelled" } } }),
       prisma.campRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
-      prisma.eventRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
+      prisma.eventRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: "approved" } }),
       prisma.workshopRegistration.count({ where: { userId: id, registeredAt: { gte: since }, status: { not: "cancelled" } } }),
       prisma.review.count({ where: { userId: id, createdAt: { gte: since } } }),
       // season rank driver: per-user in-window game activity

@@ -38,7 +38,7 @@ async function gatherInputs(userId: string, now: Date): Promise<{ input: Reputat
       where: { userId, paymentStatus: "paid", camp: { endDate: { lt: now } } },
     }),
     prisma.eventRegistration.count({
-      where: { userId, paymentStatus: "paid", event: { endDate: { lt: now } } },
+      where: { userId, status: "approved", paymentStatus: "paid", event: { endDate: { lt: now } } },
     }),
     prisma.workshopRegistration.count({
       where: { userId, paymentStatus: "paid", workshop: { endDate: { lt: now } } },

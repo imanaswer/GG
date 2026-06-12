@@ -361,7 +361,7 @@ model EventRegistration {
   eventId       String
   userId        String
   teamName      String?
-  status        String   @default("registered")
+  status        String   @default("pending")
   paymentStatus String   @default("pending")
   cancelledAt   DateTime?
   approvedAt    DateTime?

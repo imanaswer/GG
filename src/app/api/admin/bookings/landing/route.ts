@@ -47,9 +47,20 @@ export async function GET(req: NextRequest) {
     return { total, pending, active: paid, completed, cancelled: cancelled + refunded };
   }
 
+  async function eventMetrics(): Promise<LandingMetrics> {
+    const [total, pending, activeApproved, completedApproved, rejectedOrCancelled] = await Promise.all([
+      prisma.eventRegistration.count(),
+      prisma.eventRegistration.count({ where: { status: "pending" } }),
+      prisma.eventRegistration.count({ where: { status: "approved", event: { endDate: { gte: now } } } }),
+      prisma.eventRegistration.count({ where: { status: "approved", event: { endDate: { lt: now } } } }),
+      prisma.eventRegistration.count({ where: { status: { in: ["rejected", "cancelled"] } } }),
+    ]);
+    return { total, pending, active: activeApproved, completed: completedApproved, cancelled: rejectedOrCancelled };
+  }
+
   const [camps, events, workshops] = await Promise.all([
     regMetrics("campRegistration", "camp"),
-    regMetrics("eventRegistration", "event"),
+    eventMetrics(),
     regMetrics("workshopRegistration", "workshop"),
   ]);
 
