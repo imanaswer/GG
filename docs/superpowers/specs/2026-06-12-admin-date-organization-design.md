@@ -223,3 +223,25 @@ standalone `/admin/games` page renders the three sections after the reorder.
   refactoring `/admin/games` to share the `BookingsCategoryView` component (this
   slice only adds date sections to the existing Games page in place).
 - Deriving full calendar occurrences for coach batches (we use weekday match only).
+
+## Known limitations (shipped 2026-06-12, accepted from the client-side-bucketing design)
+
+These are consequences of bucketing the **returned page** (25 rows) on the client while
+the server paginates. Surfaced by the final code review; recorded as accepted/known:
+
+1. **Bucket count badges are page-scoped, not totals.** "Today (25)" means 25 *on this
+   page*, not 25 today overall. In the default view (`upcoming` + ascending session
+   sort) Today/Tomorrow always sort to the front, so they're accurate for realistic
+   single-venue volumes; only the `Upcoming` bucket truncates across pages. Follow-up
+   if it bites: derive bucket counts from a server aggregate, or raise `PAGE_SIZE`/
+   disable pagination while grouped.
+2. **Coaches `Past` preset is a no-op.** `coachDateWhere` only filters `today`/`tomorrow`
+   (weekday); `past`/`upcoming`/`custom` apply no server filter and coaches order by
+   `createdAt`. So picking `Past` on the Coaches tab re-buckets the same unfiltered page
+   — it does not show past-dated coach bookings (they have no date). Follow-up: hide the
+   `Past`/range presets on the Coaches tab and add a "organized by weekly schedule" hint
+   (needs passing `config.dateMode` into `BookingsToolbar`).
+3. **CSV export respects the current filter.** With the new default `upcoming`, a fresh
+   export captures upcoming-by-session rows, not all rows (pre-feature default was `all`).
+   This is arguably correct (export = what you see); switch the date dropdown to
+   `All dates` before exporting for a full dump.
