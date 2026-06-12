@@ -9,7 +9,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { SportEvent } from "@/hooks/useData";
 
-type Reg = { id: string; playerName?: string; playerEmail?: string; teamName?: string; eventTitle?: string; eventType?: string; entryFee: number; registeredAt: string };
 type Ev = SportEvent;
 
 function toDateInput(d: string | undefined) {
@@ -50,7 +49,7 @@ function toPayload(form: EventForm, published: boolean, id?: string) {
 
 export default function AdminEvents() {
   const qc = useQueryClient();
-  const { data } = useQuery<{ registrations: Reg[]; events: Ev[] }>({ queryKey: ["admin-events"], queryFn: () => fetch("/api/admin/events").then(r => r.json()), refetchInterval: 30_000 });
+  const { data } = useQuery<{ events: Ev[] }>({ queryKey: ["admin-events"], queryFn: () => fetch("/api/admin/events").then(r => r.json()), refetchInterval: 30_000 });
 
   const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
   const [form, setForm] = useState<Ev>(EMPTY_EV);
@@ -88,8 +87,6 @@ export default function AdminEvents() {
   const openDelete = (e: Ev) => { setDeleteTarget(e); setModal("delete"); };
   const closeModal = () => { setModal(null); setDeleteTarget(null); };
 
-  const td: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#d1d5db", borderTop: "1px solid rgba(255,255,255,0.05)" };
-  const th: React.CSSProperties = { padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" };
   const iconBtn: React.CSSProperties = { background: "none", border: "none", cursor: "pointer", padding: 4, display: "inline-flex", alignItems: "center" };
 
   return (
@@ -127,31 +124,6 @@ export default function AdminEvents() {
                 )}
               </div>
             ))}
-          </div>
-
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ background: "#111" }}>
-                  <tr>{["Event","Type","Player / Captain","Team Name","Entry Fee","Payment","Date"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {!(data?.registrations.length) ? (
-                    <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No registrations yet</td></tr>
-                  ) : data!.registrations.map(r => (
-                    <tr key={r.id}>
-                      <td style={td}><div style={{ fontWeight: 600, color: "#fff" }}>{r.eventTitle}</div></td>
-                      <td style={td}><span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.12)", color: "#e63946", fontWeight: 700 }}>{r.eventType}</span></td>
-                      <td style={{ ...td, fontWeight: 600 }}>{r.playerName}</td>
-                      <td style={{ ...td, color: "#9ca3af" }}>{r.teamName ?? "—"}</td>
-                      <td style={{ ...td, color: r.entryFee === 0 ? "#4ade80" : "#fff", fontWeight: 700 }}>{r.entryFee === 0 ? "Free" : `₹${r.entryFee}`}</td>
-                      <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "rgba(234,179,8,0.12)", color: "#eab308" }}>Pending</span></td>
-                      <td style={{ ...td, color: "#6b7280", whiteSpace: "nowrap" }}>{new Date(r.registeredAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
 
