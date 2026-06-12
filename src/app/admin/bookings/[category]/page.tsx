@@ -1,5 +1,5 @@
 "use client";
-import { use } from "react";
+import { use, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -17,7 +17,9 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
   return (
     <AdminGuard>
       <AdminShell>
-        <BookingsCategoryView config={CATEGORY_CONFIGS[category as CategoryKey]} />
+        <Suspense fallback={null}>
+          <BookingsCategoryView config={CATEGORY_CONFIGS[category as CategoryKey]} />
+        </Suspense>
       </AdminShell>
     </AdminGuard>
   );

@@ -11,17 +11,38 @@ import type { BookingRow, ListResponse } from "@/lib/adminBookings/types";
 import type { BookingAction } from "@/lib/adminBookings/actions";
 import { BookingsTable } from "./BookingsTable";
 import { bucketRows, BUCKET_ORDER, BUCKET_LABELS } from "@/lib/adminBookings/grouping";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import type { DatePreset } from "@/lib/adminBookings/types";
+import { STATUS_LABELS } from "@/lib/adminBookings/status";
 
 const PAGE_SIZE = 25;
 
 export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
   const qc = useQueryClient();
-  const [status, setStatus] = useState("all");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const DATE_PRESETS = ["all", "today", "tomorrow", "upcoming", "past", "custom"];
+  const initialDate = (DATE_PRESETS.includes(searchParams.get("date") ?? "") ? searchParams.get("date") : "upcoming") as DatePreset;
+
+  const [status, setStatus] = useState(() => searchParams.get("status") ?? "all");
   const [page, setPage] = useState(1);
-  const [tb, setTb] = useState<ToolbarState>({ q: "", date: "upcoming", from: "", to: "", sort: "upcoming", by: "session", group: "day" });
+  const [tb, setTb] = useState<ToolbarState>(() => ({ q: "", date: initialDate, from: "", to: "", sort: "upcoming", by: "session", group: "day" }));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<BookingRow | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set(["past"]));
+
+  const filterChips: string[] = [];
+  if (status === "active") filterChips.push("Pending + Approved");
+  else if (status !== "all") filterChips.push(STATUS_LABELS[status] ?? status);
+  if (tb.date === "all") filterChips.push("All dates");
+
+  const clearFilters = () => {
+    setStatus("all");
+    setTb(t => ({ ...t, date: "upcoming" }));
+    setPage(1);
+    router.replace(pathname);
+  };
 
   const params = new URLSearchParams({
     status, page: String(page), pageSize: String(PAGE_SIZE), sort: tb.sort, date: tb.date, by: tb.by,
@@ -62,6 +83,16 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 2 }}>{config.label} Bookings</h1>
       <p style={{ fontSize: 12.5, color: "#6b7280", marginBottom: 18 }}>Showing {data?.total ?? 0} bookings</p>
+
+      {filterChips.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>Filtered:</span>
+          {filterChips.map(c => (
+            <span key={c} style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(230,57,70,0.12)", color: "#fca5a5", border: "1px solid rgba(230,57,70,0.3)" }}>{c}</span>
+          ))}
+          <button onClick={clearFilters} style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+        </div>
+      )}
 
       <SummaryCards counts={data?.counts ?? []} active={status} onPick={s => { setStatus(s); setPage(1); }} />
       <BookingsToolbar state={tb} onChange={s => { setTb(s); setPage(1); }} onExport={exportCsv} dateMode={config.dateMode} />
