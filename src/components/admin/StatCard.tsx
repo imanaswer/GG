@@ -38,7 +38,7 @@ export function StatCard({ value, label, sub, icon: Icon, color = "#e63946", acc
       <Link
         href={href}
         style={cardStyle}
-        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(230,57,70,0.4)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = `rgba(${rgb},0.4)`; }}
         onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = baseBorder; }}
       >
         {inner}
