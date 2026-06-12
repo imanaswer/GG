@@ -360,6 +360,9 @@ export function useCancelCamp() {
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────
+export type ScheduleItem = { title: string; date: string; time: string; location: string };
+export type LegacyScheduleItem = { day: string; time: string; event: string };
+
 export type SportEvent = {
   id: string; title: string; sport: string;
   type: string; date: string; startDate: string; endDate: string; registrationDeadline: string;
@@ -368,8 +371,16 @@ export type SportEvent = {
   prizePool: string; entryFee: string; entryFeeAmount: number;
   difficulty: string; imageUrl: string; featured: boolean; status: string;
   description: string; format: string[]; prizes: string[]; requirements: string[];
-  schedule: { day: string; time: string; event: string }[];
+  schedule: (ScheduleItem | LegacyScheduleItem)[];
   organizer: string; organizerContact: string; tags: string[];
+  // Slice 1 additions (optional — older rows may omit when narrowed)
+  published?: boolean; thumbnailUrl?: string;
+  aboutLong?: string; whatYouGet?: string[]; venueInfo?: string;
+  matchFormat?: string; teamSize?: string; numRounds?: string; structure?: string; eligibility?: string; rules?: string[];
+  additionalRewards?: string[];
+  city?: string; state?: string; country?: string; pincode?: string; mapsLink?: string;
+  lat?: number | null; lng?: number | null;
+  approvalMode?: string; currency?: string; gstPercent?: number; convenienceFeePct?: number;
   registrations?: { id: string; teamName?: string }[];
   registeredCount?: number;
   userRegistration?: { id: string; paymentStatus: string; teamName?: string | null } | null;
