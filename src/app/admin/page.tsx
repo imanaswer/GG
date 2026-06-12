@@ -35,13 +35,13 @@ export default function AdminOverview() {
 
           {/* Top 6 metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14, marginBottom: 20 }}>
-            <StatCard value={m?.totalUsers      ?? "—"} label="Total Users"        sub="Registered players"   icon={Users}          />
-            <StatCard value={m?.totalCoaches    ?? "—"} label="Active Coaches"     sub="On the platform"      icon={Star}           />
-            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + approved"  icon={CalendarCheck}  />
-            <StatCard value={m?.gamesThisWeek   ?? "—"} label="Games This Week"    sub="Open + full"          icon={Gamepad2}       />
-            <StatCard value={m?.campRegistrations?? "—"} label="Camp Registrations" sub="All camps"           icon={Tent}           />
-            <StatCard value={m?.workshopRegistrations ?? "—"} label="Workshop Sign-ups" sub="All workshops"   icon={Lightbulb}      />
-            <StatCard value={`₹${(m?.revenueMonth ?? 0).toLocaleString("en-IN")}`} label="Revenue (Month)" sub="Paid transactions" icon={IndianRupee} accent color="#e63946" />
+            <StatCard value={m?.totalUsers      ?? "—"} label="Total Users"        sub="Registered players"   icon={Users}          href="/admin/users" />
+            <StatCard value={m?.totalCoaches    ?? "—"} label="Active Coaches"     sub="On the platform"      icon={Star}           href="/admin/coaches" />
+            <StatCard value={m?.activeBookings  ?? "—"} label="Active Bookings"    sub="Pending + approved"  icon={CalendarCheck}  href="/admin/bookings/coaches?status=active" />
+            <StatCard value={m?.gamesThisWeek   ?? "—"} label="Games This Week"    sub="Open + full"          icon={Gamepad2}       href="/admin/games?range=week" />
+            <StatCard value={m?.campRegistrations?? "—"} label="Camp Registrations" sub="All camps"           icon={Tent}           href="/admin/bookings/camps?date=all" />
+            <StatCard value={m?.workshopRegistrations ?? "—"} label="Workshop Sign-ups" sub="All workshops"   icon={Lightbulb}      href="/admin/bookings/workshops?date=all" />
+            <StatCard value={`₹${(m?.revenueMonth ?? 0).toLocaleString("en-IN")}`} label="Revenue (Month)" sub="Paid transactions" icon={IndianRupee} accent color="#e63946" href="/admin/revenue" />
           </div>
 
           {/* Health row */}
