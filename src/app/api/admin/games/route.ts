@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
       players:   { include: { user: { select: { name: true, reliabilityScore: true } } } },
       waitlist:  { select: { id: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { scheduledAt: "asc" },
   });
   const games = rows.map(g => ({
     ...g,

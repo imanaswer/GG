@@ -6,6 +6,7 @@ import { StatCard }    from "@/components/admin/StatCard";
 import { Badge }       from "@/components/admin/Badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
+import { bucketForCalendar, BUCKET_ORDER, BUCKET_LABELS } from "@/lib/adminBookings/grouping";
 
 type Player = { userId:string; name:string; joinedAt:string; attended:boolean|null; reliabilityScore:number };
 type GameData = { id:string; title:string; sport:string; organizerName?:string; organizerReliability?:number; location:string; scheduledAt:string; slots:number; slotsLeft:number; cost:string; status:string; waitlistCount:number; playerCount:number; completedAt?:string|null; cancelledAt?:string|null; adminVerified:boolean; pointsAwarded:boolean; players:Player[] };
@@ -18,6 +19,7 @@ export default function AdminGames() {
   const [attendance, setAttendance] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set(["past"]));
   const games = data?.games ?? [];
   const st    = data?.stats;
 
@@ -61,6 +63,47 @@ export default function AdminGames() {
 
   const btn = (bg: string): React.CSSProperties => ({ flex: 1, padding: "10px 12px", borderRadius: 8, border: "none", background: bg, color: "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 });
 
+  const renderGameRow = (g: GameData) => {
+    const filled = g.slots - g.slotsLeft;
+    const pct = Math.round((filled / g.slots) * 100);
+    return (
+      <tr key={g.id} onClick={() => openDrawer(g)} style={{ cursor: "pointer" }}
+        onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"}
+        onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
+      >
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{g.title}</span>
+          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{g.sport}</span>
+          {(g.status === "completed" || g.status === "archived") && (g.pointsAwarded
+            ? <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#4ade80" }}>✓ finalized</span>
+            : <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#eab308" }}>● awaiting review</span>)}
+        </td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#9ca3af" }}>
+          {g.organizerName}
+          {g.organizerReliability && <span style={{ marginLeft: 6, fontSize: 11, color: "#eab308" }}>★ {g.organizerReliability.toFixed(1)}</span>}
+        </td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "#9ca3af", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.location}</td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" }}>{new Date(g.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ fontSize: 12, color: "#fff", marginBottom: 4 }}>{filled}/{g.slots}</div>
+          <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, width: 70, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
+          </div>
+        </td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.cost === "Free" ? "#4ade80" : "#fff" }}>{g.cost}</td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}><Badge status={g.status} /></td>
+        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.waitlistCount > 0 ? "#eab308" : "#6b7280" }}>{g.waitlistCount}</td>
+      </tr>
+    );
+  };
+
+  const gameBuckets = (() => {
+    const out: Record<string, GameData[]> = { today: [], tomorrow: [], upcoming: [], past: [], unscheduled: [] };
+    const now = new Date();
+    for (const g of games) out[bucketForCalendar(g.scheduledAt, now)].push(g);
+    return out;
+  })();
+
   return (
     <AdminGuard>
       <AdminShell>
@@ -77,54 +120,41 @@ export default function AdminGames() {
             <StatCard value={st?.waitlisted ?? 0} label="Waitlisted"  sub="Across all games" />
           </div>
 
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ background: "#111" }}>
-                  <tr>{["Game","Organiser","Location","Date & Time","Slots","Cost","Status","Waitlist"].map(h => (
-                    <th key={h} style={{ padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
-                  ))}</tr>
-                </thead>
-                <tbody>
-                  {!games.length ? (
-                    <tr><td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No games found</td></tr>
-                  ) : games.map(g => {
-                    const filled = g.slots - g.slotsLeft;
-                    const pct    = Math.round((filled / g.slots) * 100);
-                    return (
-                      <tr key={g.id} onClick={() => openDrawer(g)} style={{ cursor: "pointer" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"}
-                        onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = "transparent"}
-                      >
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{g.title}</span>
-                          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{g.sport}</span>
-                          {(g.status === "completed" || g.status === "archived") && (g.pointsAwarded
-                            ? <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#4ade80" }}>✓ finalized</span>
-                            : <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#eab308" }}>● awaiting review</span>)}
-                        </td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#9ca3af" }}>
-                          {g.organizerName}
-                          {g.organizerReliability && <span style={{ marginLeft: 6, fontSize: 11, color: "#eab308" }}>★ {g.organizerReliability.toFixed(1)}</span>}
-                        </td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "#9ca3af", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.location}</td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" }}>{new Date(g.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                          <div style={{ fontSize: 12, color: "#fff", marginBottom: 4 }}>{filled}/{g.slots}</div>
-                          <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, width: 70, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
-                          </div>
-                        </td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.cost === "Free" ? "#4ade80" : "#fff" }}>{g.cost}</td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}><Badge status={g.status} /></td>
-                        <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.waitlistCount > 0 ? "#eab308" : "#6b7280" }}>{g.waitlistCount}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {!games.length ? (
+            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "40px", textAlign: "center", color: "#6b7280" }}>No games found</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {BUCKET_ORDER.filter(b => gameBuckets[b].length > 0).map(b => {
+                const isOpen = !collapsedBuckets.has(b);
+                return (
+                  <div key={b}>
+                    <button
+                      onClick={() => setCollapsedBuckets(s => { const n = new Set(s); if (n.has(b)) n.delete(b); else n.add(b); return n; })}
+                      style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: 8 }}
+                    >
+                      <span style={{ fontSize: 13, color: "#6b7280" }}>{isOpen ? "▼" : "▶"}</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{BUCKET_LABELS[b]}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{gameBuckets[b].length}</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead style={{ background: "#111" }}>
+                              <tr>{["Game","Organiser","Location","Date & Time","Slots","Cost","Status","Waitlist"].map(h => (
+                                <th key={h} style={{ padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                              ))}</tr>
+                            </thead>
+                            <tbody>{gameBuckets[b].map(renderGameRow)}</tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Game detail drawer */}
