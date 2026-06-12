@@ -327,6 +327,30 @@ model SportEvent {
   organizer            String
   organizerContact     String
   tags                 String[] @default([])
+  // ── Slice 1: authoring + content model (all optional, additive) ──
+  published         Boolean  @default(true)
+  thumbnailUrl      String   @default("")
+  aboutLong         String   @default("")
+  whatYouGet        String[] @default([])
+  venueInfo         String   @default("")
+  matchFormat       String   @default("")
+  teamSize          String   @default("")
+  numRounds         String   @default("")
+  structure         String   @default("")
+  eligibility       String   @default("")
+  rules             String[] @default([])
+  additionalRewards String[] @default([])
+  city              String   @default("")
+  state             String   @default("")
+  country           String   @default("India")
+  pincode           String   @default("")
+  mapsLink          String   @default("")
+  lat               Float?
+  lng               Float?
+  approvalMode      String   @default("auto")
+  currency          String   @default("INR")
+  gstPercent        Int      @default(0)
+  convenienceFeePct Int      @default(0)
   schedule             Json     @default("[]")
   createdAt            DateTime @default(now())
   registrations EventRegistration[]
