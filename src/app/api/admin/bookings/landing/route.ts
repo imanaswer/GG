@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   // Registration categories
   async function regMetrics(model: "campRegistration" | "eventRegistration" | "workshopRegistration",
                             parent: "camp" | "event" | "workshop"): Promise<LandingMetrics> {
-    const m = (prisma as any)[model];
+    const m = (prisma as unknown as Record<string, { count: (args?: unknown) => Promise<number> }>)[model];
     const [total, pending, paid, cancelled, refunded] = await Promise.all([
       m.count(),
       m.count({ where: { status: { not: "cancelled" }, paymentStatus: "pending" } }),

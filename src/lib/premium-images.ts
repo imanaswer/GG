@@ -42,6 +42,16 @@ export const STORY: Record<"learn" | "play" | "connect", PremiumImage> = {
   connect: { src: u("photo-1552879890-3a06dd3a06c2"), alt: "Team celebrating together", credit: "Unsplash / Nathan Shively" },
 };
 
+// Landing "Pick your entry" hub cards — one well-matched image per lane.
+// Decoupled from STORY/*_IMAGE so the landing grid can be tuned independently.
+export const HUB_IMAGES: Record<"learn" | "play" | "events" | "camps" | "workshops", PremiumImage> = {
+  learn:     { src: u("photo-1526232761682-d26e03ac148e"), alt: "Coach mentoring young athlete", credit: "Unsplash / Clique Images" },
+  play:      { src: u("photo-1574629810360-7efbbe195018"), alt: "Evening pickup game", credit: "Unsplash / Ben Hershey" },
+  events:    { src: u("photo-1531415074968-036ba1b575da"), alt: "Cricket batsman competing", credit: "Unsplash / Alessandro Bogliari" },
+  camps:     { src: u("photo-1534438327276-14e5300c3a48"), alt: "Athletes training hard", credit: "Unsplash / Victor Freitas" },
+  workshops: { src: u("photo-1571019613454-1cb2f99b2d8b"), alt: "Instructor leading a hands-on session", credit: "Unsplash / Danielle Cerullo" },
+};
+
 // Generic coach portraits (used when /api coach imageUrl is missing)
 export const COACH_FALLBACKS: PremiumImage[] = [
   { src: u("photo-1552058544-f2b08422138a", 900), alt: "Coach portrait", credit: "Unsplash / Pablo Heimplatz" },

@@ -26,7 +26,7 @@ export default function Privacy() {
           <p><strong style={{ color: "#fff" }}>Account data:</strong> Name, email address, username, encrypted password, phone number (optional).</p>
           <p style={{ marginTop: 8 }}><strong style={{ color: "#fff" }}>Profile data:</strong> Bio, location, sports preferences, avatar image (if uploaded).</p>
           <p style={{ marginTop: 8 }}><strong style={{ color: "#fff" }}>Activity data:</strong> Games joined, bookings made, camps registered, events attended, reviews written.</p>
-          <p style={{ marginTop: 8 }}><strong style={{ color: "#fff" }}>Child data (camps only):</strong> Child's name and age, collected only for camp registration purposes.</p>
+          <p style={{ marginTop: 8 }}><strong style={{ color: "#fff" }}>Child data (camps only):</strong> Child&apos;s name and age, collected only for camp registration purposes.</p>
           <p style={{ marginTop: 8 }}><strong style={{ color: "#fff" }}>Payment data:</strong> Transaction IDs only. Full card/UPI details are handled by Razorpay and are never stored on our servers.</p>
         </Section>
 
@@ -56,7 +56,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="7. Children's Data">
-          <p>Camp registration requires children's names and ages, provided by parents or legal guardians. This data is used solely for camp administration and is not shared beyond the relevant camp organiser. Parents may request deletion of their child's data by contacting us.</p>
+          <p>Camp registration requires children&apos;s names and ages, provided by parents or legal guardians. This data is used solely for camp administration and is not shared beyond the relevant camp organiser. Parents may request deletion of their child&apos;s data by contacting us.</p>
         </Section>
 
         <Section title="8. Contact">

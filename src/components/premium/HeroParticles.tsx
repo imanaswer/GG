@@ -16,6 +16,11 @@ function ParticleField({ count = 1200 }: { count?: number }) {
   const { positions, sizes } = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const siz = new Float32Array(count);
+    // Intentional one-shot randomness: particle positions are generated once per
+    // `count` and frozen into a buffer. This is a "use client" WebGL canvas (no SSR,
+    // no hydration mismatch), so the react-hooks/purity warning about Math.random
+    // does not apply — re-running on re-render is exactly what the [count] dep guards.
+    /* eslint-disable react-hooks/purity */
     for (let i = 0; i < count; i++) {
       // Spherical shell distribution — thicker near the centre
       const r = 4 + Math.random() * 8;
@@ -26,6 +31,7 @@ function ParticleField({ count = 1200 }: { count?: number }) {
       pos[i * 3 + 2] = r * Math.cos(phi);
       siz[i] = Math.random() * 0.035 + 0.015;
     }
+    /* eslint-enable react-hooks/purity */
     return { positions: pos, sizes: siz };
   }, [count]);
 

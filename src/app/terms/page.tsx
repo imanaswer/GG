@@ -23,7 +23,7 @@ export default function Terms() {
         </div>
 
         <Section title="1. Acceptance of Terms">
-          <p>By registering for or using Game Ground ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform. Use of the Platform constitutes acceptance of the most current version of these Terms.</p>
+          <p>By registering for or using Game Ground (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform. Use of the Platform constitutes acceptance of the most current version of these Terms.</p>
         </Section>
 
         <Section title="2. User Accounts">
@@ -47,7 +47,7 @@ export default function Terms() {
         </Section>
 
         <Section title="7. Liability Limitation">
-          <p>Game Ground is provided "as is" without warranties of any kind. We are not liable for any injury, loss, or damage arising from sports activities facilitated through the Platform. Users participate in physical activities at their own risk. Our total liability is limited to fees paid in the preceding 30 days.</p>
+          <p>Game Ground is provided &quot;as is&quot; without warranties of any kind. We are not liable for any injury, loss, or damage arising from sports activities facilitated through the Platform. Users participate in physical activities at their own risk. Our total liability is limited to fees paid in the preceding 30 days.</p>
         </Section>
 
         <Section title="8. Changes to Terms">

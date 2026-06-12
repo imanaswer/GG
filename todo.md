@@ -1,6 +1,43 @@
 # Production Readiness — TODO
 
-**Honest assessment:** the app **builds cleanly** (`npm run build` passes, `tsc --noEmit` is clean) and the P0 blockers from the issue list are resolved in code. Recent shippable work — Workshops, Reputation/Tiers, Leaderboard, Coach photos, Avatar picker, Account delete hardening — is in production-ready shape. **Remaining work is mostly external setup** I can't do from this repo (third-party accounts, secrets, domain, legal, real content).
+> ## ⚙️ Verification run — 2026-06-11
+>
+> Re-ran the full local gate. Current truth (supersedes stale claims below where they conflict):
+>
+> | Check | Result |
+> |---|---|
+> | `tsc --noEmit` | ✅ clean |
+> | `npm run build` | ✅ passes (Next 16, does **not** gate on lint) |
+> | `npm run test` (vitest) | ✅ 71 passed / 11 files |
+> | `npm run lint` | ✅ **0 errors** (29 cosmetic warnings — `eslint` script has no `--max-warnings`, so they don't fail) |
+> | `npm audit` | ⚠️ could not run (no network this session) — **unverified**, re-run before launch |
+>
+> **No hard deploy-breaker in code** — build/typecheck/tests/lint all green; a Vercel deploy will succeed. Remaining work is the external-setup gaps below.
+>
+> ### Code fixes applied this session (2026-06-11)
+> - ✅ **Lint cleared to 0 errors** (was 41). `no-explicit-any` in the admin-bookings routes + `actions.ts` now use `Prisma.<Model>GetPayload` / a typed dynamic-delegate cast; `adminAuth` returns `JWTPayload`; `AdminShell` uses `LucideIcon`. The two React-rule errors (`react-hooks/purity` in `HeroParticles`, `set-state-in-effect` in `PremiumNav`) are intentional code, now carrying scoped `eslint-disable`s with rationale (matches the `SplitText.tsx` convention). Unescaped entities in `page`/`privacy`/`terms` escaped.
+> - ↩️ **Correction — two items I previously flagged were already handled:**
+>   - **`admin123`** is NOT a live hole: `api/admin/auth/route.ts:14` throws if `ADMIN_PASSWORD` is unset *in production* (fails closed). Same for `AUTH_SECRET` in `adminAuth.ts:7`. The `admin123` fallback only exists in dev. Still set a real `ADMIN_PASSWORD`, but it is not a security risk as shipped.
+>   - **Razorpay payment indexes already exist** — `@@index([razorpayOrderId])` / `@@index([razorpayPaymentId])` are in `schema.prisma` and the deployed `20260504195751_add_perf_indexes` migration. No work needed.
+>
+> **Already done since this file was last written (items below are now stale):**
+> - ✅ **Cloudinary upload migration is DONE.** Both `/api/upload` and `/api/admin/upload` now do signed Cloudinary direct uploads (no `public/uploads/` disk writes). Section 2's "Cloudinary migration for uploads" is complete. They return `503` until Cloudinary keys are set.
+> - ✅ **Demo-account login button removed** — the hard-coded `demo@gameground.com / password123` button is gone from the codebase. Only the `admin123` *admin-password fallback* remains (see below).
+> - ✅ Coach **booking-approval workflow** shipped + migrated (`add_booking_approval`, `admin_bookings_status_fields`). This is the source of the new lint errors.
+>
+> **Remaining real breakdowns (after this session's fixes):**
+> 1. ~~Lint fails~~ → ✅ fixed this session (0 errors).
+> 2. ~~`admin123` security risk~~ → ↩️ not a risk; fails closed in prod (see correction above). Still: set a real `ADMIN_PASSWORD` env value before launch.
+> 3. ~~Razorpay indexes missing~~ → ✅ already present in schema + migration.
+> 4. **`npm audit` unverified** this session (no network) — run it on a networked machine before launch. **Only open code-adjacent verification item.**
+>
+> Net: there is **no remaining in-code breakdown**. Everything still blocking launch is **external setup** — third-party accounts, production secrets, domain, and legal content — in the sections below.
+>
+> Everything below is the prior plan, kept for the external-setup checklist. Treat the summary table at the very bottom as superseded by this block.
+
+---
+
+**Honest assessment (prior):** the app **builds cleanly** (`npm run build` passes, `tsc --noEmit` is clean) and the P0 blockers from the issue list are resolved in code. Recent shippable work — Workshops, Reputation/Tiers, Leaderboard, Coach photos, Avatar picker, Account delete hardening — is in production-ready shape. **Remaining work is mostly external setup** I can't do from this repo (third-party accounts, secrets, domain, legal, real content).
 
 This file is split into:
 1. **Things I need from you** (external setup, secrets, content decisions)
@@ -116,6 +153,7 @@ Caught by `npm run lint` and manual review. None of these break production, but 
 - [ ] **Admin routes audit** — every route under `/api/admin/*` should call `getAdminSessionFromRequest`. I verified the ones I touched; a quick pass to confirm all of them would be good.
 - [ ] **Rate-limit tuning** — current values are conservative defaults. After a week of real traffic, review and adjust `authLimit` (5/min may be too low for shared-IP cafes) and `mutationLimit`.
 - [ ] **`dev`/test seed accounts** — remove the hard-coded `demo@gameground.com / password123` from the login page's "Try Demo Account" button before public launch, or gate it behind `process.env.NODE_ENV !== "production"`.
+- [ ] **Admin coach-batch edit vs. concurrent booking (TOCTOU)** — `PUT /api/admin/coaches` reads `coach.{totalSeats,seatsLeft}` mid-transaction and writes back a delta. A booking committing in that narrow window could have its `seatsLeft` decrement overwritten. Admin-only edit path, low likelihood; harden with a row lock (`SELECT … FOR UPDATE`) or a relative `{ increment: delta }` write if seat accuracy ever matters under concurrency.
 
 **Recently completed (was in this section):**
 - ✅ Cleared `react-hooks/set-state-in-effect` in `PremiumNav.tsx` (mobile menu now closes via onClick, not effect)

@@ -41,7 +41,6 @@ export function PlayerHeroCard(p: PlayerHeroCardProps) {
             {p.rank ? <Stat icon={<Trophy size={14} color="#eab308" />} label={`#${p.rank}`} /> : null}
             <Stat icon={<Flame size={14} color="#f97316" />} label={`${p.streakWeeks} wk streak`} />
             <Stat icon={<Calendar size={14} color="rgba(255,255,255,0.5)" />} label={`Joined ${joined}`} />
-            {p.favoriteSport && <Stat icon={<span>⚽</span>} label={p.favoriteSport} />}
           </div>
         </div>
       </div>

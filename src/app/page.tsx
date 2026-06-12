@@ -14,7 +14,7 @@ import { SplitText } from "@/components/premium/SplitText";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { SPORT_TILES, STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
+import { SPORT_TILES, STORY, HERO_BACKDROPS, HUB_IMAGES } from "@/lib/premium-images";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
@@ -127,7 +127,7 @@ function Hero() {
               fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
               textTransform: "uppercase", color: "#ff6b74",
             }}>
-              Kozhikode's Sports Playbook
+              Kozhikode&apos;s Sports Playbook
             </span>
           </motion.div>
 
@@ -303,8 +303,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Coaches & academies, verified in person.",
     bullets: ["50+ expert coaches", "Flexible schedules", "Every skill level"],
     icon: GraduationCap,
-    image: STORY.learn.src,
-    imageAlt: STORY.learn.alt,
+    image: HUB_IMAGES.learn.src,
+    imageAlt: HUB_IMAGES.learn.alt,
     accent: "#ff6b74",
   },
   {
@@ -314,8 +314,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Pickup games, five minutes from home.",
     bullets: ["Instant matching", "Local courts", "Skill-matched partners"],
     icon: Users,
-    image: STORY.play.src,
-    imageAlt: STORY.play.alt,
+    image: HUB_IMAGES.play.src,
+    imageAlt: HUB_IMAGES.play.alt,
     accent: "#f97316",
   },
   {
@@ -325,8 +325,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Tournaments and city-wide competitions.",
     bullets: ["Open tournaments", "Cash prizes", "Official leagues"],
     icon: Trophy,
-    image: EVENT_IMAGE.src,
-    imageAlt: EVENT_IMAGE.alt,
+    image: HUB_IMAGES.events.src,
+    imageAlt: HUB_IMAGES.events.alt,
     accent: "#a855f7",
   },
   {
@@ -336,8 +336,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Intensive programs that build athletes.",
     bullets: ["Multi-day camps", "Skill development", "Certifications"],
     icon: Target,
-    image: CAMP_IMAGE.src,
-    imageAlt: CAMP_IMAGE.alt,
+    image: HUB_IMAGES.camps.src,
+    imageAlt: HUB_IMAGES.camps.alt,
     accent: "#e63946",
   },
   {
@@ -347,8 +347,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Focused sessions that sharpen your craft.",
     bullets: ["Expert-led classes", "Hands-on drills", "Small group format"],
     icon: Lightbulb,
-    image: WORKSHOP_IMAGE.src,
-    imageAlt: WORKSHOP_IMAGE.alt,
+    image: HUB_IMAGES.workshops.src,
+    imageAlt: HUB_IMAGES.workshops.alt,
     accent: "#22d3ee",
   },
 ];
@@ -520,7 +520,7 @@ function QuickHub() {
               maxWidth: 320,
               lineHeight: 1.6,
             }}>
-              Whether you're here to train, drop in, compete, or level up — jump
+              Whether you&apos;re here to train, drop in, compete, or level up — jump
               straight to what you need.
             </p>
           </Reveal>
@@ -653,7 +653,7 @@ function SportsGrid() {
             <h2 className="display" style={{ fontSize: "clamp(36px, 4.5vw, 64px)", color: "#fff" }}>
               Pick your game.{" "}
               <span className="display-serif" style={{ color: "rgba(255,255,255,0.7)" }}>
-                We'll bring the court.
+                We&apos;ll bring the court.
               </span>
             </h2>
           </Reveal>
@@ -1034,7 +1034,7 @@ function Footer() {
               <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
             </Link>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
+              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               <MapPin size={13} />

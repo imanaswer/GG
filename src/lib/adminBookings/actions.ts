@@ -21,6 +21,15 @@ export function isActionAllowed(category: CategoryKey, action: BookingAction): b
 
 export interface ActionResult { id: string; ok: boolean; error?: string; }
 
+// REG categories are addressed by string key, so we index the Prisma client
+// dynamically. This minimal delegate shape covers the two methods we call and
+// lets us drop the `any` casts.
+type Delegate = {
+  update: (args: unknown) => Promise<unknown>;
+  findUnique: (args: unknown) => Promise<Record<string, unknown> | null>;
+};
+type DynamicClient = Record<string, Delegate>;
+
 const REG = {
   camps:     { model: "campRegistration",     parent: "camp",       parentId: "campId",     counter: "participants", fullStatus: "full",  openStatus: "open" },
   events:    { model: "eventRegistration",    parent: "sportEvent", parentId: "eventId",    counter: "participants", fullStatus: "Full",  openStatus: "Registration Open" },
@@ -71,23 +80,25 @@ export async function applyAction(
 
   // Registration categories (camps/events/workshops)
   const cfg = REG[category as keyof typeof REG];
+  const db = prisma as unknown as DynamicClient;
   if (action === "mark-paid") {
-    await (prisma as any)[cfg.model].update({ where: { id }, data: { paymentStatus: "paid" satisfies PaymentStatus } });
+    await db[cfg.model].update({ where: { id }, data: { paymentStatus: "paid" satisfies PaymentStatus } });
     return;
   }
   if (action === "mark-refunded") {
-    await (prisma as any)[cfg.model].update({ where: { id }, data: { paymentStatus: "refunded" satisfies PaymentStatus } });
+    await db[cfg.model].update({ where: { id }, data: { paymentStatus: "refunded" satisfies PaymentStatus } });
     return;
   }
   if (action === "cancel") {
     await prisma.$transaction(async (tx) => {
-      const reg = await (tx as any)[cfg.model].findUnique({ where: { id }, select: { status: true, [cfg.parentId]: true } });
+      const txdb = tx as unknown as DynamicClient;
+      const reg = await txdb[cfg.model].findUnique({ where: { id }, select: { status: true, [cfg.parentId]: true } });
       if (!reg) throw new Error("Not found");
       if (reg.status === "cancelled") return; // idempotent
       const parentId = reg[cfg.parentId];
-      await (tx as any)[cfg.model].update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
-      const parent = await (tx as any)[cfg.parent].findUnique({ where: { id: parentId }, select: { status: true } });
-      await (tx as any)[cfg.parent].update({
+      await txdb[cfg.model].update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
+      const parent = await txdb[cfg.parent].findUnique({ where: { id: parentId }, select: { status: true } });
+      await txdb[cfg.parent].update({
         where: { id: parentId },
         data: { [cfg.counter]: { decrement: 1 }, status: parent?.status === cfg.fullStatus ? cfg.openStatus : undefined },
       });

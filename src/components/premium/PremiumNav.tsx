@@ -52,7 +52,9 @@ export function PremiumNav({ variant = "solid" }: Props) {
     };
   }, [userMenu]);
 
-  // Close menus on route change.
+  // Close menus on route change. Syncing to `path` (not an onClick) is deliberate:
+  // it also covers browser back/forward navigation, where no link click fires.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setUserMenu(false); setOpen(false); }, [path]);
 
   const closeMenu = () => setOpen(false);

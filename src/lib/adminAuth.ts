@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
@@ -18,7 +18,7 @@ export async function signAdminToken(): Promise<string> {
     .sign(await secret());
 }
 
-export async function verifyAdminToken(token: string): Promise<any | null> {
+export async function verifyAdminToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, await secret());
     return payload;

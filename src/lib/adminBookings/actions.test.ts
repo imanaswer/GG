@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => {
   const model = () => ({ update: vi.fn(), findUnique: vi.fn() });
+  // Loose by design: a hand-rolled Prisma stand-in indexed by model name.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
     gamePlayer: model(),
     game: model(),
@@ -13,7 +15,7 @@ const { prismaMock } = vi.hoisted(() => {
     workshop: model(),
     // $transaction invokes the callback with the same mock object so that
     // assertions on prismaMock.<model>.<method> cover transactional calls too.
-    $transaction: vi.fn(async (fn: any) => fn(prismaMock)),
+    $transaction: vi.fn(async (fn: (p: unknown) => unknown) => fn(prismaMock)),
   };
   return { prismaMock };
 });
