@@ -42,6 +42,12 @@ describe("normalizeBatches", () => {
     expect(() => normalizeBatches([{ day: "Mon", time: "6 AM", seats: -1 }])).toThrow(BatchValidationError);
     expect(() => normalizeBatches([{ day: "Mon", time: "6 AM", seats: "abc" }])).toThrow(BatchValidationError);
   });
+
+  it("keeps a zero-seat row when day and time are present", () => {
+    expect(normalizeBatches([{ day: "Mon", time: "6 AM", seats: 0 }])).toEqual([
+      { day: "Mon", time: "6 AM", level: "All Levels", seats: 0 },
+    ]);
+  });
 });
 
 describe("sumSeats", () => {

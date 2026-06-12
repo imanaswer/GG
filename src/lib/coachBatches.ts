@@ -9,7 +9,12 @@ export type NormalizedBatch = {
   seats: number;
 };
 
-export class BatchValidationError extends Error {}
+export class BatchValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BatchValidationError";
+  }
+}
 
 // Coerce + validate raw batch rows from the admin form.
 // - trims strings; defaults level to "All Levels"
