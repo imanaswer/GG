@@ -13,7 +13,7 @@ import { BookingsTable } from "./BookingsTable";
 import { bucketRows, BUCKET_ORDER, BUCKET_LABELS } from "@/lib/adminBookings/grouping";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { DatePreset } from "@/lib/adminBookings/types";
-import { STATUS_LABELS } from "@/lib/adminBookings/status";
+import { STATUS_LABELS, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 
 const PAGE_SIZE = 25;
 
@@ -25,7 +25,13 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
   const DATE_PRESETS = ["all", "today", "tomorrow", "upcoming", "past", "custom"];
   const initialDate = (DATE_PRESETS.includes(searchParams.get("date") ?? "") ? searchParams.get("date") : "upcoming") as DatePreset;
 
-  const [status, setStatus] = useState(() => searchParams.get("status") ?? "all");
+  // Seed filters from the URL once on mount (one-way seed, not two-way sync:
+  // later SummaryCards/toolbar interactions own the state and don't rewrite the URL).
+  const validStatuses = ["all", ...CATEGORY_STATUSES[config.key], ...(config.key === "coaches" ? ["active"] : [])];
+  const rawStatus = searchParams.get("status") ?? "all";
+  const initialStatus = validStatuses.includes(rawStatus) ? rawStatus : "all";
+
+  const [status, setStatus] = useState(() => initialStatus);
   const [page, setPage] = useState(1);
   const [tb, setTb] = useState<ToolbarState>(() => ({ q: "", date: initialDate, from: "", to: "", sort: "upcoming", by: "session", group: "day" }));
   const [selected, setSelected] = useState<Set<string>>(new Set());
