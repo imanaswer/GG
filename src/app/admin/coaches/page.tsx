@@ -11,6 +11,8 @@ import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { COACH_TYPES, SKILL_LEVELS, formatPrice } from "@/lib/taxonomy";
 
+type BatchRow = { id?: string; day: string; time: string; level: string; seats: number };
+
 type Coach = {
   id: string; name: string; sport: string; type: string; skillLevel: string;
   location: string; address: string; price: string; priceMin: number; priceMax: number;
@@ -18,6 +20,7 @@ type Coach = {
   features: string[]; certifications: string[]; imageUrl: string; coverImageUrl: string; photos: string[];
   seatsLeft: number; totalSeats: number; rating: number; reviewCount: number;
   status: string; totalBookings: number; confirmedBookings: number; revenue: number;
+  batches?: BatchRow[];
 };
 
 const EMPTY: Partial<Coach> = {
@@ -25,7 +28,7 @@ const EMPTY: Partial<Coach> = {
   location: "", address: "", price: "", priceMin: 0, priceMax: 0,
   timing: "", phone: "", email: "", description: "",
   features: [], certifications: [], imageUrl: "", coverImageUrl: "", photos: [],
-  totalSeats: 20, seatsLeft: 20, status: "active",
+  totalSeats: 20, seatsLeft: 20, status: "active", batches: [],
 };
 
 const SPORTS = ["Football", "Cricket", "Basketball", "Badminton", "Tennis", "Swimming", "Table Tennis", "Volleyball", "Athletics", "Martial Arts", "Yoga", "Gym & Fitness"];
@@ -80,6 +83,12 @@ export default function AdminCoaches() {
   const closeModal = () => { setModal(null); setDeleteTarget(null); };
 
   const update = <K extends keyof Coach>(key: K, val: Coach[K]) => setForm(f => ({ ...f, [key]: val }));
+
+  const batches = form.batches ?? [];
+  const addBatch = () => update("batches", [...batches, { day: "", time: "", level: "All Levels", seats: 10 }] as never);
+  const rmBatch = (i: number) => update("batches", batches.filter((_, j) => j !== i) as never);
+  const setBatch = (i: number, key: keyof BatchRow, val: string | number) =>
+    update("batches", batches.map((b, j) => (j === i ? { ...b, [key]: val } : b)) as never);
 
   const coaches = data?.coaches ?? [];
   const pending = coaches.filter(c => c.status === "pending_approval");
@@ -153,6 +162,7 @@ export default function AdminCoaches() {
                           <div style={{ height: 3, background: "#1c1c1c", borderRadius: 99, width: 60, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
                           </div>
+                          {!!c.batches?.length && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4 }}>{c.batches.length} batch{c.batches.length === 1 ? "" : "es"}</div>}
                         </td>
                         <td style={{ ...td, textAlign: "center" }}>{c.confirmedBookings}/{c.totalBookings}</td>
                         <td style={{ ...td, color: "#eab308" }}>★ {c.rating.toFixed(1)} ({c.reviewCount})</td>
@@ -196,16 +206,50 @@ export default function AdminCoaches() {
               <FormInput label="Email" value={form.email ?? ""} onChange={v => update("email", v)} type="email" />
             </FormRow>
             <FormInput label="Timing" value={form.timing ?? ""} onChange={v => update("timing", v)} placeholder="e.g. Mon-Fri 6AM-8AM, 4PM-7PM" />
-            <FormRow>
-              <FormInput label="Total Seats" value={form.totalSeats ?? 20} onChange={v => update("totalSeats", Number(v) as never)} type="number" />
-              <FormInput label="Seats Left" value={form.seatsLeft ?? 20} onChange={v => update("seatsLeft", Number(v) as never)} type="number" />
-            </FormRow>
+            {batches.length > 0 ? (
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 12px", padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
+                Seat counts are managed automatically from the batches below.
+              </p>
+            ) : (
+              <FormRow>
+                <FormInput label="Total Seats" value={form.totalSeats ?? 20} onChange={v => update("totalSeats", Number(v) as never)} type="number" />
+                <FormInput label="Seats Left" value={form.seatsLeft ?? 20} onChange={v => update("seatsLeft", Number(v) as never)} type="number" />
+              </FormRow>
+            )}
             <FormTextarea label="Description" value={form.description ?? ""} onChange={v => update("description", v)} rows={3} />
             <ImageUpload label="Profile Photo (portrait & listing card)" value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
             <ImageUpload label="Cover Photo (detail page background)" value={form.coverImageUrl ?? ""} onChange={v => update("coverImageUrl", v)} />
             <MultiImageUpload label="Facility Photos" value={form.photos ?? []} onChange={v => update("photos", v as never)} />
             <FormTextarea label="Features (one per line)" value={(form.features ?? []).join("\n")} onChange={v => update("features", v.split("\n").filter(Boolean) as never)} rows={3} placeholder="Professional training equipment&#10;Personalized coaching&#10;Video analysis" />
             <FormTextarea label="Certifications (one per line)" value={(form.certifications ?? []).join("\n")} onChange={v => update("certifications", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="AFC C License&#10;SAI Certified" />
+            <div style={{ margin: "14px 0 4px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Batches</label>
+                <span style={{ fontSize: 11, color: "#6b7280" }}>{batches.length} batch{batches.length === 1 ? "" : "es"}</span>
+              </div>
+              {batches.length === 0 && (
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 10px" }}>No batches yet. Add the schedule slots students can see and join.</p>
+              )}
+              {batches.map((b, i) => (
+                <div key={b.id ?? i} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Batch {i + 1}</span>
+                    <button type="button" onClick={() => rmBatch(i)} style={iconBtn} title="Remove batch"><Trash2 size={14} color="#f87171" /></button>
+                  </div>
+                  <FormRow>
+                    <FormInput label="Day(s)" value={b.day} onChange={v => setBatch(i, "day", v)} placeholder="Mon–Wed–Fri" />
+                    <FormInput label="Time" value={b.time} onChange={v => setBatch(i, "time", v)} placeholder="6:00–8:00 AM" />
+                  </FormRow>
+                  <FormRow>
+                    <FormSelect label="Level" value={b.level} onChange={v => setBatch(i, "level", v)} options={SKILL_LEVELS.map(l => ({ value: l, label: l }))} />
+                    <FormInput label="Seats" value={b.seats} onChange={v => setBatch(i, "seats", Number(v))} type="number" />
+                  </FormRow>
+                </div>
+              ))}
+              <button type="button" onClick={addBatch} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, background: "transparent", border: "1px dashed rgba(255,255,255,0.2)", color: "#9ca3af", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                <Plus size={14} /> Add batch
+              </button>
+            </div>
             {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}
             <FormActions onCancel={closeModal} submitLabel={modal === "add" ? "Add Coach" : "Save Changes"} loading={save.isPending} />
           </form>
