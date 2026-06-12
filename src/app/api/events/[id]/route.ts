@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
+import { getAdminSessionFromRequest } from "@/lib/adminAuth";
+import { deriveEventStatus } from "@/lib/events";
 import { ok, fail, handleErr } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
@@ -17,8 +19,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       include: { registrations: true },
     });
     if (!event) return fail("Event not found", 404);
+
+    const isAdmin = await getAdminSessionFromRequest(req);
+    if (!event.published && !isAdmin) return fail("Event not found", 404);
+
     const now = new Date();
-    const status = (event.startDate <= now && event.endDate >= now) ? "Live" : event.status;
+    const status = deriveEventStatus(event, now);
 
     let userRegistration: { id: string; paymentStatus: string; teamName: string | null } | null = null;
     const session = await getSessionFromRequest(req);
@@ -38,9 +44,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!session) return fail("Authentication required", 401);
     const { teamName } = await req.json().catch(() => ({}));
 
-    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true } });
+    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true, published: true } });
     if (!event) return fail("Event not found", 404);
     if (["Cancelled", "Completed", "Archived", "Full"].includes(event.status)) return fail("Registrations are closed for this event", 409);
+    if (!event.published) return fail("Registrations are closed for this event", 409);
     if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
     if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
 

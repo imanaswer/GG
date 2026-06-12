@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ok, handleErr } from "@/lib/api";
+import { deriveEventStatus } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const when   = p.get("when");
     const now    = new Date();
 
-    const where: Prisma.SportEventWhereInput = { status: { notIn: ["Completed", "Archived", "Cancelled"] } };
+    const where: Prisma.SportEventWhereInput = { published: true, status: { notIn: ["Completed", "Archived", "Cancelled"] } };
     if (sport && sport !== "all") where.sport = sport;
     if (type  && type  !== "all") where.type  = type;
     if (diff  && diff  !== "all") where.difficulty = diff;
@@ -27,10 +28,7 @@ export async function GET(req: NextRequest) {
 
     let events = await prisma.sportEvent.findMany({ where });
 
-    events = events.map(ev => {
-      if (ev.startDate <= now && ev.endDate >= now) return { ...ev, status: "Live" };
-      return ev;
-    });
+    events = events.map(ev => ({ ...ev, status: deriveEventStatus(ev, now) }));
 
     if (q) events = events.filter(e => e.title.toLowerCase().includes(q) || e.sport.toLowerCase().includes(q));
 
