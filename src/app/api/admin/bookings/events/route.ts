@@ -3,7 +3,7 @@ import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { parsePagination, buildDateQuery } from "@/lib/adminBookings/query";
-import { registrationWhereForStatus, deriveRegistrationStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
+import { eventWhereForStatus, deriveEventRegistrationStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
 import type { BookingRow, ListResponse, StatusCount, PaymentInfo } from "@/lib/adminBookings/types";
@@ -22,7 +22,7 @@ function toRow(r: Prisma.EventRegistrationGetPayload<{ include: typeof INCLUDE }
   return {
     id: r.id, userId: r.userId, userName: r.user?.name ?? "—", userEmail: r.user?.email ?? "—",
     userPhone: r.user?.phone ?? null, entityName: r.event?.title ?? "—",
-    status: deriveRegistrationStatus(r.status, r.paymentStatus),
+    status: deriveEventRegistrationStatus(r.status),
     createdAt: r.registeredAt.toISOString(), updatedAt: r.updatedAt?.toISOString() ?? null,
     sessionDate: r.event?.startDate?.toISOString() ?? null,
     extra: { team: r.teamName ?? "—" }, payment,
@@ -35,7 +35,7 @@ function buildWhere(p: URLSearchParams, now: Date) {
   const status = p.get("status") ?? "all";
   const q = p.get("q")?.trim();
   const { where: dateWhere } = buildDateQuery(p, now, AXIS);
-  const where: Record<string, unknown> = { ...registrationWhereForStatus(status), ...dateWhere };
+  const where: Record<string, unknown> = { ...eventWhereForStatus(status), ...dateWhere };
   if (q) where.OR = [
     { id: { contains: q, mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
@@ -47,14 +47,13 @@ function buildWhere(p: URLSearchParams, now: Date) {
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
   const base = { ...countWhere }; delete base.status; delete base.paymentStatus;
-  const [cancelled, pending, paid, failed, refunded] = await Promise.all([
+  const [pending, approved, rejected, cancelled] = await Promise.all([
+    prisma.eventRegistration.count({ where: { ...base, status: "pending" } }),
+    prisma.eventRegistration.count({ where: { ...base, status: "approved" } }),
+    prisma.eventRegistration.count({ where: { ...base, status: "rejected" } }),
     prisma.eventRegistration.count({ where: { ...base, status: "cancelled" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "pending" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "paid" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "failed" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "refunded" } }),
   ]);
-  const m: Record<string, number> = { cancelled, pending, paid, failed, refunded };
+  const m: Record<string, number> = { pending, approved, rejected, cancelled };
   return CATEGORY_STATUSES.events.map(s => ({ status: s, count: m[s] ?? 0 }));
 }
 
@@ -66,9 +65,9 @@ export async function GET(req: NextRequest) {
 
   if (p.get("format") === "csv") {
     const rows = await prisma.eventRegistration.findMany({ where, include: INCLUDE, orderBy: { registeredAt: "desc" } });
-    const mapped = rows.map(r => toRow(r, null));
-    const headers = ["Booking ID", "User", "Email", "Phone", "Event", "Team", "Date", "Status", "Created"];
-    const csv = toCsv(headers, mapped.map(r => [r.id, r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.team, r.sessionDate, r.status, r.createdAt]));
+    const mapped = await Promise.all(rows.map(async r => ({ row: toRow(r, null), pay: await paymentFor(r.eventId, r.userId) })));
+    const headers = ["Booking ID", "User", "Email", "Phone", "Event", "Team", "Date", "Approval", "Payment", "Created"];
+    const csv = toCsv(headers, mapped.map(({ row: r, pay }) => [r.id, r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.team, r.sessionDate, r.status, pay?.status ?? "—", r.createdAt]));
     return new NextResponse(csv, { headers: { "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="events-bookings.csv"` } });
   }
 
@@ -89,10 +88,10 @@ export async function PATCH(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  const { ids, id, action } = body;
+  const { ids, id, action, rejectionReason } = body;
   const list: string[] = Array.isArray(ids) ? ids : id ? [id] : [];
   if (!list.length || !action) return NextResponse.json({ error: "Missing ids/action" }, { status: 400 });
   if (!isActionAllowed("events", action as BookingAction)) return NextResponse.json({ error: "Action not allowed" }, { status: 400 });
-  const results = await applyBulk("events", list, action as BookingAction);
+  const results = await applyBulk("events", list, action as BookingAction, rejectionReason ? { rejectionReason } : undefined);
   return NextResponse.json({ results });
 }
