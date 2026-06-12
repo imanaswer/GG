@@ -57,6 +57,15 @@ The dashboard renders 7 metric cards. Final mapping:
   `scheduledAt >= now - 7*86400000ms` AND `status IN (open, full)` — a raw 7-day rolling
   window, **not** an IST calendar week. The filter must use the same raw millisecond
   arithmetic, not the IST day-bounds helpers in `adminBookings/query.ts`.
+  - **Guarantee strength caveat:** unlike Active Bookings / Camps / Workshops — where both
+    the card number and the list total are computed server-side via Prisma `count()` with
+    provably-equal `where` clauses in the same request — the Games filter runs *client-side*
+    (`new Date()` in the browser) against a separately-fetched `/api/admin/games` payload,
+    while the card number comes from the server-side overview fetch. The predicate is
+    identical, but a game sitting exactly on the `now − 7d` edge, or created/updated between
+    the two fetches, can momentarily disagree. This is inherent to filtering client-side and
+    is acceptable for an admin dashboard; it is a slightly weaker (timing-dependent) guarantee
+    than the server-side cards.
 
 ## Components & changes
 
