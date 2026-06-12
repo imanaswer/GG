@@ -364,6 +364,9 @@ model EventRegistration {
   status        String   @default("registered")
   paymentStatus String   @default("pending")
   cancelledAt   DateTime?
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  rejectionReason String?
   registeredAt  DateTime @default(now())
   updatedAt     DateTime @updatedAt
   event SportEvent @relation(fields: [eventId], references: [id])
