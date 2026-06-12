@@ -42,8 +42,9 @@ export function gamePlayerWhereForStatus(bucket: string): Record<string, unknown
   return { status: { not: "cancelled" }, attended: null }; // joined
 }
 
-/** Coach where-fragment is a plain status equality. */
+/** Coach where-fragment is a plain status equality, plus the `active` pseudo-status. */
 export function coachWhereForStatus(bucket: string): Record<string, unknown> {
   if (!bucket || bucket === "all") return {};
+  if (bucket === "active") return { status: { in: ["pending", "approved"] } };
   return { status: bucket };
 }

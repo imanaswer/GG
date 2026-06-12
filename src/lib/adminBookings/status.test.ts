@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   deriveRegistrationStatus, deriveGamePlayerStatus,
-  CATEGORY_STATUSES, registrationWhereForStatus, gamePlayerWhereForStatus,
+  CATEGORY_STATUSES, registrationWhereForStatus, gamePlayerWhereForStatus, coachWhereForStatus,
 } from "./status";
 
 describe("deriveRegistrationStatus", () => {
@@ -42,5 +42,15 @@ describe("where builders", () => {
     expect(CATEGORY_STATUSES.coaches).toEqual(["pending","approved","rejected","completed","cancelled"]);
     expect(CATEGORY_STATUSES["play-sessions"]).toEqual(["joined","attended","no-show","cancelled"]);
     expect(CATEGORY_STATUSES.camps).toEqual(["pending","paid","failed","refunded","cancelled"]);
+  });
+  it("coach: returns empty where for all / empty", () => {
+    expect(coachWhereForStatus("all")).toEqual({});
+    expect(coachWhereForStatus("")).toEqual({});
+  });
+  it("coach: maps a concrete status to equality", () => {
+    expect(coachWhereForStatus("approved")).toEqual({ status: "approved" });
+  });
+  it("coach: maps the 'active' pseudo-status to pending OR approved", () => {
+    expect(coachWhereForStatus("active")).toEqual({ status: { in: ["pending", "approved"] } });
   });
 });
