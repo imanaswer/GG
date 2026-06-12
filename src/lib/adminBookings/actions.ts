@@ -4,7 +4,7 @@ import type { CategoryKey } from "./types";
 import type { PaymentStatus } from "@/lib/paymentStatus";
 
 export type BookingAction =
-  | "approve" | "reject" | "complete" | "cancel"
+  | "approve" | "reject" | "refund" | "complete" | "cancel"
   | "mark-paid" | "mark-refunded" | "mark-attended" | "mark-no-show";
 
 export const ALLOWED_ACTIONS: Record<CategoryKey, BookingAction[]> = {
@@ -12,7 +12,7 @@ export const ALLOWED_ACTIONS: Record<CategoryKey, BookingAction[]> = {
   "play-sessions": ["mark-attended", "mark-no-show", "cancel"],
   workshops:       ["cancel", "mark-paid", "mark-refunded"],
   camps:           ["cancel", "mark-paid", "mark-refunded"],
-  events:          ["cancel", "mark-paid", "mark-refunded"],
+  events:          ["approve", "reject", "refund", "cancel", "mark-paid", "mark-refunded"],
 };
 
 export function isActionAllowed(category: CategoryKey, action: BookingAction): boolean {
@@ -49,6 +49,58 @@ export async function applyAction(
   if (!isActionAllowed(category, action)) throw new Error(`Action ${action} not allowed for ${category}`);
 
   // NOTE: future audit log goes here — record (category, id, action, actor, ts).
+
+  if (category === "events" && (action === "approve" || action === "reject" || action === "refund")) {
+    await prisma.$transaction(async (tx) => {
+      const reg = await tx.eventRegistration.findUnique({
+        where: { id },
+        select: { status: true, eventId: true, userId: true },
+      });
+      if (!reg) throw new Error("Not found");
+
+      if (action === "approve") {
+        if (reg.status === "approved") return;                 // idempotent
+        if (reg.status !== "pending") throw new Error(`Cannot approve a ${reg.status} registration`);
+        await tx.eventRegistration.update({ where: { id }, data: { status: "approved", approvedAt: new Date() } });
+        return;
+      }
+
+      if (action === "reject") {
+        if (reg.status === "rejected") return;                 // idempotent
+        if (reg.status !== "pending") throw new Error(`Cannot reject a ${reg.status} registration`);
+      } else { // refund
+        if (reg.status === "cancelled") return;                // idempotent
+        if (reg.status !== "approved") throw new Error("Can only refund an approved registration");
+      }
+
+      // Refund ONLY a genuinely paid Payment row (free events store paymentStatus
+      // "paid" with no Payment row — they must not be marked refunded).
+      const paid = await tx.payment.findFirst({
+        where: { entityType: "event", entityId: reg.eventId, userId: reg.userId, status: "paid" },
+        select: { id: true },
+      });
+      if (paid) await tx.payment.update({ where: { id: paid.id }, data: { status: "refunded" satisfies PaymentStatus } });
+
+      await tx.eventRegistration.update({
+        where: { id },
+        data: {
+          status: action === "reject" ? "rejected" : "cancelled",
+          ...(action === "reject"
+            ? { rejectedAt: new Date(), rejectionReason: meta?.rejectionReason ?? null }
+            : { cancelledAt: new Date() }),
+          ...(paid ? { paymentStatus: "refunded" satisfies PaymentStatus } : {}),
+        },
+      });
+
+      // Release the held seat (mirror the generic cancel branch).
+      const event = await tx.sportEvent.findUnique({ where: { id: reg.eventId }, select: { status: true } });
+      await tx.sportEvent.update({
+        where: { id: reg.eventId },
+        data: { participants: { decrement: 1 }, status: event?.status === "Full" ? "Registration Open" : undefined },
+      });
+    });
+    return;
+  }
 
   if (category === "coaches") {
     if (action === "approve")  { await approveBooking(id); return; }
