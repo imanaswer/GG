@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!session) return fail("Authentication required", 401);
     const { teamName } = await req.json().catch(() => ({}));
 
-    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true, published: true } });
+    const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true, published: true, approvalMode: true } });
     if (!event) return fail("Event not found", 404);
     if (["Cancelled", "Completed", "Archived", "Full"].includes(event.status)) return fail("Registrations are closed for this event", 409);
     if (!event.published) return fail("Registrations are closed for this event", 409);
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const isFree = event.entryFeeAmount === 0;
 
     await prisma.$transaction([
-      prisma.eventRegistration.create({ data: { eventId: id, userId: session.id, teamName, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus } }),
+      prisma.eventRegistration.create({ data: { eventId: id, userId: session.id, teamName, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus, status: event.approvalMode === "manual" ? "pending" : "approved" } }),
       prisma.sportEvent.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),
     ]);
 

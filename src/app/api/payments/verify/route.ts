@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (entityType === "event") {
       const { teamName } = registration ?? {};
-      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true } });
+      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, approvalMode: true } });
       if (!event) return fail("Event not found", 404);
       if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
       if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
             status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
-        prisma.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus } }),
+        prisma.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus, status: event.approvalMode === "manual" ? "pending" : "approved" } }),
         prisma.sportEvent.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
       ]);
       return ok({ verified: true });
