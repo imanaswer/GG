@@ -1,6 +1,7 @@
 import type { CategoryKey, BookingRow } from "./types";
 import type { RowActionDef } from "@/components/admin/bookings/BookingDrawer";
 import type { BulkActionDef } from "@/components/admin/bookings/BulkActionBar";
+import { EVENT_STATUS_LABELS } from "./status";
 
 export interface ColumnDef { key: string; header: string; render: (r: BookingRow) => string; }
 
@@ -12,6 +13,7 @@ export interface CategoryConfig {
   columns: ColumnDef[];
   rowActions: RowActionDef[];
   bulkActions: BulkActionDef[];
+  statusLabels?: Record<string, string>;
 }
 
 const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("en-IN") : "—";
@@ -104,21 +106,24 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
   events: {
     key: "events", label: "Events", apiPath: "/api/admin/bookings/events",
     dateMode: "calendar",
+    statusLabels: EVENT_STATUS_LABELS,
     columns: [
       { key: "id", header: "Booking ID", render: r => r.id },
       { key: "user", header: "User", render: r => r.userName },
       { key: "event", header: "Event", render: r => r.entityName },
       { key: "team", header: "Team", render: r => r.extra.team ?? "—" },
+      { key: "payment", header: "Payment", render: r => r.payment?.status ?? "—" },
       { key: "created", header: "Created", render: r => fmtDate(r.createdAt) },
     ],
     rowActions: [
-      { action: "mark-paid", label: "Mark Paid" },
-      { action: "mark-refunded", label: "Mark Refunded" },
+      { action: "approve", label: "Approve" },
+      { action: "reject", label: "Reject", danger: true, needsReason: true },
+      { action: "refund", label: "Refund", danger: true },
       { action: "cancel", label: "Cancel", danger: true },
     ],
     bulkActions: [
-      { action: "mark-paid", label: "Mark Paid" },
-      { action: "mark-refunded", label: "Mark Refunded" },
+      { action: "approve", label: "Approve" },
+      { action: "reject", label: "Reject", danger: true },
       { action: "cancel", label: "Cancel", danger: true },
     ],
   },

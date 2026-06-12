@@ -40,7 +40,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
 
   const filterChips: string[] = [];
   if (status === "active") filterChips.push("Pending + Approved");
-  else if (status !== "all") filterChips.push(STATUS_LABELS[status] ?? status);
+  else if (status !== "all") filterChips.push(config.statusLabels?.[status] ?? STATUS_LABELS[status] ?? status);
   if (tb.date === "all") filterChips.push("All dates");
 
   const clearFilters = () => {
@@ -100,7 +100,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
         </div>
       )}
 
-      <SummaryCards counts={data?.counts ?? []} active={status} onPick={s => { setStatus(s); setPage(1); }} />
+      <SummaryCards counts={data?.counts ?? []} active={status} onPick={s => { setStatus(s); setPage(1); }} labels={config.statusLabels} />
       <BookingsToolbar state={tb} onChange={s => { setTb(s); setPage(1); }} onExport={exportCsv} dateMode={config.dateMode} />
 
       {tb.group === "off" ? (

@@ -3,8 +3,8 @@ import type { StatusCount } from "@/lib/adminBookings/types";
 import { STATUS_LABELS } from "@/lib/adminBookings/status";
 
 export function SummaryCards({
-  counts, active, onPick,
-}: { counts: StatusCount[]; active: string; onPick: (status: string) => void }) {
+  counts, active, onPick, labels,
+}: { counts: StatusCount[]; active: string; onPick: (status: string) => void; labels?: Record<string, string> }) {
   const total = counts.reduce((a, c) => a + c.count, 0);
   const items = [{ status: "all", count: total }, ...counts];
   return (
@@ -19,7 +19,7 @@ export function SummaryCards({
           }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{count}</div>
             <div style={{ fontSize: 11, color: "#9ca3af", textTransform: "capitalize" }}>
-              {status === "all" ? "All" : (STATUS_LABELS[status] ?? status)}
+              {status === "all" ? "All" : (labels?.[status] ?? STATUS_LABELS[status] ?? status)}
             </div>
           </button>
         );
