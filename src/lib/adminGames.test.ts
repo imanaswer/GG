@@ -5,6 +5,10 @@ const NOW = new Date("2026-06-12T12:00:00.000Z");
 const iso = (msFromNow: number) => new Date(NOW.getTime() + msFromNow).toISOString();
 
 describe("isGameInMetricWeek", () => {
+  it("windows at exactly 7 days (metric lock)", () => {
+    expect(GAMES_WEEK_MS).toBe(7 * 86_400_000);
+  });
+
   it("includes an open game scheduled now", () => {
     expect(isGameInMetricWeek(iso(0), "open", NOW)).toBe(true);
   });
