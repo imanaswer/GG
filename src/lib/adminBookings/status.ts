@@ -5,7 +5,7 @@ export const CATEGORY_STATUSES: Record<CategoryKey, string[]> = {
   "play-sessions": ["joined", "attended", "no-show", "cancelled"],
   workshops:       ["pending", "paid", "failed", "refunded", "cancelled"],
   camps:           ["pending", "paid", "failed", "refunded", "cancelled"],
-  events:          ["pending", "paid", "failed", "refunded", "cancelled"],
+  events:          ["pending", "approved", "rejected", "cancelled"],
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -47,4 +47,23 @@ export function coachWhereForStatus(bucket: string): Record<string, unknown> {
   if (!bucket || bucket === "all") return {};
   if (bucket === "active") return { status: { in: ["pending", "approved"] } };
   return { status: bucket };
+}
+
+/** Events use an approval axis (status), with payment shown as a separate column. */
+export const EVENT_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending approval",
+  approved: "Approved",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
+
+/** Filter fragment for the events approval axis. */
+export function eventWhereForStatus(bucket: string): Record<string, unknown> {
+  if (!bucket || bucket === "all") return {};
+  return { status: bucket };
+}
+
+/** Events display-status IS the approval status (payment shown separately). */
+export function deriveEventRegistrationStatus(status: string): string {
+  return status;
 }

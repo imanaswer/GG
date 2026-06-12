@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   deriveRegistrationStatus, deriveGamePlayerStatus,
   CATEGORY_STATUSES, registrationWhereForStatus, gamePlayerWhereForStatus, coachWhereForStatus,
+  eventWhereForStatus, deriveEventRegistrationStatus, EVENT_STATUS_LABELS,
 } from "./status";
 
 describe("deriveRegistrationStatus", () => {
@@ -52,5 +53,41 @@ describe("where builders", () => {
   });
   it("coach: maps the 'active' pseudo-status to pending OR approved", () => {
     expect(coachWhereForStatus("active")).toEqual({ status: { in: ["pending", "approved"] } });
+  });
+});
+
+describe("eventWhereForStatus (approval axis)", () => {
+  it("returns {} for all/empty", () => {
+    expect(eventWhereForStatus("all")).toEqual({});
+    expect(eventWhereForStatus("")).toEqual({});
+  });
+  it("filters by the approval status directly", () => {
+    expect(eventWhereForStatus("pending")).toEqual({ status: "pending" });
+    expect(eventWhereForStatus("approved")).toEqual({ status: "approved" });
+    expect(eventWhereForStatus("rejected")).toEqual({ status: "rejected" });
+    expect(eventWhereForStatus("cancelled")).toEqual({ status: "cancelled" });
+  });
+});
+
+describe("deriveEventRegistrationStatus", () => {
+  it("returns the approval status verbatim (a rejected paid row is 'rejected', not 'paid')", () => {
+    expect(deriveEventRegistrationStatus("pending")).toBe("pending");
+    expect(deriveEventRegistrationStatus("approved")).toBe("approved");
+    expect(deriveEventRegistrationStatus("rejected")).toBe("rejected");
+    expect(deriveEventRegistrationStatus("cancelled")).toBe("cancelled");
+  });
+});
+
+describe("EVENT_STATUS_LABELS", () => {
+  it("labels pending as approval, not payment", () => {
+    expect(EVENT_STATUS_LABELS.pending).toBe("Pending approval");
+    expect(EVENT_STATUS_LABELS.approved).toBe("Approved");
+    expect(EVENT_STATUS_LABELS.rejected).toBe("Rejected");
+  });
+});
+
+describe("CATEGORY_STATUSES.events is the approval axis", () => {
+  it("lists approval buckets", () => {
+    expect(CATEGORY_STATUSES.events).toEqual(["pending", "approved", "rejected", "cancelled"]);
   });
 });
