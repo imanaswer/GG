@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { isGameInMetricWeek } from "@/lib/adminGames";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { StatCard }    from "@/components/admin/StatCard";
@@ -12,7 +15,9 @@ type Player = { userId:string; name:string; joinedAt:string; attended:boolean|nu
 type GameData = { id:string; title:string; sport:string; organizerName?:string; organizerReliability?:number; location:string; scheduledAt:string; slots:number; slotsLeft:number; cost:string; status:string; waitlistCount:number; playerCount:number; completedAt?:string|null; cancelledAt?:string|null; adminVerified:boolean; pointsAwarded:boolean; players:Player[] };
 type StatsData = { total:number; open:number; full:number; completed:number; cancelled:number; awaitingReview:number; waitlisted:number };
 
-export default function AdminGames() {
+function AdminGamesInner() {
+  const searchParams = useSearchParams();
+  const weekOnly = searchParams.get("range") === "week";
   const qc = useQueryClient();
   const { data } = useQuery<{ games: GameData[]; stats: StatsData }>({ queryKey: ["admin-games"], queryFn: () => fetch("/api/admin/games").then(r => r.json()) });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -20,7 +25,11 @@ export default function AdminGames() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set(["past"]));
-  const games = data?.games ?? [];
+  const allGames = data?.games ?? [];
+  const now = new Date();
+  const games = weekOnly
+    ? allGames.filter(g => isGameInMetricWeek(g.scheduledAt, g.status, now))
+    : allGames;
   const st    = data?.stats;
 
   // Derive the selected game from query data so the drawer always reflects the
@@ -99,7 +108,6 @@ export default function AdminGames() {
 
   const gameBuckets = (() => {
     const out: Record<string, GameData[]> = { today: [], tomorrow: [], upcoming: [], past: [], unscheduled: [] };
-    const now = new Date();
     for (const g of games) out[bucketForCalendar(g.scheduledAt, now)].push(g);
     return out;
   })();
@@ -109,6 +117,13 @@ export default function AdminGames() {
       <AdminShell>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", marginBottom: 20 }}>Games Tracker</h1>
+
+          {weekOnly && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(230,57,70,0.10)", border: "1px solid rgba(230,57,70,0.3)", width: "fit-content" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#fca5a5" }}>Showing open/full games scheduled within the last 7 days</span>
+              <Link href="/admin/games" style={{ fontSize: 12, fontWeight: 700, color: "#fff", textDecoration: "none", lineHeight: 1 }} aria-label="Clear filter">✕</Link>
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
             <StatCard value={st?.total ?? 0}     label="Total Games"        icon={Gamepad2} />
@@ -223,5 +238,13 @@ export default function AdminGames() {
         )}
       </AdminShell>
     </AdminGuard>
+  );
+}
+
+export default function AdminGames() {
+  return (
+    <Suspense fallback={null}>
+      <AdminGamesInner />
+    </Suspense>
   );
 }
