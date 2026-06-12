@@ -235,12 +235,11 @@ the server paginates. Surfaced by the final code review; recorded as accepted/kn
    single-venue volumes; only the `Upcoming` bucket truncates across pages. Follow-up
    if it bites: derive bucket counts from a server aggregate, or raise `PAGE_SIZE`/
    disable pagination while grouped.
-2. **Coaches `Past` preset is a no-op.** `coachDateWhere` only filters `today`/`tomorrow`
-   (weekday); `past`/`upcoming`/`custom` apply no server filter and coaches order by
-   `createdAt`. So picking `Past` on the Coaches tab re-buckets the same unfiltered page
-   — it does not show past-dated coach bookings (they have no date). Follow-up: hide the
-   `Past`/range presets on the Coaches tab and add a "organized by weekly schedule" hint
-   (needs passing `config.dateMode` into `BookingsToolbar`).
+2. ~~**Coaches `Past` preset is a no-op.**~~ **RESOLVED 2026-06-12** (commit `d56dfec`).
+   `BookingsToolbar` now takes `dateMode`; in weekday mode on the session axis the
+   `Past`/`Custom` presets are hidden (they were silent no-ops — coaches have no date)
+   and a "weekly schedule" hint shows. They reappear on the booking-date axis, where
+   `createdAt` filtering is real. Switching axis resets a stale `past`/`custom` preset.
 3. **CSV export respects the current filter.** With the new default `upcoming`, a fresh
    export captures upcoming-by-session rows, not all rows (pre-feature default was `all`).
    This is arguably correct (export = what you see); switch the date dropdown to
