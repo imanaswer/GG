@@ -995,7 +995,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                     {(reg.isPending || paying)
                       ? "Processing…"
                       : event.entryFeeAmount > 0
-                        ? `Pay ${event.entryFee}`
+                        ? `Pay ₹${charge.total.toLocaleString("en-IN")}`
                         : "Confirm registration"}
                   </button>
                 </div>
