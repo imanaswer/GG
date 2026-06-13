@@ -53,7 +53,7 @@ export function BookingDrawer({
         {row.payment && (
           <>
             <p style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", margin: "18px 0 6px" }}>Payment Information</p>
-            <Field label="Amount" value={`₹${row.payment.amount} ${row.payment.currency}`} />
+            <Field label="Amount" value={`₹${(row.payment.amount / 100).toLocaleString("en-IN")} ${row.payment.currency}`} />
             <Field label="Status" value={row.payment.status} />
             <Field label="Razorpay Payment" value={row.payment.razorpayPaymentId} />
             <Field label="Paid At" value={fmt(row.payment.paidAt)} />
