@@ -354,6 +354,18 @@ model SportEvent {
   schedule             Json     @default("[]")
   createdAt            DateTime @default(now())
   registrations EventRegistration[]
+  updates       EventUpdate[]
+}
+
+model EventUpdate {
+  id        String   @id @default(cuid())
+  eventId   String
+  title     String   @default("")
+  body      String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  event SportEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  @@index([eventId, pinned, createdAt(sort: Desc)])
 }
 
 model EventRegistration {
