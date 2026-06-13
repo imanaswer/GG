@@ -6,7 +6,8 @@ import { Badge }       from "@/components/admin/Badge";
 import { AdminModal, DeleteConfirm } from "@/components/admin/AdminModal";
 import { EventWizard, EMPTY_EVENT, type EventForm } from "@/components/admin/EventWizard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Megaphone } from "lucide-react";
+import { EventUpdatesModal } from "@/components/admin/EventUpdatesModal";
 import type { SportEvent } from "@/hooks/useData";
 
 type Ev = SportEvent;
@@ -54,6 +55,7 @@ export default function AdminEvents() {
   const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
   const [form, setForm] = useState<Ev>(EMPTY_EV);
   const [deleteTarget, setDeleteTarget] = useState<Ev | null>(null);
+  const [updatesTarget, setUpdatesTarget] = useState<Ev | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onError = useCallback(() => setError("Something went wrong. Please try again."), []);
@@ -105,6 +107,7 @@ export default function AdminEvents() {
             {(data?.events ?? []).map(e => (
               <div key={e.id} style={{ background: "#141414", border: `1px solid ${e.status === "Live" ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px", boxShadow: e.status === "Live" ? "0 0 16px rgba(239,68,68,0.1)" : "none", position: "relative" }}>
                 <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 4 }}>
+                  <button onClick={() => setUpdatesTarget(e)} style={iconBtn} title="Updates"><Megaphone size={13} color="#fbbf24" /></button>
                   <button onClick={() => openEdit(e)} style={iconBtn} title="Edit"><Pencil size={13} color="#60a5fa" /></button>
                   <button onClick={() => openDelete(e)} style={iconBtn} title="Delete"><Trash2 size={13} color="#f87171" /></button>
                 </div>
@@ -142,6 +145,13 @@ export default function AdminEvents() {
         <AdminModal open={modal === "delete"} onClose={closeModal} title="Delete Event" width={420}>
           <DeleteConfirm name={deleteTarget?.title ?? ""} onConfirm={() => deleteTarget && remove.mutate(deleteTarget.id)} onCancel={closeModal} loading={remove.isPending} />
         </AdminModal>
+
+        <EventUpdatesModal
+          eventId={updatesTarget?.id ?? null}
+          eventTitle={updatesTarget?.title ?? ""}
+          open={!!updatesTarget}
+          onClose={() => setUpdatesTarget(null)}
+        />
       </AdminShell>
     </AdminGuard>
   );
