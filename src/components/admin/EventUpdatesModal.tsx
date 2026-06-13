@@ -27,12 +27,21 @@ export function EventUpdatesModal({ eventId, eventTitle, open, onClose }: {
   const reset = () => { setTitle(""); setBody(""); setPinned(false); setError(null); };
 
   const post = useMutation({
-    mutationFn: () => fetch(`/api/admin/events/${eventId}/updates`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body, pinned }),
-    }).then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+    mutationFn: async () => {
+      const r = await fetch(`/api/admin/events/${eventId}/updates`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, body, pinned }),
+      });
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const fieldErrors = json?.details as Record<string, string[]> | undefined;
+        const firstError = fieldErrors ? Object.values(fieldErrors).flat()[0] : undefined;
+        throw new Error(firstError ?? "Could not post the update.");
+      }
+      return json;
+    },
     onSuccess: (res) => { qc.setQueryData(key, res); reset(); },
-    onError: () => setError("Could not post the update. A body is required."),
+    onError: (e: Error) => setError(e.message),
   });
 
   const remove = useMutation({

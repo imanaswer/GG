@@ -25,6 +25,9 @@ describe("eventUpdateInputSchema", () => {
   it("rejects an empty body", () => {
     expect(() => eventUpdateInputSchema.parse({ body: "" })).toThrow();
   });
+  it("rejects a whitespace-only body", () => {
+    expect(() => eventUpdateInputSchema.parse({ body: "   " })).toThrow();
+  });
   it("defaults title to '' and pinned to false", () => {
     const p = eventUpdateInputSchema.parse({ body: "Venue changed to Court 2" });
     expect(p.title).toBe("");

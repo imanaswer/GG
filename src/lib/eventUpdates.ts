@@ -23,7 +23,7 @@ export function sortEventUpdates<T extends { pinned: boolean; createdAt: string 
 /** Admin input for posting an update. */
 export const eventUpdateInputSchema = z.object({
   title: z.string().max(120).default(""),
-  body: z.string().min(1, "Update body is required").max(2000),
+  body: z.string().trim().min(1, "Update body is required").max(2000),
   pinned: z.boolean().default(false),
 });
 
