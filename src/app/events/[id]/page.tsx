@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { EVENT_IMAGE } from "@/lib/premium-images";
 
-type Tab = "overview" | "format" | "prizes" | "schedule";
+type Tab = "overview" | "format" | "prizes" | "schedule" | "updates";
 
 function TabButton({ id, active, onClick, label, count }: { id: Tab; active: Tab; onClick: (t: Tab) => void; label: string; count?: number }) {
   const isActive = active === id;
@@ -137,6 +137,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       : { title: s.event ?? "", date: s.day ?? "", time: s.time ?? "", location: "" }
   );
   const hasFormatSpecs = !!(event.matchFormat || event.teamSize || event.numRounds || event.structure || event.eligibility);
+  const updates = event.updates ?? [];
   const regClosed    = new Date(event.registrationDeadline) < new Date();
   const isLive       = event.status === "Live";
   const isTeam       = event.type === "Tournament" || event.type === "League" || event.type === "Festival";
@@ -385,6 +386,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                     <TabButton id="format"   active={tab} onClick={setTab} label="Format"   count={event.format.length + (event.rules?.length ?? 0)} />
                     <TabButton id="prizes"   active={tab} onClick={setTab} label="Prizes"   count={event.prizes.length} />
                     <TabButton id="schedule" active={tab} onClick={setTab} label="Schedule" count={scheduleRows.length} />
+                    <TabButton id="updates"  active={tab} onClick={setTab} label="Updates"  count={updates.length} />
                   </div>
                 </Reveal>
 
@@ -599,6 +601,30 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                               </div>
                             )}
                           </div>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
+
+                {tab === "updates" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {updates.length === 0 && (
+                      <div style={cardStyle}>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>No updates yet.</p>
+                      </div>
+                    )}
+                    {updates.map((u) => (
+                      <Reveal key={u.id}>
+                        <div style={{ ...cardStyle, borderColor: u.pinned ? "rgba(234,179,8,0.3)" : "rgba(255,255,255,0.06)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            {u.pinned && <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308", textTransform: "uppercase", letterSpacing: "0.05em" }}>Pinned</span>}
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                              {new Date(u.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          {u.title && <h4 style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{u.title}</h4>}
+                          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.72)", lineHeight: 1.7, whiteSpace: "pre-line" }}>{u.body}</p>
                         </div>
                       </Reveal>
                     ))}
