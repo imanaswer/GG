@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
     if (!session) return fail("Authentication required", 401);
 
     const body = (await req.json()) as Body;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, entityType, entityId, amount, registration, devMode } = body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, entityType, entityId, amount, registration } = body;
     if (!entityType || !entityId) return fail("entityType and entityId required", 400);
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    const liveVerification = !devMode && keySecret;
+    const liveVerification = !!keySecret;
     if (liveVerification) {
       const expected = crypto.createHmac("sha256", keySecret!)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
