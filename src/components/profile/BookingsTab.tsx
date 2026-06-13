@@ -1,6 +1,8 @@
 "use client";
 import { bucketByStatus, coachBookingGroupStatus } from "@/lib/profileGrouping";
 import type { Booking, ProfileRegItem, UserProfile } from "@/hooks/useData";
+import { EventRegCard } from "./EventRegCard";
+import { useCancelEvent } from "@/hooks/useData";
 
 const STATUS_GROUPS = [
   { key: "upcoming" as const, label: "Upcoming" },
@@ -39,6 +41,7 @@ function TypeSection<T>({ label, items, statusOf, render }: { label: string; ite
 }
 
 export function BookingsTab({ bookings, registrations }: { bookings: Booking[]; registrations: UserProfile["registrations"] }) {
+  const cancel = useCancelEvent();
   const empty = !bookings.length && !registrations?.camps.length && !registrations?.events.length && !registrations?.workshops.length;
   if (empty) return <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", padding: "20px 0" }}>No bookings yet.</div>;
   const regStatus = (r: ProfileRegItem) => r.groupStatus;
@@ -51,7 +54,7 @@ export function BookingsTab({ bookings, registrations }: { bookings: Booking[]; 
       <TypeSection label="Camps" items={registrations?.camps ?? []} statusOf={regStatus}
         render={(r) => <Row key={r.id} title={r.title} sub={r.startDate ? new Date(r.startDate).toLocaleDateString("en-IN") : "—"} status={r.status} />} />
       <TypeSection label="Events" items={registrations?.events ?? []} statusOf={regStatus}
-        render={(r) => <Row key={r.id} title={r.title} sub={r.startDate ? new Date(r.startDate).toLocaleDateString("en-IN") : "—"} status={r.status} />} />
+        render={(r) => <EventRegCard key={r.id} reg={r} onCancel={(id) => cancel.mutate(id)} cancelling={cancel.isPending} />} />
     </div>
   );
 }
