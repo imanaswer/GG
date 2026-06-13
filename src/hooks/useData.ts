@@ -411,6 +411,7 @@ export function useCancelEvent() {
     onSuccess: (_, eventId) => {
       qc.invalidateQueries({ queryKey: ["events"] });
       qc.invalidateQueries({ queryKey: ["event", eventId] });
+      qc.invalidateQueries({ queryKey: ["user"] });
       toast.success("Registration cancelled.");
     },
     onError: e => toast.error(e.message),
