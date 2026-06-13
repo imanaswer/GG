@@ -15,6 +15,7 @@ import { useEvent, useRegisterEvent, useCancelEvent } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { EVENT_IMAGE } from "@/lib/premium-images";
+import { computeEventCharge } from "@/lib/eventPricing";
 
 type Tab = "overview" | "format" | "prizes" | "schedule" | "updates";
 
@@ -127,6 +128,10 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   }
 
   const spotsLeft    = event.maxParticipants - event.participants;
+  const charge = computeEventCharge(event);
+  const feeLines: { label: string; amount: number }[] = [{ label: "Entry fee", amount: charge.base }];
+  if (charge.gst > 0) feeLines.push({ label: `GST (${event.gstPercent ?? 0}%)`, amount: charge.gst });
+  if (charge.convenience > 0) feeLines.push({ label: `Convenience (${event.convenienceFeePct ?? 0}%)`, amount: charge.convenience });
   const pct          = Math.min(100, Math.round((event.participants / event.maxParticipants) * 100));
   const cardStyle: React.CSSProperties = { background: "rgba(13,13,13,0.7)", backdropFilter: "blur(18px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, padding: "24px 28px" };
 
@@ -848,7 +853,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                                 ? "Registration closed"
                                 : spotsLeft <= 0
                                   ? "Event full"
-                                  : <>{isTeam ? "Register your team" : (event.entryFeeAmount > 0 ? `Pay ${event.entryFee}` : "Register")} <ChevronRight size={16} /></>}
+                                  : <>{isTeam ? "Register your team" : (event.entryFeeAmount > 0 ? `Pay ₹${charge.total.toLocaleString("en-IN")}` : "Register")} <ChevronRight size={16} /></>}
                           </button>
                         </Magnetic>
                       </div>
@@ -944,16 +949,17 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   />
                 </div>
                 {event.entryFeeAmount > 0 && (
-                  <div style={{
-                    padding: "14px 16px", borderRadius: 14,
-                    background: "rgba(230,57,70,0.06)",
-                    border: "1px solid rgba(230,57,70,0.2)",
-                  }}>
-                    <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>
-                      Entry fee: <span style={{ color: "#ff6b74" }}>{event.entryFee}</span>
-                    </p>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-                      Secure payment via Razorpay. Team slot reserved after payment.
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)" }}>
+                    {feeLines.map(l => (
+                      <div key={l.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255,255,255,0.72)", marginBottom: 5 }}>
+                        <span>{l.label}</span><span>₹{l.amount.toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 800, color: "#fff", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 7, marginTop: 3 }}>
+                      <span>Total</span><span style={{ color: "#ff6b74" }}>₹{charge.total.toLocaleString("en-IN")}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
+                      Secure payment via Razorpay. Slot reserved after payment.
                     </p>
                   </div>
                 )}
