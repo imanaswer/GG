@@ -1,14 +1,35 @@
 import { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { prisma } from "@/lib/prisma";
+import { computeEventCharge } from "@/lib/eventPricing";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const { amount, entityType, entityId, currency = "INR" } = await req.json();
-    if (!amount || !entityType || !entityId) return fail("amount, entityType, entityId required", 400);
+    const body = await req.json();
+    const { entityType, entityId } = body;
+    if (!entityType || !entityId) return fail("entityType, entityId required", 400);
+
+    let amount: number = body.amount;
+    let currency: string = body.currency ?? "INR";
+
+    // Events: server-authoritative — never trust the client-sent amount.
+    if (entityType === "event") {
+      const event = await prisma.sportEvent.findUnique({
+        where: { id: entityId },
+        select: { entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true },
+      });
+      if (!event) return fail("Event not found", 404);
+      const total = computeEventCharge(event).total;
+      if (total <= 0) return fail("This is a free event", 400);
+      amount = total;
+      currency = event.currency || "INR";
+    } else if (!amount) {
+      return fail("amount, entityType, entityId required", 400);
+    }
 
     const keyId     = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
