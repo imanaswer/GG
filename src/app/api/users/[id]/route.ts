@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       prisma.gamePlayer.findMany({ where: { userId: id }, include: { game: true }, orderBy: { joinedAt: "desc" } }),
       prisma.game.findMany({ where: { organizerId: id }, orderBy: { scheduledAt: "desc" } }),
       isOwner ? prisma.campRegistration.findMany({ where: { userId: id }, include: { camp: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
-      isOwner ? prisma.eventRegistration.findMany({ where: { userId: id }, include: { event: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
+      isOwner ? prisma.eventRegistration.findMany({ where: { userId: id }, include: { event: { select: { title: true, startDate: true, endDate: true, entryFeeAmount: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
       isOwner ? prisma.workshopRegistration.findMany({ where: { userId: id }, include: { workshop: { select: { title: true, startDate: true, endDate: true } } }, orderBy: { registeredAt: "desc" } }) : Promise.resolve([]),
       isOwner ? prisma.booking.count({ where: { userId: id, status: "completed" } }) : Promise.resolve(0),
     ]);
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     const registrations = isOwner ? {
       camps: campRegs.map(r => ({ id: r.id, title: r.camp?.title ?? "Camp", startDate: r.camp?.startDate, endDate: r.camp?.endDate, status: r.status, paymentStatus: r.paymentStatus, groupStatus: registrationGroupStatus(r.status, (r.camp?.endDate ?? r.camp?.startDate ?? new Date()).toISOString(), now) })),
-      events: eventRegs.map(r => ({ id: r.id, entityId: r.eventId, title: r.event?.title ?? "Event", startDate: r.event?.startDate, endDate: r.event?.endDate, status: r.status, paymentStatus: r.paymentStatus, rejectionReason: r.rejectionReason, groupStatus: registrationGroupStatus(r.status, (r.event?.endDate ?? r.event?.startDate ?? new Date()).toISOString(), now) })),
+      events: eventRegs.map(r => ({ id: r.id, entityId: r.eventId, title: r.event?.title ?? "Event", startDate: r.event?.startDate, endDate: r.event?.endDate, status: r.status, paymentStatus: r.paymentStatus, entryFeeAmount: r.event?.entryFeeAmount, rejectionReason: r.rejectionReason, groupStatus: registrationGroupStatus(r.status, (r.event?.endDate ?? r.event?.startDate ?? new Date()).toISOString(), now) })),
       workshops: workshopRegs.map(r => ({ id: r.id, title: r.workshop?.title ?? "Workshop", startDate: r.workshop?.startDate, endDate: r.workshop?.endDate, status: r.status, paymentStatus: r.paymentStatus, groupStatus: registrationGroupStatus(r.status, (r.workshop?.endDate ?? r.workshop?.startDate ?? new Date()).toISOString(), now) })),
     } : undefined;
 

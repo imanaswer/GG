@@ -33,7 +33,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (reg) userRegistration = { id: reg.id, paymentStatus: reg.paymentStatus, teamName: reg.teamName, status: reg.status, rejectionReason: reg.rejectionReason };
     }
 
-    return ok({ ...event, status, registeredCount: event.registrations.length, userRegistration });
+    const { registrations, ...eventPublic } = event;
+    return ok({ ...eventPublic, status, registeredCount: registrations.length, userRegistration });
   } catch (e) { return handleErr(e); }
 }
 

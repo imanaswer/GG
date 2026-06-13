@@ -24,8 +24,11 @@ export function EventRegCard({ reg, onCancel, cancelling }: {
   cancelling: boolean;
 }) {
   const approval = APPROVAL[reg.status] ?? { label: reg.status, bg: "rgba(255,255,255,0.07)", color: "#9ca3af" };
-  const pay = isPaymentStatus(reg.paymentStatus) ? { label: PAYMENT_STATUS_LABELS[reg.paymentStatus], ...PAYMENT_STATUS_COLORS[reg.paymentStatus] } : null;
-  const canCancel = canCancelEventRegistration({ status: reg.status, startDate: reg.startDate }, new Date());
+  const isFree = (reg.entryFeeAmount ?? 0) === 0;
+  const pay = isFree
+    ? { label: "Free", bg: "rgba(107,114,128,0.15)", color: "#9ca3af" }
+    : (isPaymentStatus(reg.paymentStatus) ? { label: PAYMENT_STATUS_LABELS[reg.paymentStatus], ...PAYMENT_STATUS_COLORS[reg.paymentStatus] } : null);
+  const canCancel = !!reg.entityId && canCancelEventRegistration({ status: reg.status, startDate: reg.startDate }, new Date());
   const showTicket = reg.status === "approved" && !!reg.entityId;
 
   return (

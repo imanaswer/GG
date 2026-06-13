@@ -53,7 +53,7 @@ export type ProfileGameItem = {
 export type ProfileRegItem = {
   id: string; title: string; startDate?: string; endDate?: string;
   status: string; paymentStatus: string; groupStatus: "upcoming" | "completed" | "cancelled";
-  entityId?: string; rejectionReason?: string | null;
+  entityId?: string; rejectionReason?: string | null; entryFeeAmount?: number;
 };
 export type ProfileUpcoming = {
   type: "coach" | "game" | "workshop" | "camp" | "event";
