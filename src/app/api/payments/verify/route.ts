@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
+import { computeEventCharge } from "@/lib/eventPricing";
 import crypto from "crypto";
 
 type Body = {
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     if (entityType === "event") {
       const { teamName } = registration ?? {};
-      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, approvalMode: true } });
+      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, approvalMode: true, entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true } });
       if (!event) return fail("Event not found", 404);
       if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
       if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
@@ -73,13 +74,15 @@ export async function POST(req: NextRequest) {
       const existing = await prisma.eventRegistration.findFirst({ where: { eventId: entityId, userId: session.id }, select: { id: true } });
       if (existing) return fail("Already registered", 409);
 
+      const chargePaise = computeEventCharge(event).total * 100;
+
       const statusUpdate = event.participants + 1 >= event.maxParticipants ? "Full" : undefined;
       await prisma.$transaction([
         prisma.payment.create({
           data: {
             userId: session.id, entityType, entityId,
             razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: amount ?? 0, currency: "INR",
+            amount: chargePaise, currency: event.currency || "INR",
             status: "paid" satisfies PaymentStatus, paidAt: new Date(),
           },
         }),
