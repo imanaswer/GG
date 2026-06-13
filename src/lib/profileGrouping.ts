@@ -12,8 +12,22 @@ export function coachBookingGroupStatus(status: string): GroupStatus {
 }
 
 export function registrationGroupStatus(status: string, parentEnd: string, now: Date): GroupStatus {
-  if (status === "cancelled") return "cancelled";
+  if (status === "cancelled" || status === "rejected") return "cancelled";
   return new Date(parentEnd).getTime() < now.getTime() ? "completed" : "upcoming";
+}
+
+/**
+ * Whether the user may cancel their own event registration — mirrors the server
+ * rule in DELETE /api/events/[id]: only an active (pending/approved) registration,
+ * and only ≥ 90 minutes before the event start.
+ */
+export function canCancelEventRegistration(
+  r: { status: string; startDate?: string },
+  now: Date,
+): boolean {
+  if (r.status !== "pending" && r.status !== "approved") return false;
+  if (!r.startDate) return true;
+  return new Date(r.startDate).getTime() - now.getTime() >= 90 * 60_000;
 }
 
 export type UpcomingType = "coach" | "game" | "workshop" | "camp" | "event";

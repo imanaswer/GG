@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { gameGroupStatus, coachBookingGroupStatus, registrationGroupStatus, selectUpcoming } from "./profileGrouping";
+import { gameGroupStatus, coachBookingGroupStatus, registrationGroupStatus, selectUpcoming, canCancelEventRegistration } from "./profileGrouping";
 
 const NOW = new Date("2026-06-11T12:00:00.000Z");
 const future = "2026-06-20T10:00:00.000Z";
@@ -52,4 +52,31 @@ describe("selectUpcoming", () => {
     ])?.id).toBe("g");
   });
   it("returns null when empty", () => expect(selectUpcoming([])).toBeNull());
+});
+
+describe("registrationGroupStatus — rejected", () => {
+  const NOW2 = new Date("2026-06-13T00:00:00Z");
+  it("groups rejected under cancelled regardless of date", () => {
+    expect(registrationGroupStatus("rejected", "2026-12-01T00:00:00Z", NOW2)).toBe("cancelled");
+    expect(registrationGroupStatus("rejected", "2026-01-01T00:00:00Z", NOW2)).toBe("cancelled");
+  });
+});
+
+describe("canCancelEventRegistration", () => {
+  const NOW2 = new Date("2026-06-13T00:00:00Z");
+  it("false for terminal statuses", () => {
+    expect(canCancelEventRegistration({ status: "rejected", startDate: "2026-09-01T00:00:00Z" }, NOW2)).toBe(false);
+    expect(canCancelEventRegistration({ status: "cancelled", startDate: "2026-09-01T00:00:00Z" }, NOW2)).toBe(false);
+  });
+  it("true for active + future (>90 min)", () => {
+    expect(canCancelEventRegistration({ status: "pending", startDate: "2026-09-01T00:00:00Z" }, NOW2)).toBe(true);
+    expect(canCancelEventRegistration({ status: "approved", startDate: "2026-09-01T00:00:00Z" }, NOW2)).toBe(true);
+  });
+  it("false when within 90 minutes of start", () => {
+    const soon = new Date(NOW2.getTime() + 60 * 60_000).toISOString(); // 60 min away
+    expect(canCancelEventRegistration({ status: "approved", startDate: soon }, NOW2)).toBe(false);
+  });
+  it("true when no startDate is known", () => {
+    expect(canCancelEventRegistration({ status: "approved" }, NOW2)).toBe(true);
+  });
 });
