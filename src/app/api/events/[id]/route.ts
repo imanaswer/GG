@@ -6,6 +6,7 @@ import { deriveEventStatus } from "@/lib/events";
 import { ok, fail, handleErr } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
+import { sortEventUpdates } from "@/lib/eventUpdates";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const event = await prisma.sportEvent.findUnique({
       where: { id },
-      include: { registrations: true },
+      include: { registrations: true, updates: true },
     });
     if (!event) return fail("Event not found", 404);
 
@@ -33,8 +34,14 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (reg) userRegistration = { id: reg.id, paymentStatus: reg.paymentStatus, teamName: reg.teamName, status: reg.status, rejectionReason: reg.rejectionReason };
     }
 
-    const { registrations, ...eventPublic } = event;
-    return ok({ ...eventPublic, status, registeredCount: registrations.length, userRegistration });
+    const { registrations, updates, ...eventPublic } = event;
+    return ok({
+      ...eventPublic,
+      status,
+      registeredCount: registrations.length,
+      userRegistration,
+      updates: sortEventUpdates(updates.map(u => ({ id: u.id, title: u.title, body: u.body, pinned: u.pinned, createdAt: u.createdAt.toISOString() }))),
+    });
   } catch (e) { return handleErr(e); }
 }
 

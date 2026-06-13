@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import type { EventUpdateItem } from "@/lib/eventUpdates";
 
 // ─── shared fetcher ───────────────────────────────────────────────────────────
 async function f<T>(url: string, opts?: RequestInit): Promise<T> {
@@ -384,6 +385,7 @@ export type SportEvent = {
   approvalMode?: string; currency?: string; gstPercent?: number; convenienceFeePct?: number;
   registrations?: { id: string; teamName?: string }[];
   registeredCount?: number;
+  updates?: EventUpdateItem[];
   userRegistration?: { id: string; paymentStatus: string; teamName?: string | null; status?: string; rejectionReason?: string | null } | null;
 };
 
