@@ -14,7 +14,7 @@ import { SplitText } from "@/components/premium/SplitText";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { SPORT_TILES, STORY, HERO_BACKDROPS, HUB_IMAGES } from "@/lib/premium-images";
+import { SPORT_TILES, STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
@@ -167,8 +167,7 @@ function Hero() {
               fontWeight: 400,
             }}
           >
-            One app to find coaches, join pickup games, and sign up for camps &
-            tournaments — anywhere in Kozhikode.
+            Your go-to app for coaches, pickup games, camps, and tournaments in Kozhikode.
           </motion.p>
 
           {/* CTAs */}
@@ -303,8 +302,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Coaches & academies, verified in person.",
     bullets: ["50+ expert coaches", "Flexible schedules", "Every skill level"],
     icon: GraduationCap,
-    image: HUB_IMAGES.learn.src,
-    imageAlt: HUB_IMAGES.learn.alt,
+    image: STORY.learn.src,
+    imageAlt: STORY.learn.alt,
     accent: "#ff6b74",
   },
   {
@@ -314,8 +313,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Pickup games, five minutes from home.",
     bullets: ["Instant matching", "Local courts", "Skill-matched partners"],
     icon: Users,
-    image: HUB_IMAGES.play.src,
-    imageAlt: HUB_IMAGES.play.alt,
+    image: STORY.play.src,
+    imageAlt: STORY.play.alt,
     accent: "#f97316",
   },
   {
@@ -325,8 +324,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Tournaments and city-wide competitions.",
     bullets: ["Open tournaments", "Cash prizes", "Official leagues"],
     icon: Trophy,
-    image: HUB_IMAGES.events.src,
-    imageAlt: HUB_IMAGES.events.alt,
+    image: EVENT_IMAGE.src,
+    imageAlt: EVENT_IMAGE.alt,
     accent: "#a855f7",
   },
   {
@@ -336,8 +335,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Intensive programs that build athletes.",
     bullets: ["Multi-day camps", "Skill development", "Certifications"],
     icon: Target,
-    image: HUB_IMAGES.camps.src,
-    imageAlt: HUB_IMAGES.camps.alt,
+    image: CAMP_IMAGE.src,
+    imageAlt: CAMP_IMAGE.alt,
     accent: "#e63946",
   },
   {
@@ -347,8 +346,8 @@ const HUB_CARDS: HubCard[] = [
     tagline: "Focused sessions that sharpen your craft.",
     bullets: ["Expert-led classes", "Hands-on drills", "Small group format"],
     icon: Lightbulb,
-    image: HUB_IMAGES.workshops.src,
-    imageAlt: HUB_IMAGES.workshops.alt,
+    image: WORKSHOP_IMAGE.src,
+    imageAlt: WORKSHOP_IMAGE.alt,
     accent: "#22d3ee",
   },
 ];
@@ -1034,7 +1033,7 @@ function Footer() {
               <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
             </Link>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
+              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               <MapPin size={13} />
