@@ -23,13 +23,14 @@ const MARGIN = 56;
 const RED = rgb(0.902, 0.224, 0.275);
 
 // pdf-lib's StandardFonts (Helvetica/HelveticaBold) use WinAnsi encoding, which
-// covers ASCII plus a limited set of Latin-1 punctuation/accents. Coach-entered
-// data (address, user agent, names, etc.) can contain emoji, CJK, or other
-// Unicode characters that WinAnsi can't encode — `page.drawText` throws on those.
-// Replace anything outside the safe printable-ASCII + common Latin-1 range with
-// "?" so PDF generation never crashes on real-world input.
+// safely covers printable ASCII (0x20-0x7E) and the Latin-1 Supplement
+// letters/punctuation block (0xA0-0xFF, e.g. e-acute, n-tilde, middle dot).
+// Coach-entered data (address, user agent, names, etc.) can contain emoji,
+// CJK, or undefined C1 control characters (0x7F-0x9F) that WinAnsi can't
+// encode — `page.drawText` throws on those. Replace anything outside the two
+// safe ranges with "?" so PDF generation never crashes on real-world input.
 function sanitize(text: string): string {
-  return text.replace(/[^\x20-\x7E -ÿ]/g, "?");
+  return text.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "?");
 }
 
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
