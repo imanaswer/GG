@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2, Image as ImageIcon, Check } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2, Image as ImageIcon, Check, Upload } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,8 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) { router.push("/login"); return; }
@@ -66,6 +68,24 @@ export default function EditProfile() {
     setProfile(p => (p ? { ...p, [k]: v } : p));
   const toggleSport = (s: string) =>
     set("sports", profile.sports.includes(s) ? profile.sports.filter(x => x !== s) : [...profile.sports, s]);
+
+  const uploadAvatar = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "gameground/avatars");
+      const r = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await r.json();
+      if (!r.ok) throw new Error(json.error ?? "Upload failed");
+      set("avatarUrl", json.data?.url ?? json.url);
+      toast.success("Photo uploaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -133,9 +153,39 @@ export default function EditProfile() {
               </div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", flex: 1, minWidth: 200 }}>
                 {profile.avatarUrl
-                  ? "Tap a different option to change, or use initials."
-                  : "Showing your initials. Pick an avatar below."}
+                  ? "Upload your own photo, pick a preset below, or use initials."
+                  : "Showing your initials. Upload a photo or pick a preset below."}
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                style={{ display: "none" }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadAvatar(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                style={{
+                  padding: "8px 14px", borderRadius: 100,
+                  fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: uploading ? "not-allowed" : "pointer",
+                  opacity: uploading ? 0.6 : 1,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}
+              >
+                {uploading
+                  ? <><Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</>
+                  : <><Upload size={13} /> Upload photo</>}
+              </button>
               {profile.avatarUrl && (
                 <button
                   type="button"
@@ -206,6 +256,7 @@ export default function EditProfile() {
             </div>
             <style>{`
               .avatar-option:hover { transform: translateY(-2px); }
+              @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>
           </SectionCard>
 
