@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Star, Users, Trophy, Sparkles, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Users, Trophy, Sparkles, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -1033,7 +1033,7 @@ function Footer() {
               <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
             </Link>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
+              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               <MapPin size={13} />

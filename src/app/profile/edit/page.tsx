@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, AlertTriangle, Save, User, Phone, MapPin, Trophy, Loader2, Image as ImageIcon, Check, Upload } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Save, User, MapPin, Trophy, Loader2, Image as ImageIcon, Check, Upload } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
