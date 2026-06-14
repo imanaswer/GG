@@ -30,6 +30,14 @@ export default function CoachBookings() {
     if (!loading && (!user || user.role !== "coach")) router.push("/login");
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (loading || !user || user.role !== "coach") return;
+    fetch("/api/coach/agreements")
+      .then(r => r.json())
+      .then(d => { if (d?.data && d.data.signed === false) router.push("/onboarding-terms"); })
+      .catch(() => {});
+  }, [user, loading, router]);
+
   if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><PremiumNav /></div>;
 
   const active = TABS.find(t => t.key === tab)!;

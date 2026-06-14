@@ -16,6 +16,14 @@ export default function CoachDashboard() {
     if (!loading && (!user || user.role !== "coach")) router.push("/login");
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (loading || !user || user.role !== "coach") return;
+    fetch("/api/coach/agreements")
+      .then(r => r.json())
+      .then(d => { if (d?.data && d.data.signed === false) router.push("/onboarding-terms"); })
+      .catch(() => {});
+  }, [user, loading, router]);
+
   const { data: bookings } = useQuery<{ pending: number; approved: number; list: { id: string; status: string; coachName: string; batchId: string; note: string; createdAt: string; playerName: string }[] }>({
     queryKey: ["coach-bookings"],
     queryFn: () => fetch("/api/bookings?role=coach").then(r => r.json()).then(d => d.data ?? d),

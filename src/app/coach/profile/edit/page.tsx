@@ -18,6 +18,14 @@ export default function CoachProfileEdit() {
     if (!loading && (!user || user.role !== "coach")) router.push("/login");
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (loading || !user || user.role !== "coach") return;
+    fetch("/api/coach/agreements")
+      .then(r => r.json())
+      .then(d => { if (d?.data && d.data.signed === false) router.push("/onboarding-terms"); })
+      .catch(() => {});
+  }, [user, loading, router]);
+
   const save = async () => {
     setSaving(true);
     const r = await fetch(`/api/users/${user!.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio: form.bio, phone: form.phone }) });
