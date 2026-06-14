@@ -486,6 +486,9 @@ model CoachAgreement {
   coach    Coach                    @relation(fields: [coachId], references: [id])
   auditLogs CoachAgreementAuditLog[]
 
+  // One agreement row per coach per version — fails a concurrent double-submit
+  // closed (P2002) so an immutable legal record can never be duplicated.
+  @@unique([userId, agreementVersion])
   @@index([coachId])
   @@index([agreementNumber])
   @@index([acceptedAt])

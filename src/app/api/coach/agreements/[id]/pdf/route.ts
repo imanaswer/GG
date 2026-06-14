@@ -25,6 +25,10 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const isOwner = !!session && session.id === agreement.userId;
     if (!isAdmin && !isOwner) return fail("You are not allowed to access this document", 403);
 
+    // Fetch first so the audit trail records only downloads that actually
+    // delivered bytes — a failed Cloudinary fetch must not log a phantom download.
+    const bytes = await fetchAgreementPdf(agreement.pdfPublicId);
+
     await prisma.coachAgreementAuditLog.create({
       data: {
         agreementId: agreement.id, action: "DOWNLOAD",
@@ -33,7 +37,6 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       },
     });
 
-    const bytes = await fetchAgreementPdf(agreement.pdfPublicId);
     return new Response(new Uint8Array(bytes), {
       headers: {
         "Content-Type": "application/pdf",
