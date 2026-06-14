@@ -5,6 +5,7 @@ import { ok, fail, handleErr } from "@/lib/api";
 import { gameGroupStatus, registrationGroupStatus, selectUpcoming, type GroupStatus } from "@/lib/profileGrouping";
 import { computeProfileCompletion } from "@/lib/profileCompletion";
 import { currentSeason, seasonRep } from "@/lib/season";
+import { requireSignedAgreement, AgreementGateError } from "@/lib/coachAgreement/gate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -148,6 +149,9 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
+    // Coaches must have a signed Partnership Agreement before editing/publishing their profile.
+    if (session.role === "coach") await requireSignedAgreement(session.id);
+
     const { name, bio, location, sports, phone, username, avatarUrl, lookingFor } = await req.json();
 
     let nextLookingFor: string | null | undefined;
@@ -180,7 +184,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     });
 
     return ok({ ...user, passwordHash: undefined });
-  } catch (e) { return handleErr(e); }
+  } catch (e) {
+    if (e instanceof AgreementGateError) return fail(e.message, e.status);
+    return handleErr(e);
+  }
 }
 
 export async function DELETE(req: NextRequest, { params }: Ctx) {
