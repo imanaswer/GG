@@ -30,7 +30,7 @@ export type Game = {
   id: string; sport: string; title: string; location: string; address: string;
   scheduledAt: string; duration: number; slots: number; slotsLeft: number;
   skillLevel: string; organizerId: string; organizerName?: string;
-  organizerRating?: number; organizerGames?: number;
+  organizerRating?: number; organizerGames?: number; organizerPhone?: string | null;
   cost: string; costAmount: number; description: string; rules: string[];
   imageUrl: string; status: string; createdAt: string;
   lat?: number | null; lng?: number | null;

@@ -18,6 +18,7 @@ import { mapsHref, hasMapTarget } from "@/lib/maps";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { GAME_FALLBACKS, pickFallback } from "@/lib/premium-images";
+import { whatsAppLink } from "@/lib/whatsapp";
 
 export default function GameDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -151,9 +152,19 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
     }
   };
 
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const hostWhatsApp = whatsAppLink(
+    game.organizerPhone,
+    `Hi ${game.organizerName ?? "there"}, I'm reaching out about your game "${game.title}" at ${game.location}.${shareUrl ? ` ${shareUrl}` : ""}`,
+  );
+
+  const joinedWhatsApp = whatsAppLink(
+    game.organizerPhone,
+    `Hi ${game.organizerName ?? "there"}, I've joined "${game.title}" — are we still on?`,
+  );
+
   const handleWhatsApp = () => {
-    const msg = encodeURIComponent(`Join me for ${game.title} at ${game.location}! ${window.location.href}`);
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
+    if (hostWhatsApp) window.open(hostWhatsApp, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -204,19 +215,21 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                   >
                     <Share2 size={15} />
                   </button>
-                  <button
-                    onClick={handleWhatsApp}
-                    style={{
-                      width: 38, height: 38, borderRadius: 100,
-                      background: "rgba(37,211,102,0.9)",
-                      border: "1px solid rgba(37,211,102,0.5)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#fff", cursor: "pointer",
-                    }}
-                    title="Share on WhatsApp"
-                  >
-                    <MessageCircle size={15} />
-                  </button>
+                  {!isOrganizer && hostWhatsApp && (
+                    <button
+                      onClick={handleWhatsApp}
+                      style={{
+                        width: 38, height: 38, borderRadius: 100,
+                        background: "rgba(37,211,102,0.9)",
+                        border: "1px solid rgba(37,211,102,0.5)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", cursor: "pointer",
+                      }}
+                      title="Message the host on WhatsApp"
+                    >
+                      <MessageCircle size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             </Reveal>
@@ -545,21 +558,23 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           </p>
                         </div>
                       )}
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`Hey! I joined ${game.title} — are we still on?`)}`}
-                        target="_blank" rel="noopener noreferrer"
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                          height: 44, borderRadius: 100,
-                          background: "rgba(37,211,102,0.1)",
-                          color: "#25d366",
-                          border: "1px solid rgba(37,211,102,0.3)",
-                          textDecoration: "none",
-                          fontSize: 13, fontWeight: 700,
-                        }}
-                      >
-                        <MessageCircle size={14} /> Message organiser
-                      </a>
+                      {joinedWhatsApp && (
+                        <a
+                          href={joinedWhatsApp}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                            height: 44, borderRadius: 100,
+                            background: "rgba(37,211,102,0.1)",
+                            color: "#25d366",
+                            border: "1px solid rgba(37,211,102,0.3)",
+                            textDecoration: "none",
+                            fontSize: 13, fontWeight: 700,
+                          }}
+                        >
+                          <MessageCircle size={14} /> Message organiser
+                        </a>
+                      )}
                     </div>
                   ) : joinable ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -5,6 +5,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
 import { validateGameSchedule } from "@/lib/gameTime";
 import { isBookableVenue, venueSupportsSport, slotAvailability, slotDurationMinutes } from "@/lib/venues";
+import { toWhatsAppNumber } from "@/lib/whatsapp";
 
 const SPORT_IMAGES: Record<string, string> = {
   Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
@@ -79,6 +80,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
+
+    // A host must be reachable: the game page offers participants a tap-to-chat
+    // link to the organiser, so we require a WhatsApp number on the profile
+    // before a game can be created.
+    const host = await prisma.user.findUnique({ where: { id: session.id }, select: { phone: true } });
+    if (!toWhatsAppNumber(host?.phone)) {
+      return fail("Add a WhatsApp number to your profile before hosting a game.", 400);
+    }
 
     const body = await req.json();
     const input = CreateGameSchema.parse(body);

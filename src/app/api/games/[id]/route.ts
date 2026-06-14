@@ -8,24 +8,39 @@ type Ctx = { params: Promise<{ id: string }> };
 
 const CANCEL_CUTOFF_MS = 90 * 60_000;
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
     const game = await prisma.game.findUnique({
       where: { id },
       include: {
-        organizer: { select: { name: true, reliabilityScore: true, gamesOrganized: true, avatarUrl: true } },
+        organizer: { select: { name: true, reliabilityScore: true, gamesOrganized: true, avatarUrl: true, phone: true } },
         players:   { include: { user: { select: { name: true, username: true, avatarUrl: true, reliabilityScore: true, tier: true, reputationScore: true } } } },
       },
     });
     if (!game) return fail("Game not found", 404);
 
+    // The organiser's phone is private ("only shown to organisers and
+    // participants"), so it is returned only to authenticated requests and
+    // never leaked to logged-out visitors.
+    const session = await getSessionFromRequest(req);
+    const organizerPublic = game.organizer
+      ? {
+          name: game.organizer.name,
+          reliabilityScore: game.organizer.reliabilityScore,
+          gamesOrganized: game.organizer.gamesOrganized,
+          avatarUrl: game.organizer.avatarUrl,
+        }
+      : null;
+
     return ok({
       ...game,
+      organizer: organizerPublic,
       organizerName: game.organizer?.name,
       organizerRating: game.organizer?.reliabilityScore,
       organizerGames: game.organizer?.gamesOrganized,
       organizerAvatar: game.organizer?.avatarUrl,
+      organizerPhone: session ? game.organizer?.phone ?? null : null,
       players: game.players.map(gp => ({
         id: gp.id, userId: gp.userId,
         name: gp.user?.name ?? "Unknown",

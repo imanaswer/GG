@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 const { prismaMock, sessionMock } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
+    user: { findUnique: vi.fn() },
     venueSlot: { findUnique: vi.fn() },
     game: { create: vi.fn(), findMany: vi.fn() },
   };
@@ -34,6 +35,8 @@ async function jsonOf(res: Response) {
 beforeEach(() => {
   vi.clearAllMocks();
   sessionMock.mockResolvedValue({ id: "host1" });
+  // A reachable host by default; individual tests override to exercise the gate.
+  prismaMock.user.findUnique.mockResolvedValue({ phone: "+91 98765 43210" });
 });
 
 describe("POST /api/games (venue-slot booking)", () => {
@@ -41,6 +44,14 @@ describe("POST /api/games (venue-slot booking)", () => {
     sessionMock.mockResolvedValue(null);
     const res = await POST(reqWith({ ...base, slotId: "slot1" }) as never);
     expect(res.status).toBe(401);
+  });
+
+  it("requires the host to have a WhatsApp number", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ phone: null });
+    const res = await POST(reqWith({ ...base, slotId: "slot1" }) as never);
+    const j = await jsonOf(res);
+    expect(res.status).toBe(400);
+    expect(j.error).toBe("Add a WhatsApp number to your profile before hosting a game.");
   });
 
   it("rejects a missing slot with a friendly message", async () => {
