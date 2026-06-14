@@ -44,12 +44,12 @@ export default function CreateGamePage() {
   const selectSport = (v: string) => setForm(p => ({ ...p, sport: v, venueId: "", slotId: "" }));
   const selectVenue = (id: string) => setForm(p => ({ ...p, venueId: id, slotId: "" }));
 
-  const { data: venues = [] } = useQuery<Venue[]>({
+  const { data: venues = [], isFetching: venuesFetching } = useQuery<Venue[]>({
     queryKey: ["venues", form.sport],
     queryFn: () => fetch(`/api/venues?sport=${encodeURIComponent(form.sport)}`).then(r => r.json()).then(j => j.data ?? []),
     enabled: !!form.sport,
   });
-  const { data: slots = [] } = useQuery<Slot[]>({
+  const { data: slots = [], isFetching: slotsFetching } = useQuery<Slot[]>({
     queryKey: ["venue-slots", form.venueId],
     queryFn: () => fetch(`/api/venues/${form.venueId}/slots?all=1`).then(r => r.json()).then(j => j.data ?? []),
     enabled: !!form.venueId,
@@ -133,6 +133,8 @@ export default function CreateGamePage() {
               <SectionCard Icon={MapPin} title="Pick a venue" hint="Only GameGround-approved venues for your sport. Address fills in automatically.">
                 {!form.sport ? (
                   <EmptyHint>Choose a sport above to see approved venues.</EmptyHint>
+                ) : venuesFetching && venues.length === 0 ? (
+                  <EmptyHint>Loading approved venues…</EmptyHint>
                 ) : venues.length === 0 ? (
                   <EmptyHint>No approved {form.sport} venues are available yet. Please check back soon.</EmptyHint>
                 ) : (
@@ -167,7 +169,9 @@ export default function CreateGamePage() {
           {/* STEP 2 — When */}
           {step === 2 && (
             <SectionCard Icon={CalendarClock} title="Pick an available slot" hint={`Times are set by ${selectedVenue?.name ?? "the venue"}. Blocked or booked slots can't be selected.`}>
-              {slots.length === 0 ? (
+              {slotsFetching && slots.length === 0 ? (
+                <EmptyHint>Loading available slots…</EmptyHint>
+              ) : slots.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <EmptyHint>No open slots at {selectedVenue?.name ?? "this venue"} right now.</EmptyHint>
                   <button type="button" onClick={() => setStep(1)} style={{
