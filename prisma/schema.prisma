@@ -89,6 +89,7 @@ model Coach {
   batches  Batch[]
   bookings Booking[]
   reviews  Review[]
+  agreements CoachAgreement[]
 }
 
 model Batch {
@@ -460,4 +461,46 @@ model Payment {
   @@index([razorpayPaymentId])
   @@index([entityType, entityId])
   @@index([status, createdAt(sort: Desc)])
+}
+
+model CoachAgreement {
+  id               String   @id @default(cuid())
+  agreementNumber  String   @unique
+  coachId          String
+  userId           String
+  agreementVersion String
+  fullName         String
+  email            String
+  signatureName    String
+  acceptedAt       DateTime @default(now())
+  ipAddress        String
+  userAgent        String
+  pdfPublicId      String
+  pdfResourceType  String   @default("raw")
+  agreementHash    String
+  status           String   @default("SIGNED") // PENDING_SIGNATURE | SIGNED | EXPIRED | SUPERSEDED
+  personalSnapshot Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  coach    Coach                    @relation(fields: [coachId], references: [id])
+  auditLogs CoachAgreementAuditLog[]
+
+  @@index([coachId])
+  @@index([agreementNumber])
+  @@index([acceptedAt])
+}
+
+model CoachAgreementAuditLog {
+  id          String   @id @default(cuid())
+  agreementId String
+  action      String   // VIEW | DOWNLOAD
+  actorId     String
+  actorRole   String   // coach | admin
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  agreement CoachAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@index([agreementId])
 }
