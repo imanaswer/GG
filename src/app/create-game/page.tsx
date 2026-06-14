@@ -62,7 +62,7 @@ export default function CreateGamePage() {
   const amountNum  = parseInt(form.costAmount) || 0;
   const step1Valid = !!(form.sport && form.skillLevel && form.venueId);
   const step2Valid = !!form.slotId;
-  const step3Valid = !!form.slots && playersNum >= 2 && (!form.paid || amountNum > 0);
+  const step3Valid = Number.isInteger(playersNum) && playersNum >= 2 && playersNum <= 100 && (!form.paid || amountNum > 0);
   const canSubmit  = step1Valid && step2Valid && step3Valid;
 
   const defaultTitle = defaultGameTitle(form.skillLevel, form.sport, selectedVenue?.name ?? "");
@@ -227,7 +227,7 @@ export default function CreateGamePage() {
                 <SummaryRow label="Sport"   value={`${form.sport} · ${form.skillLevel}`} />
                 <SummaryRow label="Venue"   value={selectedVenue?.name ?? "—"} />
                 <SummaryRow label="When"    value={selectedSlot ? `${slotDay(selectedSlot.startTime)} · ${slotTime(selectedSlot.startTime)}–${slotTime(selectedSlot.endTime)}` : "—"} />
-                <SummaryRow label="Players" value={form.slots || "—"} />
+                <SummaryRow label="Players" value={Number.isNaN(playersNum) ? "—" : String(playersNum)} />
                 <SummaryRow label="Cost"    value={form.paid ? formatCost(amountNum) : "Free"} last />
               </div>
             </>
