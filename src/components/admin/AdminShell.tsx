@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CalendarCheck, Gamepad2, MapPin, Tent, Wrench, Trophy, Users, Star, DollarSign, LogOut, Menu, ChevronDown, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Gamepad2, MapPin, Tent, Wrench, Trophy, Users, Star, FileText, DollarSign, LogOut, Menu, ChevronDown, type LucideIcon } from "lucide-react";
 
 const BOOKING_CHILDREN = [
   { href: "/admin/bookings/coaches",       label: "Coaches" },
@@ -22,6 +22,7 @@ const NAV = [
   { href: "/admin/events",    label: "Events",     icon: Trophy },
   { href: "/admin/users",    label: "Users",     icon: Users },
   { href: "/admin/coaches",  label: "Coaches",   icon: Star },
+  { href: "/admin/coaches/agreements", label: "Agreements", icon: FileText },
   { href: "/admin/revenue",  label: "Revenue",   icon: DollarSign },
 ];
 
