@@ -160,4 +160,14 @@ export const emails = {
       <a href="${pdfUrl}" style="display:inline-block;margin-top:16px;background:#e63946;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Download PDF</a>
     </div>${footer}`,
   }),
+
+  agreementInvite: (name: string, signLink: string) => ({
+    subject: "Sign your GameGround Coach Partnership Agreement",
+    html: `${brand}<div style="padding:28px">
+      <h2 style="color:#fff;margin:0 0 12px">Welcome to Game Ground, ${name}! 🎉</h2>
+      <p style="color:#9ca3af">Before you can go live as a coach, please review and sign your Coach Partnership Agreement. No login needed — just open your secure link below.</p>
+      <a href="${signLink}" style="display:inline-block;margin-top:18px;background:#e63946;color:#fff;padding:13px 22px;border-radius:8px;text-decoration:none;font-weight:700">Review &amp; Sign Agreement</a>
+      <p style="color:#6b7280;font-size:12px;margin-top:18px">This link is unique to you — please don't share it. It expires in 30 days.</p>
+    </div>${footer}`,
+  }),
 };

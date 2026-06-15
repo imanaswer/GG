@@ -8,7 +8,8 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import { COACH_TYPES, SKILL_LEVELS, formatPrice } from "@/lib/taxonomy";
 
 type BatchRow = { id?: string; day: string; time: string; level: string; seats: number };
@@ -79,6 +80,16 @@ export default function AdminCoaches() {
 
   const openAdd = () => { setForm({ ...EMPTY }); setModal("add"); };
   const openEdit = (c: Coach) => { setForm({ ...c }); setModal("edit"); };
+
+  const copySignLink = async (c: Coach) => {
+    try {
+      const r = await fetch(`/api/admin/coaches/${c.id}/agreement-link`);
+      const d = await r.json();
+      if (!r.ok || !d.signLink) { toast.error(d.error ?? "Could not create signing link"); return; }
+      await navigator.clipboard.writeText(d.signLink);
+      toast.success("Agreement signing link copied to clipboard");
+    } catch { toast.error("Could not copy signing link"); }
+  };
   const openDelete = (c: Coach) => { setDeleteTarget(c); setModal("delete"); };
   const closeModal = () => { setModal(null); setDeleteTarget(null); };
 
@@ -170,6 +181,7 @@ export default function AdminCoaches() {
                         <td style={td}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <button onClick={() => openEdit(c)} style={iconBtn} title="Edit"><Pencil size={14} color="#60a5fa" /></button>
+                            <button onClick={() => copySignLink(c)} style={iconBtn} title="Copy agreement signing link"><Link2 size={14} color="#4ade80" /></button>
                             <button onClick={() => openDelete(c)} style={iconBtn} title="Delete"><Trash2 size={14} color="#f87171" /></button>
                             <Link href={`/coach/${c.id}`} target="_blank" style={{ fontSize: 11, color: "#60a5fa", textDecoration: "none", fontWeight: 600, marginLeft: 4 }}>View →</Link>
                           </div>

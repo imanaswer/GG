@@ -5,6 +5,7 @@ import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { clientIp } from "@/lib/ratelimit";
 import { fail, handleErr } from "@/lib/api";
 import { fetchAgreementPdf } from "@/lib/coachAgreement/storage";
+import { verifyAgreementToken } from "@/lib/coachAgreement/token";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,14 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     if (!agreement) return fail("Agreement not found", 404);
 
     const isOwner = !!session && session.id === agreement.userId;
-    if (!isAdmin && !isOwner) return fail("You are not allowed to access this document", 403);
+    // A per-coach signing token also grants access to that coach's own PDF
+    // (so a coach who signed via link, with no login, can still download it).
+    let isTokenOwner = false;
+    if (!isAdmin && !isOwner) {
+      const token = new URL(req.url).searchParams.get("token");
+      if (token) isTokenOwner = (await verifyAgreementToken(token)) === agreement.userId;
+    }
+    if (!isAdmin && !isOwner && !isTokenOwner) return fail("You are not allowed to access this document", 403);
 
     // Fetch first so the audit trail records only downloads that actually
     // delivered bytes — a failed Cloudinary fetch must not log a phantom download.
@@ -32,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     await prisma.coachAgreementAuditLog.create({
       data: {
         agreementId: agreement.id, action: "DOWNLOAD",
-        actorId: isAdmin ? "admin" : session!.id, actorRole: isAdmin ? "admin" : "coach",
+        actorId: isAdmin ? "admin" : (session?.id ?? agreement.userId), actorRole: isAdmin ? "admin" : "coach",
         ipAddress: clientIp(req),
       },
     });

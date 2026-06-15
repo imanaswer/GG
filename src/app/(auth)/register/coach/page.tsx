@@ -66,12 +66,13 @@ export default function RegisterCoach() {
       body: JSON.stringify(payload),
     });
     setSubmitting(false);
+    const d = await r.json().catch(() => null);
     if (r.ok) {
-      toast.success("Application submitted. We'll review within 48 hours.");
-      router.push("/");
+      toast.success("Account created — let's sign your coach agreement.");
+      const token = d?.data?.token ?? d?.token;
+      router.push(token ? `/onboarding-terms?token=${encodeURIComponent(token)}` : "/onboarding-terms");
     } else {
-      const d = await r.json();
-      toast.error(d.error ?? "Submission failed");
+      toast.error(d?.error ?? "Submission failed");
     }
   };
 
