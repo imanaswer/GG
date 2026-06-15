@@ -9,6 +9,7 @@ import { formatAgreementNumber } from "@/lib/coachAgreement/agreementNumber";
 import { computeAgreementHash } from "@/lib/coachAgreement/hash";
 import { generateAgreementPdf } from "@/lib/coachAgreement/pdf";
 import { uploadAgreementPdf } from "@/lib/coachAgreement/storage";
+import { sendEmail, emails } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,22 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, agreementNumber: true, agreementVersion: true, acceptedAt: true },
     });
+
+    // Supersede any older-version SIGNED agreements this coach holds. No-op today
+    // (only v1.0 exists); correct when a future version (v1.1+) is signed.
+    await prisma.coachAgreement.updateMany({
+      where: { userId: session.id, status: "SIGNED", agreementVersion: { not: version } },
+      data: { status: "SUPERSEDED" },
+    });
+
+    // Email the signed PDF to the coach (non-fatal; reuse the bytes we just made).
+    const pdfBase64 = Buffer.from(pdfBytes).toString("base64");
+    const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/coach/agreements/${record.id}/pdf`;
+    await sendEmail({
+      to: input.email,
+      ...emails.agreementSigned(input.fullName, agreementNumber, version, input.signedDate, pdfUrl),
+      attachments: [{ filename: `${agreementNumber}.pdf`, content: pdfBase64 }],
+    }).catch(() => {});
 
     return ok({ agreement: record }, 201);
   } catch (e) { return handleErr(e); }

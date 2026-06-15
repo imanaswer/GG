@@ -8,6 +8,7 @@ interface EmailPayload {
   to: string;
   subject: string;
   html: string;
+  attachments?: { filename: string; content: string }[]; // content = base64
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
@@ -23,7 +24,8 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: payload.to, subject: payload.subject, html: payload.html }),
+      body: JSON.stringify({ from, to: payload.to, subject: payload.subject, html: payload.html,
+        ...(payload.attachments ? { attachments: payload.attachments } : {}) }),
     });
     return res.ok;
   } catch (err) {
@@ -145,6 +147,17 @@ export const emails = {
       <p style="color:#9ca3af">Hi ${playerName}, your coaching session request with <strong style="color:#fff">${coachName}</strong> (${slot}) was rejected.</p>
       ${reason ? `<div style="margin-top:16px;padding:14px;background:#1a1a1a;border-radius:8px;border-left:3px solid #e63946"><p style="color:#9ca3af;margin:0">Reason: ${reason}</p></div>` : ""}
       <p style="color:#9ca3af;margin-top:16px;font-size:13px">You can browse other coaches and request a new session anytime.</p>
+    </div>${footer}`,
+  }),
+
+  agreementSigned: (name: string, agreementNumber: string, version: string, signedDate: string, pdfUrl: string) => ({
+    subject: "GameGround Coach Agreement Successfully Signed",
+    html: `${brand}<div style="padding:28px">
+      <h2 style="color:#fff;margin:0 0 12px">Agreement Signed ✓</h2>
+      <p style="color:#9ca3af">Thank you, ${name}. Your Coach Partnership Agreement is now on file.</p>
+      <p style="color:#9ca3af;margin-top:12px">Agreement Number: <strong style="color:#fff">${agreementNumber}</strong><br/>
+         Version: ${version}<br/>Signed: ${signedDate}</p>
+      <a href="${pdfUrl}" style="display:inline-block;margin-top:16px;background:#e63946;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Download PDF</a>
     </div>${footer}`,
   }),
 };
