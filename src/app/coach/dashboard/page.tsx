@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Users, Star, Clock, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/Shared";
+import { AgreementStatusBadge } from "@/components/coachAgreement/AgreementStatusBadge";
 
 export default function CoachDashboard() {
   const { user, loading } = useAuth();
@@ -27,6 +28,12 @@ export default function CoachDashboard() {
   const { data: bookings } = useQuery<{ pending: number; approved: number; list: { id: string; status: string; coachName: string; batchId: string; note: string; createdAt: string; playerName: string }[] }>({
     queryKey: ["coach-bookings"],
     queryFn: () => fetch("/api/bookings?role=coach").then(r => r.json()).then(d => d.data ?? d),
+    enabled: !!user,
+  });
+
+  const { data: agreement } = useQuery<{ signed: boolean; currentVersion: string; agreement: { id: string; agreementNumber: string; agreementVersion: string; acceptedAt: string; status: string } | null }>({
+    queryKey: ["coach-agreement"],
+    queryFn: () => fetch("/api/coach/agreements").then(r => r.json()).then(d => d.data ?? d),
     enabled: !!user,
   });
 
@@ -105,6 +112,33 @@ export default function CoachDashboard() {
                 <ChevronRight size={14} color="#6b7280" />
               </Link>
             ))}
+          </div>
+        </div>
+
+        <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "18px 20px", marginTop: 16 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Legal Documents</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Coach Partnership Agreement</p>
+              {agreement?.signed && agreement.agreement ? (
+                <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+                  Version {agreement.agreement.agreementVersion} · Signed {new Date(agreement.agreement.acceptedAt).toLocaleDateString()} · {agreement.agreement.agreementNumber}
+                </p>
+              ) : (
+                <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Not signed yet</p>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {agreement?.signed && agreement.agreement ? (
+                <>
+                  <AgreementStatusBadge status={agreement.agreement.status} />
+                  <a href={`/api/coach/agreements/${agreement.agreement.id}/pdf`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 600 }}>View Agreement</a>
+                  <a href={`/api/coach/agreements/${agreement.agreement.id}/pdf`} style={{ fontSize: 13, color: "#fff", background: "#e63946", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Download PDF</a>
+                </>
+              ) : (
+                <Link href="/onboarding-terms" style={{ fontSize: 13, color: "#fff", background: "#e63946", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Sign now</Link>
+              )}
+            </div>
           </div>
         </div>
       </main>
