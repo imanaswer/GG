@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Users, Trophy, Sparkles, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Users, Trophy, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -14,7 +14,7 @@ import { SplitText } from "@/components/premium/SplitText";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { SPORT_TILES, STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
+import { STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
@@ -42,6 +42,12 @@ function ScrollProgress() {
 }
 
 /* ── Hero ───────────────────────────────────────────────── */
+
+const HERO_TRUST = [
+  { value: "147+", label: "players" },
+  { value: "12", label: "founding coaches" },
+  { value: "Kozhikode", label: "live now" },
+];
 
 function Hero() {
   const { scrollY } = useScroll();
@@ -208,6 +214,32 @@ function Hero() {
               </Link>
             </Magnetic>
           </motion.div>
+
+          {/* Inline trust strip — live numbers folded into the hero */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 1.05 }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 18, marginTop: 36, flexWrap: "wrap",
+            }}
+          >
+            {HERO_TRUST.map((t, i) => (
+              <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                {i > 0 && (
+                  <span aria-hidden style={{
+                    width: 4, height: 4, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.22)",
+                  }} />
+                )}
+                <span style={{ fontSize: 13.5, color: "rgba(255,255,255,0.62)" }}>
+                  <strong style={{ color: "#fff", fontWeight: 700 }}>{t.value}</strong>{" "}
+                  {t.label}
+                </span>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </motion.div>
 
@@ -242,11 +274,11 @@ function Hero() {
 function Marquee() {
   const items = [
     "Built for Kozhikode",
-    "verified coaches",
-    "Games each week",
+    "Verified coaches",
+    "Games every week",
     "All kinds of sports",
     "Beachside to indoor courts",
-    "Trusted by  players",
+    "Trusted by local players",
   ];
   return (
     <div style={{
@@ -280,7 +312,7 @@ function Marquee() {
   );
 }
 
-/* ── Quick navigation hub (4 category cards) ────────────── */
+/* ── Quick navigation hub (5 category cards) ────────────── */
 
 type HubCard = {
   href: string;
@@ -504,7 +536,7 @@ function QuickHub() {
           <Reveal>
             <div style={{ maxWidth: 640 }}>
               <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
-                Four ways in
+                Five ways in
               </span>
               <h2 className="display" style={{ fontSize: "clamp(36px, 4.5vw, 64px)", color: "#fff" }}>
                 Pick your{" "}
@@ -537,12 +569,49 @@ function QuickHub() {
         >
           {HUB_CARDS.map(c => <HubCardItem key={c.href} card={c} />)}
         </Stagger>
+
+        {/* Sport pills — "every sport" message, folded in compactly */}
+        <Reveal delay={0.1}>
+          <div className="sport-pills">
+            <span className="sport-pills-label">Pick your game</span>
+            {SPORTS.map(sport => (
+              <Link key={sport} href={`/learn?sport=${sport}`} className="sport-pill">
+                {sport}
+              </Link>
+            ))}
+          </div>
+        </Reveal>
       </div>
 
       <style>{`
         .hub-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12) !important; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
         .hub-card:hover .hub-card-img { transform: scale(1.06); filter: saturate(1) brightness(0.95) !important; }
         .hub-card:hover .hub-card-arrow { transform: translate(3px, -3px); }
+
+        .sport-pills {
+          display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+          margin-top: 48px; padding-top: 36px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .sport-pills-label {
+          font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+          text-transform: uppercase; color: rgba(255,255,255,0.4);
+          margin-right: 6px;
+        }
+        .sport-pill {
+          display: inline-flex; align-items: center;
+          padding: 9px 18px; border-radius: 100px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.78); font-size: 13.5px; font-weight: 500;
+          text-decoration: none;
+          transition: background 240ms ease, border-color 240ms ease, color 240ms ease, transform 240ms ease;
+        }
+        .sport-pill:hover {
+          background: rgba(230,57,70,0.12);
+          border-color: rgba(230,57,70,0.5);
+          color: #fff; transform: translateY(-2px);
+        }
         @media (max-width: 1200px) {
           .hub-grid { grid-template-columns: repeat(3, 1fr) !important; }
         }
@@ -557,283 +626,7 @@ function QuickHub() {
   );
 }
 
-/* ── Split story section ────────────────────────────────── */
-
-function StorySection({
-  eyebrow, title, description, href, ctaLabel, image, imageAlt, reverse,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  href: string;
-  ctaLabel: string;
-  image: string;
-  imageAlt: string;
-  reverse?: boolean;
-}) {
-  return (
-    <section className="section">
-      <div className="container-lg">
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 80,
-          alignItems: "center",
-        }} className="two-col">
-          <Reveal style={{ order: reverse ? 2 : 1 }}>
-            <div style={{ maxWidth: 520 }}>
-              <span className="eyebrow" style={{ color: "#e63946", display: "inline-block", marginBottom: 24 }}>
-                {eyebrow}
-              </span>
-              <h2 className="display" style={{
-                fontSize: "clamp(40px, 5vw, 72px)",
-                color: "#fff",
-                marginBottom: 28,
-              }}>
-                {title}
-              </h2>
-              <p style={{
-                fontSize: 17, lineHeight: 1.65,
-                color: "rgba(255,255,255,0.6)",
-                marginBottom: 36,
-              }}>
-                {description}
-              </p>
-              <Magnetic strength={10}>
-                <Link href={href} style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "14px 24px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "#fff", fontSize: 14, fontWeight: 600,
-                  textDecoration: "none",
-                }}>
-                  {ctaLabel}
-                  <ArrowUpRight size={15} />
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
-
-          <Reveal style={{ order: reverse ? 1 : 2 }} delay={0.1}>
-            <div className="frame-img" style={{
-              aspectRatio: "4/5",
-              position: "relative",
-              boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
-            }}>
-              <Parallax speed={50} style={{ position: "absolute", inset: "-10%" }}>
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  sizes="(max-width: 900px) 90vw, 50vw"
-                  style={{ objectFit: "cover" }}
-                />
-              </Parallax>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Sports grid ────────────────────────────────────────── */
-
-function SportsGrid() {
-  return (
-    <section className="section-tight">
-      <div className="container-lg">
-        <div style={{ maxWidth: 820, marginBottom: 72 }}>
-          <Reveal>
-            <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 20 }}>
-              Every sport
-            </span>
-            <h2 className="display" style={{ fontSize: "clamp(36px, 4.5vw, 64px)", color: "#fff" }}>
-              Pick your game.{" "}
-              <span className="display-serif" style={{ color: "rgba(255,255,255,0.7)" }}>
-                We&apos;ll bring the court.
-              </span>
-            </h2>
-          </Reveal>
-        </div>
-
-        <Stagger className="sports-grid-layout">
-          {SPORTS.map(sport => {
-            const img = SPORT_TILES[sport];
-            return (
-              <Link
-                key={sport}
-                href={`/learn?sport=${sport}`}
-                data-stagger
-                style={{
-                  position: "relative",
-                  aspectRatio: "4/5",
-                  overflow: "hidden",
-                  borderRadius: 18,
-                  background: "#0a0a0a",
-                  border: "1px solid rgba(255,255,255,0.05)",
-                  textDecoration: "none",
-                  display: "block",
-                  isolation: "isolate",
-                }}
-                className="sport-tile"
-              >
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 260px"
-                  style={{
-                    objectFit: "cover",
-                    filter: "grayscale(0.4) brightness(0.75)",
-                    transition: "transform 700ms cubic-bezier(0.16,1,0.3,1), filter 500ms",
-                  }}
-                />
-                <div style={{
-                  position: "absolute", inset: 0,
-                  background: "linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.9) 100%)",
-                }} />
-                <div style={{
-                  position: "absolute", bottom: 20, left: 20, right: 20,
-                  display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                }} className="sport-tile-content">
-                  <span style={{
-                    fontSize: 20, fontWeight: 800, color: "#fff",
-                    letterSpacing: "-0.02em",
-                  }} className="sport-tile-title">
-                    {sport}
-                  </span>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    width: 34, height: 34, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: "#fff",
-                  }} className="sport-tile-icon">
-                    <ArrowUpRight size={15} />
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </Stagger>
-      </div>
-      <style>{`
-        .sport-tile:hover img { transform: scale(1.06); filter: grayscale(0) brightness(0.9); }
-        .sports-grid-layout {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-          gap: 16px;
-        }
-        @media (max-width: 640px) {
-          .sports-grid-layout {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-          }
-          .sport-tile {
-            aspect-ratio: 1 / 1 !important;
-            border-radius: 12px !important;
-          }
-          .sport-tile-content {
-            bottom: 12px !important; left: 12px !important; right: 12px !important;
-          }
-          .sport-tile-title {
-            font-size: 16px !important;
-          }
-          .sport-tile-icon {
-            width: 28px !important; height: 28px !important;
-          }
-        }
-      `}</style>
-    </section>
-  );
-}
-
-/* ── Immersive "Connect" full-bleed section ─────────────── */
-
-function Immersive() {
-  const ref = useRef<HTMLDivElement>(null);
-  return (
-    <section ref={ref} style={{ position: "relative", minHeight: "80vh", overflow: "hidden" }}>
-      <Parallax speed={100} style={{ position: "absolute", inset: 0 }}>
-        <div style={{ position: "absolute", inset: "-10%" }}>
-          <Image
-            src={STORY.connect.src}
-            alt={STORY.connect.alt}
-            fill
-            sizes="100vw"
-            quality={85}
-            style={{ objectFit: "cover" }}
-          />
-        </div>
-      </Parallax>
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.4) 30%, rgba(5,5,5,1) 100%)",
-      }} />
-      <div style={{ position: "relative", padding: "180px 0" }}>
-        <div className="container-lg" style={{ textAlign: "center" }}>
-          <Reveal>
-            <span className="eyebrow" style={{ color: "#ff6b74", display: "block", marginBottom: 28 }}>
-              Camps · Tournaments · Community
-            </span>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <h2 className="display" style={{
-              fontSize: "clamp(44px, 7vw, 120px)",
-              color: "#fff",
-              maxWidth: 980, margin: "0 auto 40px",
-            }}>
-              Show up.{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>Belong.</span>
-            </h2>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <p style={{
-              fontSize: "clamp(16px, 1.5vw, 20px)",
-              color: "rgba(255,255,255,0.72)",
-              maxWidth: 620, margin: "0 auto 48px",
-              lineHeight: 1.6,
-            }}>
-              Summer camps that build the next generation. Tournaments that sell out
-              every weekend. A city that shows up for its own.
-            </p>
-          </Reveal>
-          <Reveal delay={0.3}>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <Magnetic strength={10}>
-                <Link href="/camps" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "16px 28px", borderRadius: 100,
-                  background: "#fff", color: "#050505",
-                  fontSize: 14, fontWeight: 700,
-                  textDecoration: "none",
-                }}>
-                  Browse camps <ArrowUpRight size={15} />
-                </Link>
-              </Magnetic>
-              <Magnetic strength={10}>
-                <Link href="/events" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "16px 28px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: "#fff", fontSize: 14, fontWeight: 600,
-                  textDecoration: "none",
-                }}>
-                  See events <ArrowRight size={15} />
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Stats counter ──────────────────────────────────────── */
+/* ── Stats counter (used in the closing conversion section) ── */
 
 function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suffix?: string }) {
   const [val, setVal] = useState(from);
@@ -848,7 +641,7 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
       duration: 2,
       ease: "power3.out",
       onUpdate: () => setVal(Math.round(obj.n)),
-      scrollTrigger: { trigger: el, start: "top 85%", once: true },
+      scrollTrigger: { trigger: el, start: "top 90%", once: true },
     });
     return () => { tween.scrollTrigger?.kill(); tween.kill(); };
   }, [from, to]);
@@ -856,161 +649,130 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
   return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
 }
 
-function Stats() {
-  const items = [
-    { value: 147, suffix: "+", label: "Players on the waitlist", icon: Users },
-    { value: 12, suffix: "", label: "Founding coaches onboard", icon: Trophy },
-    { value: 3, suffix: " sports", label: "Available at launch", icon: Sparkles },
-    { value: 1, suffix: " city", label: "Live now · more coming", icon: MapPin },
-  ];
+/* ── Closing conversion section (Immersive + Stats + CTA merged) ── */
 
+const CLOSE_STATS = [
+  { value: 147, suffix: "+", label: "Players on the waitlist" },
+  { value: 12, suffix: "", label: "Founding coaches onboard" },
+  { value: 3, suffix: "", label: "Sports at launch" },
+  { value: 1, suffix: "", label: "City, more coming" },
+];
+
+function ConversionClose() {
   return (
-    <section className="section-tight" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="container-lg">
-        <Reveal>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 56, flexWrap: "wrap", gap: 20 }}>
-            <div style={{ maxWidth: 560 }}>
-              <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
-                Early days
-              </span>
-              <h2 className="display" style={{ fontSize: "clamp(32px, 4vw, 56px)", color: "#fff" }}>
-                Small numbers,<br />real ones.
-              </h2>
-            </div>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320 }}>
-              We just launched. These are live numbers — no inflating, no rounding up.
+    <section style={{ position: "relative", overflow: "hidden" }}>
+      {/* Parallax background */}
+      <Parallax speed={100} style={{ position: "absolute", inset: 0 }}>
+        <div style={{ position: "absolute", inset: "-10%" }}>
+          <Image
+            src={STORY.connect.src}
+            alt={STORY.connect.alt}
+            fill
+            sizes="100vw"
+            quality={85}
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      </Parallax>
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(180deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.55) 32%, rgba(5,5,5,0.98) 100%)",
+      }} />
+
+      <div style={{ position: "relative", padding: "140px 0" }} className="close-pad">
+        <div className="container-lg" style={{ textAlign: "center" }}>
+          <Reveal>
+            <span className="eyebrow" style={{ color: "#ff6b74", display: "block", marginBottom: 28 }}>
+              Camps · Tournaments · Community
+            </span>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="display" style={{
+              fontSize: "clamp(44px, 7vw, 116px)",
+              color: "#fff",
+              maxWidth: 1000, margin: "0 auto 36px",
+            }}>
+              Your next match{" "}
+              <span className="display-serif" style={{ color: "#ff6b74" }}>starts here.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p style={{
+              fontSize: "clamp(16px, 1.5vw, 20px)",
+              color: "rgba(255,255,255,0.72)",
+              maxWidth: 600, margin: "0 auto 44px",
+              lineHeight: 1.6,
+            }}>
+              Train with verified coaches, drop into pickup games, and show up for the
+              tournaments your city actually plays. One app, one move.
             </p>
-          </div>
-        </Reveal>
+          </Reveal>
 
-        <Stagger style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-          gap: 1,
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: 24, overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.06)",
-          maxWidth: 960, margin: "0 auto",
-        }} className="stats-grid">
-          {items.map(({ value, suffix, label, icon: Icon }) => (
-            <div
-              key={label}
-              data-stagger
-              style={{
-                position: "relative",
-                padding: "32px 24px",
-                background: "#080808",
-                display: "flex", flexDirection: "column", justifyContent: "space-between",
-                gap: 24,
-                overflow: "hidden",
-                isolation: "isolate",
-              }}
-              className="stat-card"
-            >
-              {/* Subtle accent glow */}
-              <div style={{
-                position: "absolute", top: -20, right: -20,
-                width: 100, height: 100,
-                background: "radial-gradient(circle, rgba(230,57,70,0.12) 0%, transparent 70%)",
-                borderRadius: "50%",
-                pointerEvents: "none",
-                zIndex: -1,
-              }} className="stat-glow" />
-
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: "rgba(230,57,70,0.08)",
-                border: "1px solid rgba(230,57,70,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Icon size={17} color="#e63946" />
-              </div>
-
-              <div>
-                <div style={{
-                  fontFamily: "var(--font-sans)", fontWeight: 900,
-                  fontSize: "clamp(36px, 5vw, 52px)",
-                  color: "#fff", letterSpacing: "-0.04em", lineHeight: 1,
-                }}>
-                  <Counter to={value} suffix={suffix} />
+          {/* Live numbers — compact inline row */}
+          <Reveal delay={0.22}>
+            <div className="close-stats">
+              {CLOSE_STATS.map(s => (
+                <div key={s.label} className="close-stat">
+                  <div className="close-stat-num">
+                    <Counter to={s.value} suffix={s.suffix} />
+                  </div>
+                  <div className="close-stat-label">{s.label}</div>
                 </div>
-                <div style={{
-                  fontSize: 13, color: "rgba(255,255,255,0.5)",
-                  marginTop: 8, letterSpacing: "0.02em",
-                  lineHeight: 1.4,
-                }}>
-                  {label}
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </Stagger>
+          </Reveal>
+
+          <Reveal delay={0.3}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <Magnetic strength={12}>
+                <Link href="/register" style={{
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                  padding: "18px 32px", borderRadius: 100,
+                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                  boxShadow: "0 0 50px rgba(230,57,70,0.45)",
+                  color: "#fff", fontSize: 15, fontWeight: 700,
+                  textDecoration: "none",
+                }}>
+                  Create free account <ArrowUpRight size={16} />
+                </Link>
+              </Magnetic>
+              <Magnetic strength={10}>
+                <Link href="/play" style={{
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                  padding: "18px 32px", borderRadius: 100,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  color: "#fff", fontSize: 15, fontWeight: 600,
+                  textDecoration: "none",
+                }}>
+                  Browse games <ArrowRight size={16} />
+                </Link>
+              </Magnetic>
+            </div>
+          </Reveal>
+        </div>
       </div>
 
       <style>{`
-        .stat-card { transition: background 300ms ease; }
-        .stat-card:hover { background: #0a0a0a !important; }
-        .stat-card:hover .stat-glow { background: radial-gradient(circle, rgba(230,57,70,0.25) 0%, transparent 70%) !important; }
+        .close-stats {
+          display: flex; flex-wrap: wrap; justify-content: center;
+          gap: 48px; margin: 0 auto 48px; max-width: 760px;
+        }
+        .close-stat { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .close-stat-num {
+          font-family: var(--font-sans); font-weight: 900;
+          font-size: clamp(34px, 4.5vw, 52px);
+          color: #fff; letter-spacing: -0.04em; line-height: 1;
+        }
+        .close-stat-label {
+          font-size: 12.5px; color: rgba(255,255,255,0.55);
+          letter-spacing: 0.01em;
+        }
         @media (max-width: 640px) {
-          .stats-grid { margin-top: 80px !important; }
+          .close-pad { padding: 96px 0 !important; }
+          .close-stats { gap: 28px 36px; }
         }
       `}</style>
-    </section>
-  );
-}
-
-/* ── Big CTA ────────────────────────────────────────────── */
-
-function BigCTA() {
-  return (
-    <section className="section">
-      <div className="container-lg" style={{ textAlign: "center" }}>
-        <Reveal>
-          <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 28 }}>
-            Your move
-          </span>
-        </Reveal>
-        <Reveal delay={0.08}>
-          <h2 className="display" style={{
-            fontSize: "clamp(48px, 8vw, 140px)",
-            color: "#fff",
-            maxWidth: 1100, margin: "0 auto 48px",
-          }}>
-            Your next match{" "}
-            <span className="display-serif" style={{ color: "#ff6b74" }}>
-              starts here.
-            </span>
-          </h2>
-        </Reveal>
-        <Reveal delay={0.16}>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Magnetic strength={12}>
-              <Link href="/register" style={{
-                display: "inline-flex", alignItems: "center", gap: 10,
-                padding: "18px 32px", borderRadius: 100,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                boxShadow: "0 0 50px rgba(230,57,70,0.45)",
-                color: "#fff", fontSize: 15, fontWeight: 700,
-                textDecoration: "none",
-              }}>
-                Create free account <ArrowUpRight size={16} />
-              </Link>
-            </Magnetic>
-            <Magnetic strength={10}>
-              <Link href="/play" style={{
-                display: "inline-flex", alignItems: "center", gap: 10,
-                padding: "18px 32px", borderRadius: 100,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                color: "#fff", fontSize: 15, fontWeight: 600,
-                textDecoration: "none",
-              }}>
-                Browse games <ArrowRight size={16} />
-              </Link>
-            </Magnetic>
-          </div>
-        </Reveal>
-      </div>
     </section>
   );
 }
@@ -1093,34 +855,7 @@ export default function LandingPage() {
 
         <QuickHub />
 
-        <StorySection
-          eyebrow="Learn"
-          title="Train with coaches who sweat for it."
-          description="50+ verified coaches and academies across Kozhikode. Filter by sport, level and timing — book your trial in a couple of taps."
-          href="/learn"
-          ctaLabel="Find your coach"
-          image={STORY.learn.src}
-          imageAlt={STORY.learn.alt}
-        />
-
-        <SportsGrid />
-
-        <StorySection
-          eyebrow="Play"
-          title="Pickup games, five minutes from home."
-          description="Join open games posted by your neighbours. Host your own when the court's free. No groups, no WhatsApp scramble — just a map and a clock."
-          href="/play"
-          ctaLabel="Browse pickup games"
-          image={STORY.play.src}
-          imageAlt={STORY.play.alt}
-          reverse
-        />
-
-        <Immersive />
-
-        <Stats />
-
-        <BigCTA />
+        <ConversionClose />
 
         <Footer />
       </main>
