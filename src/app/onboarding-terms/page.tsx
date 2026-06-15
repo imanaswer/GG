@@ -147,7 +147,7 @@ function OnboardingTerms() {
       </div>
 
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "28px 20px 80px" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900 }}>Coach Partnership Agreement</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 900 }}>{agreement.title}</h1>
         <p style={{ color: "#666" }}>Version {agreement.version} · Effective {agreement.effectiveDate} · {agreement.jurisdiction}</p>
 
         <section style={card}>
@@ -169,9 +169,11 @@ function OnboardingTerms() {
           <h2 style={h2}>Agreement</h2>
           <div onScroll={onScroll} style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #eee", borderRadius: 8, padding: 16 }}>
             {agreement.sections.map(s => (
-              <div key={s.heading} style={{ marginBottom: 14 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 800 }}>{s.heading}</h3>
-                <p style={{ fontSize: 14, color: "#333", lineHeight: 1.6 }}>{s.body}</p>
+              <div key={s.heading} style={{ marginBottom: s.body ? 12 : 6, marginTop: s.body ? 0 : 10 }}>
+                <h3 style={{ fontSize: s.body ? 14 : 16, fontWeight: 800 }}>{s.heading}</h3>
+                {s.body.split("\n").filter(p => p.trim()).map((para, i) => (
+                  <p key={i} style={{ fontSize: 13.5, color: "#333", lineHeight: 1.6, marginTop: 4 }}>{para}</p>
+                ))}
               </div>
             ))}
           </div>

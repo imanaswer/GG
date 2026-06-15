@@ -29,8 +29,21 @@ const RED = rgb(0.902, 0.224, 0.275);
 // CJK, or undefined C1 control characters (0x7F-0x9F) that WinAnsi can't
 // encode — `page.drawText` throws on those. Replace anything outside the two
 // safe ranges with "?" so PDF generation never crashes on real-world input.
+// Transliterate common non-WinAnsi characters to readable ASCII so the legal
+// PDF stays legible (the on-screen text + hash keep the originals). Anything
+// still outside the safe ranges afterwards falls back to "?".
+const TRANSLITERATE: Record<string, string> = {
+  "\u20B9": "Rs.",           // \u20B9 rupee sign
+  "\u2018": "'", "\u2019": "'", // ' ' single curly quotes
+  "\u201C": '"', "\u201D": '"', // " " double curly quotes
+  "\u2013": "-", "\u2014": "-", "\u2011": "-", // \u2013 \u2014 \u2011 dashes/non-breaking hyphen
+  "\u2022": "-",             // \u2022 bullet
+  "\u2026": "...",           // \u2026 ellipsis
+};
 function sanitize(text: string): string {
-  return text.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "?");
+  let t = text;
+  for (const [from, to] of Object.entries(TRANSLITERATE)) t = t.split(from).join(to);
+  return t.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "?");
 }
 
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
@@ -70,7 +83,7 @@ export async function generateAgreementPdf(data: PdfData): Promise<Uint8Array> {
   page.drawText("GAME GROUND", { x: MARGIN, y: A4[1] - 27, size: 14, font: bold, color: rgb(1, 1, 1) });
   y = A4[1] - 64;
 
-  draw("Coach Partnership Agreement", bold, 18);
+  draw(agreement.title, bold, 18);
   gap(4);
   draw(`Agreement Number: ${data.agreementNumber}   ·   Version: ${data.version}`, font, 10);
   draw(`Effective: ${agreement.effectiveDate}   ·   Governing law: ${agreement.jurisdiction}`, font, 10);
@@ -89,7 +102,16 @@ export async function generateAgreementPdf(data: PdfData): Promise<Uint8Array> {
   for (const [k, v] of details) draw(`${k}: ${v}`, font, 10);
   gap(10);
 
-  for (const s of agreement.sections) { gap(4); draw(s.heading, bold, 12); draw(s.body, font, 10); }
+  for (const s of agreement.sections) {
+    if (!s.body) { gap(8); draw(s.heading, bold, 13); continue; } // section divider
+    gap(5);
+    draw(s.heading, bold, 11);
+    for (const para of s.body.split("\n")) {
+      if (!para.trim()) continue;
+      draw(para, font, 10);
+      gap(3);
+    }
+  }
   gap(12);
 
   draw("Electronic Signature", bold, 12);

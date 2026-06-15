@@ -97,9 +97,11 @@ export default function AdminAgreementDetail() {
                   <>
                     <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Effective {data.content.effectiveDate} · {data.content.jurisdiction}</p>
                     {data.content.sections.map(s => (
-                      <div key={s.heading} style={{ marginBottom: 14 }}>
-                        <h3 style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{s.heading}</h3>
-                        <p style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.6 }}>{s.body}</p>
+                      <div key={s.heading} style={{ marginBottom: s.body ? 12 : 6, marginTop: s.body ? 0 : 10 }}>
+                        <h3 style={{ fontSize: s.body ? 13 : 15, fontWeight: 800, color: "#fff" }}>{s.heading}</h3>
+                        {s.body.split("\n").filter(p => p.trim()).map((para, i) => (
+                          <p key={i} style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.6, marginTop: 4 }}>{para}</p>
+                        ))}
                       </div>
                     ))}
                   </>
