@@ -50,6 +50,9 @@ function OnboardingTerms() {
         setReady(true);
         return;
       }
+      if (data.tokenState === "used") { setBlocked("This agreement has already been signed."); setReady(true); return; }
+      if (data.tokenState === "expired") { setBlocked("This link has expired. Please request a new agreement link."); setReady(true); return; }
+      if (data.tokenState === "invalid") { setBlocked("This signing link is invalid. Please request a new agreement link."); setReady(true); return; }
       const p = data.prefill;
       setForm(f => ({
         ...f,

@@ -5,8 +5,12 @@ export class AgreementGateError extends Error {
   constructor(msg = "You must sign the Coach Partnership Agreement before continuing.") { super(msg); this.name = "AgreementGateError"; }
 }
 export async function hasSignedCurrentAgreement(userId: string): Promise<boolean> {
+  // Agreements bind to the coach record, not the user account (a coach may have
+  // signed via a link before any account existed). Resolve the coach first.
+  const coach = await prisma.coach.findUnique({ where: { userId }, select: { id: true } });
+  if (!coach) return false;
   const row = await prisma.coachAgreement.findFirst({
-    where: { userId, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
+    where: { coachId: coach.id, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
     select: { id: true },
   });
   return !!row;

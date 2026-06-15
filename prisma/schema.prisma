@@ -89,7 +89,8 @@ model Coach {
   batches  Batch[]
   bookings Booking[]
   reviews  Review[]
-  agreements CoachAgreement[]
+  agreements    CoachAgreement[]
+  signingTokens CoachSigningToken[]
 }
 
 model Batch {
@@ -467,7 +468,9 @@ model CoachAgreement {
   id               String   @id @default(cuid())
   agreementNumber  String   @unique
   coachId          String
-  userId           String
+  // Nullable: a coach can sign via a secure link before any user account exists.
+  // Backfilled when/if a login account is later linked to the coach.
+  userId           String?
   agreementVersion String
   fullName         String
   email            String
@@ -487,11 +490,27 @@ model CoachAgreement {
   auditLogs CoachAgreementAuditLog[]
 
   // One agreement row per coach per version — fails a concurrent double-submit
-  // closed (P2002) so an immutable legal record can never be duplicated.
-  @@unique([userId, agreementVersion])
+  // closed (P2002) so an immutable legal record can never be duplicated. Bound to
+  // the coach record (not a user account), so signing works without a login.
+  @@unique([coachId, agreementVersion])
   @@index([coachId])
   @@index([agreementNumber])
   @@index([acceptedAt])
+}
+
+// Secure, single-use, expiring link tokens that let a coach open the agreement
+// and sign WITHOUT a login account. Resolves directly to a coach record.
+model CoachSigningToken {
+  id        String    @id @default(cuid())
+  coachId   String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId])
 }
 
 model CoachAgreementAuditLog {

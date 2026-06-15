@@ -10,36 +10,47 @@ import { computeAgreementHash } from "@/lib/coachAgreement/hash";
 import { generateAgreementPdf } from "@/lib/coachAgreement/pdf";
 import { uploadAgreementPdf } from "@/lib/coachAgreement/storage";
 import { sendEmail, emails } from "@/lib/email";
-import { verifyAgreementToken } from "@/lib/coachAgreement/token";
+import { resolveSigningToken, markSigningTokenUsed, type TokenState } from "@/lib/coachAgreement/signingToken";
 
 export const runtime = "nodejs";
 
-// Resolve the acting coach's userId from either a coach login session OR a
-// per-coach signing token (so coaches can sign via a link without logging in).
-async function resolveCoachUserId(req: NextRequest, bodyToken?: string): Promise<string | null> {
+const EXPIRED_MSG = "This link has expired. Please request a new agreement link.";
+
+type Resolved = { coachId: string; tokenState: TokenState | "none"; token?: string } | null;
+
+// Identify the acting coach from a coach login session OR a secure signing token.
+// Signing binds to the coach record, so no user account is required.
+async function resolveCoach(req: NextRequest, bodyToken?: string): Promise<Resolved> {
   const session = await getSessionFromRequest(req);
-  if (session && session.role === "coach") return session.id;
+  if (session && session.role === "coach") {
+    const coach = await prisma.coach.findUnique({ where: { userId: session.id }, select: { id: true } });
+    if (coach) return { coachId: coach.id, tokenState: "none" };
+  }
   const token = bodyToken ?? new URL(req.url).searchParams.get("token") ?? undefined;
-  if (token) return verifyAgreementToken(token);
+  if (token) {
+    const resolved = await resolveSigningToken(token);
+    if (resolved) return { coachId: resolved.coachId, tokenState: resolved.state, token };
+  }
   return null;
 }
 
-// GET: current signing status + prefill for the coach (session- or token-identified).
+// GET: signing status, token state, and prefill for the coach.
 export async function GET(req: NextRequest) {
   try {
-    const userId = await resolveCoachUserId(req);
-    if (!userId) return fail("Coach authentication required", 401);
+    const r = await resolveCoach(req);
+    if (!r) return fail("Coach authentication required", 401);
     const coach = await prisma.coach.findUnique({
-      where: { userId },
+      where: { id: r.coachId },
       select: { name: true, email: true, phone: true, address: true },
     });
     const existing = await prisma.coachAgreement.findFirst({
-      where: { userId, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
+      where: { coachId: r.coachId, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
       orderBy: { acceptedAt: "desc" },
       select: { id: true, agreementNumber: true, agreementVersion: true, acceptedAt: true, status: true },
     });
     return ok({
       signed: !!existing,
+      tokenState: r.tokenState,
       currentVersion: CURRENT_AGREEMENT_VERSION,
       agreement: existing,
       prefill: coach ? { fullName: coach.name, email: coach.email, phone: coach.phone, address: coach.address } : null,
@@ -47,21 +58,25 @@ export async function GET(req: NextRequest) {
   } catch (e) { return handleErr(e); }
 }
 
-// POST: sign the current agreement.
+// POST: sign the current agreement (session- or token-identified).
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const userId = await resolveCoachUserId(req, typeof body?.token === "string" ? body.token : undefined);
-    if (!userId) return fail("Coach authentication required", 401);
+    const r = await resolveCoach(req, typeof body?.token === "string" ? body.token : undefined);
+    if (!r) return fail("Coach authentication required", 401);
 
-    const coach = await prisma.coach.findUnique({ where: { userId }, select: { id: true } });
-    if (!coach) throw new ApiError("No coach profile is linked to this account.", 400);
+    const coach = await prisma.coach.findUnique({ where: { id: r.coachId }, select: { id: true, userId: true } });
+    if (!coach) throw new ApiError("This signing link is no longer valid.", 400);
 
     const already = await prisma.coachAgreement.findFirst({
-      where: { userId, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
+      where: { coachId: coach.id, status: "SIGNED", agreementVersion: CURRENT_AGREEMENT_VERSION },
       select: { id: true, agreementNumber: true },
     });
     if (already) return ok({ alreadySigned: true, agreementNumber: already.agreementNumber });
+
+    // A token must still be usable to sign with (a session has tokenState "none").
+    if (r.tokenState === "expired") throw new ApiError(EXPIRED_MSG, 410);
+    if (r.tokenState === "used") return ok({ alreadySigned: true });
 
     // SignAgreementSchema strips the extra `token` key (zod objects drop unknowns).
     const input = SignAgreementSchema.parse(body);
@@ -92,7 +107,7 @@ export async function POST(req: NextRequest) {
 
     const record = await prisma.coachAgreement.create({
       data: {
-        agreementNumber, coachId: coach.id, userId, agreementVersion: version,
+        agreementNumber, coachId: coach.id, userId: coach.userId ?? null, agreementVersion: version,
         fullName: input.fullName, email: input.email, signatureName: input.signatureName,
         acceptedAt, ipAddress, userAgent, pdfPublicId, pdfResourceType: "raw",
         agreementHash, status: "SIGNED",
@@ -105,10 +120,13 @@ export async function POST(req: NextRequest) {
       select: { id: true, agreementNumber: true, agreementVersion: true, acceptedAt: true },
     });
 
+    // Consume the signing token now that the agreement exists.
+    if (r.token) await markSigningTokenUsed(r.token);
+
     // Supersede any older-version SIGNED agreements this coach holds. No-op today
     // (only v1.0 exists); correct when a future version (v1.1+) is signed.
     await prisma.coachAgreement.updateMany({
-      where: { userId, status: "SIGNED", agreementVersion: { not: version } },
+      where: { coachId: coach.id, status: "SIGNED", agreementVersion: { not: version } },
       data: { status: "SUPERSEDED" },
     });
 

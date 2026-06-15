@@ -5,7 +5,7 @@ import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { clientIp } from "@/lib/ratelimit";
 import { fail, handleErr } from "@/lib/api";
 import { fetchAgreementPdf } from "@/lib/coachAgreement/storage";
-import { verifyAgreementToken } from "@/lib/coachAgreement/token";
+import { resolveSigningToken } from "@/lib/coachAgreement/signingToken";
 
 export const runtime = "nodejs";
 
@@ -19,17 +19,21 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     const agreement = await prisma.coachAgreement.findUnique({
       where: { id },
-      select: { id: true, userId: true, agreementNumber: true, pdfPublicId: true },
+      select: { id: true, coachId: true, userId: true, agreementNumber: true, pdfPublicId: true },
     });
     if (!agreement) return fail("Agreement not found", 404);
 
-    const isOwner = !!session && session.id === agreement.userId;
-    // A per-coach signing token also grants access to that coach's own PDF
+    const isOwner = !!session && !!agreement.userId && session.id === agreement.userId;
+    // A signing token for this agreement's coach also grants access to the PDF
     // (so a coach who signed via link, with no login, can still download it).
+    // Used/expired tokens still allow download — they remain proof of being that coach.
     let isTokenOwner = false;
     if (!isAdmin && !isOwner) {
       const token = new URL(req.url).searchParams.get("token");
-      if (token) isTokenOwner = (await verifyAgreementToken(token)) === agreement.userId;
+      if (token) {
+        const resolved = await resolveSigningToken(token);
+        isTokenOwner = !!resolved && resolved.coachId === agreement.coachId;
+      }
     }
     if (!isAdmin && !isOwner && !isTokenOwner) return fail("You are not allowed to access this document", 403);
 
@@ -40,7 +44,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     await prisma.coachAgreementAuditLog.create({
       data: {
         agreementId: agreement.id, action: "DOWNLOAD",
-        actorId: isAdmin ? "admin" : (session?.id ?? agreement.userId), actorRole: isAdmin ? "admin" : "coach",
+        actorId: isAdmin ? "admin" : (session?.id ?? agreement.userId ?? agreement.coachId), actorRole: isAdmin ? "admin" : "coach",
         ipAddress: clientIp(req),
       },
     });

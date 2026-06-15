@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, handleErr } from "@/lib/api";
 import bcrypt from "bcryptjs";
-import { signAgreementToken, buildSignLink } from "@/lib/coachAgreement/token";
+import { generateSigningToken, buildSignLink } from "@/lib/coachAgreement/signingToken";
 import { sendEmail, emails } from "@/lib/email";
 
 type BatchInput = { day: string; time: string; level: string; seats: number };
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     // Issue a passwordless signing link so the coach can review + sign the
     // Coach Partnership Agreement immediately, without logging in.
-    const token = await signAgreementToken(user.id);
+    const token = await generateSigningToken(coach.id);
     const signLink = buildSignLink(token);
     await sendEmail({ to: email as string, ...emails.agreementInvite(name as string, signLink) }).catch(() => {});
 

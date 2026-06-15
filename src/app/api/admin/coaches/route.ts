@@ -17,14 +17,25 @@ export async function GET(req: NextRequest) {
   const payments = await prisma.payment.groupBy({ by: ["entityId"], where: { status: "paid", entityType: "booking" }, _sum: { amount: true } });
   const revenueByEntity = new Map(payments.map(p => [p.entityId, p._sum.amount ?? 0]));
 
+  // Latest SIGNED agreement per coach (for the Pending Signature / Signed status column).
+  const signed = await prisma.coachAgreement.findMany({
+    where: { status: "SIGNED" },
+    orderBy: { acceptedAt: "desc" },
+    select: { id: true, coachId: true, acceptedAt: true, agreementVersion: true },
+  });
+  const agreementByCoach = new Map<string, { id: string; acceptedAt: Date; agreementVersion: string }>();
+  for (const a of signed) if (!agreementByCoach.has(a.coachId)) agreementByCoach.set(a.coachId, a);
+
   const coaches = rows.map(c => {
     const bookings = c.bookings;
+    const ag = agreementByCoach.get(c.id);
     return {
       ...c,
       totalBookings: bookings.length,
       confirmedBookings: bookings.filter(b => (BILLABLE_STATUSES as string[]).includes(b.status)).length,
       revenue: revenueByEntity.get(c.id) ?? 0,
       reviews: c.reviews,
+      agreement: ag ? { id: ag.id, acceptedAt: ag.acceptedAt, version: ag.agreementVersion } : null,
     };
   });
   return NextResponse.json({ coaches });

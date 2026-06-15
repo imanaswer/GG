@@ -21,6 +21,7 @@ type Coach = {
   features: string[]; certifications: string[]; imageUrl: string; coverImageUrl: string; photos: string[];
   seatsLeft: number; totalSeats: number; rating: number; reviewCount: number;
   status: string; totalBookings: number; confirmedBookings: number; revenue: number;
+  agreement?: { id: string; acceptedAt: string; version: string } | null;
   batches?: BatchRow[];
 };
 
@@ -152,7 +153,7 @@ export default function AdminCoaches() {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead style={{ background: "#111" }}>
-                  <tr>{["Coach / Academy","Type","Location","Price","Seats","Bookings","Rating","Status","Actions"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
+                  <tr>{["Coach / Academy","Type","Location","Price","Seats","Bookings","Rating","Status","Agreement","Actions"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {!coaches.length ? (
@@ -178,6 +179,17 @@ export default function AdminCoaches() {
                         <td style={{ ...td, textAlign: "center" }}>{c.confirmedBookings}/{c.totalBookings}</td>
                         <td style={{ ...td, color: "#eab308" }}>★ {c.rating.toFixed(1)} ({c.reviewCount})</td>
                         <td style={td}><Badge status={c.status} /></td>
+                        <td style={td}>
+                          {c.agreement ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <span style={{ display: "inline-flex", width: "fit-content", alignItems: "center", padding: "2px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Signed</span>
+                              <span style={{ fontSize: 10, color: "#6b7280" }}>{new Date(c.agreement.acceptedAt).toLocaleDateString()}</span>
+                              <a href={`/api/coach/agreements/${c.agreement.id}/pdf`} style={{ fontSize: 11, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>View PDF</a>
+                            </div>
+                          ) : (
+                            <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>Pending Signature</span>
+                          )}
+                        </td>
                         <td style={td}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <button onClick={() => openEdit(c)} style={iconBtn} title="Edit"><Pencil size={14} color="#60a5fa" /></button>
