@@ -30,6 +30,10 @@ export default function AdminAgreementDetail() {
     queryKey: ["admin-agreement", id],
     queryFn: () => fetch(`/api/admin/coaches/agreements/${id}`).then(r => r.json()),
     enabled: !!id,
+    // Each fetch writes a VIEW row to the legal access log — don't refetch on
+    // window focus or background staleness, so one visit ≈ one logged view.
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
   const a = data?.agreement;
