@@ -104,7 +104,7 @@ function Hero() {
           y, opacity,
         }}
       >
-        <div className="container-lg" style={{ textAlign: "center" }}>
+        <div className="container-lg" style={{ textAlign: "center", maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
           {/* Eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -246,7 +246,7 @@ function Marquee() {
     "Games each week",
     "All kinds of sports",
     "Beachside to indoor courts",
-    "Trusted by  players",
+    "Trusted by players",
   ];
   return (
     <div style={{
@@ -260,7 +260,7 @@ function Marquee() {
       <motion.div
         className="marquee-track"
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 52, repeat: Infinity, ease: "linear" }}
       >
         {[...items, ...items, ...items].map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 64, flexShrink: 0 }}>
@@ -280,7 +280,7 @@ function Marquee() {
   );
 }
 
-/* ── Quick navigation hub (4 category cards) ────────────── */
+/* ── Quick navigation hub ───────────────────────────────── */
 
 type HubCard = {
   href: string;
@@ -371,12 +371,7 @@ function HubCardItem({ card }: { card: HubCard }) {
         isolation: "isolate",
       }}
     >
-      {/* Image head */}
-      <div style={{
-        position: "relative",
-        aspectRatio: "5/4",
-        overflow: "hidden",
-      }}>
+      <div style={{ position: "relative", aspectRatio: "5/4", overflow: "hidden" }}>
         <Image
           src={card.image}
           alt={card.imageAlt}
@@ -390,19 +385,16 @@ function HubCardItem({ card }: { card: HubCard }) {
           }}
           className="hub-card-img"
         />
-        {/* Accent tint overlay */}
         <div style={{
           position: "absolute", inset: 0,
           background: `linear-gradient(140deg, ${card.accent}25 0%, transparent 55%)`,
           mixBlendMode: "screen",
         }} />
-        {/* Gradient to card body */}
         <div style={{
           position: "absolute", inset: 0,
           background: "linear-gradient(180deg, transparent 30%, rgba(10,10,10,0.6) 85%, #0a0a0a 100%)",
         }} />
 
-        {/* Icon badge */}
         <div style={{
           position: "absolute", top: 16, right: 16,
           width: 40, height: 40, borderRadius: 12,
@@ -416,7 +408,6 @@ function HubCardItem({ card }: { card: HubCard }) {
           <Icon size={17} strokeWidth={2} />
         </div>
 
-        {/* Eyebrow badge */}
         <div style={{
           position: "absolute", top: 16, left: 16,
           padding: "5px 10px",
@@ -432,38 +423,19 @@ function HubCardItem({ card }: { card: HubCard }) {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{
-        padding: "24px 26px 26px",
-        display: "flex", flexDirection: "column", gap: 16, flex: 1,
-      }}>
+      <div style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
         <div>
-          <h3 className="display" style={{
-            fontSize: 30,
-            color: "#fff",
-            marginBottom: 8,
-          }}>
+          <h3 className="display" style={{ fontSize: 30, color: "#fff", marginBottom: 8 }}>
             {card.title}
           </h3>
-          <p style={{
-            fontSize: 13.5,
-            color: "rgba(255,255,255,0.58)",
-            lineHeight: 1.55,
-          }}>
+          <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.58)", lineHeight: 1.55 }}>
             {card.tagline}
           </p>
         </div>
 
-        <ul style={{
-          listStyle: "none", padding: 0, margin: 0,
-          display: "flex", flexDirection: "column", gap: 8,
-          flex: 1,
-        }}>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
           {card.bullets.map(b => (
-            <li key={b} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              fontSize: 12.5, color: "rgba(255,255,255,0.6)",
-            }}>
+            <li key={b} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,0.6)" }}>
               <span style={{
                 width: 4, height: 4, borderRadius: "50%",
                 background: card.accent, flexShrink: 0,
@@ -482,11 +454,7 @@ function HubCardItem({ card }: { card: HubCard }) {
           color: card.accent,
         }}>
           Explore {card.title}
-          <ArrowUpRight
-            size={14}
-            className="hub-card-arrow"
-            style={{ transition: "transform 320ms cubic-bezier(0.16,1,0.3,1)" }}
-          />
+          <ArrowUpRight size={14} className="hub-card-arrow" style={{ transition: "transform 320ms cubic-bezier(0.16,1,0.3,1)" }} />
         </div>
       </div>
     </Link>
@@ -497,10 +465,7 @@ function QuickHub() {
   return (
     <section className="section-tight">
       <div className="container-lg">
-        <div style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          marginBottom: 56, gap: 24, flexWrap: "wrap",
-        }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 56, gap: 24, flexWrap: "wrap" }}>
           <Reveal>
             <div style={{ maxWidth: 640 }}>
               <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
@@ -513,34 +478,23 @@ function QuickHub() {
             </div>
           </Reveal>
           <Reveal delay={0.08}>
-            <p style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.5)",
-              maxWidth: 320,
-              lineHeight: 1.6,
-            }}>
-              Whether you&apos;re here to train, drop in, compete, or level up — jump
-              straight to what you need.
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
+              Whether you&apos;re here to train, drop in, compete, or level up — jump straight to what you need.
             </p>
           </Reveal>
         </div>
 
-        <Stagger
-          stagger={0.08}
-          y={32}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            gap: 20,
-          }}
-          className="hub-grid"
-        >
+        <Stagger stagger={0.08} y={32} style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 28 }} className="hub-grid">
           {HUB_CARDS.map(c => <HubCardItem key={c.href} card={c} />)}
         </Stagger>
       </div>
 
       <style>{`
-        .hub-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12) !important; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+        .hub-card:hover { 
+          transform: translateY(-4px); 
+          border-color: rgba(255,255,255,0.12) !important; 
+          box-shadow: 0 0 0 1px rgba(230,57,70,0.3), 0 30px 80px rgba(0,0,0,0.5); 
+        }
         .hub-card:hover .hub-card-img { transform: scale(1.06); filter: saturate(1) brightness(0.95) !important; }
         .hub-card:hover .hub-card-arrow { transform: translate(3px, -3px); }
         @media (max-width: 1200px) {
@@ -551,89 +505,9 @@ function QuickHub() {
         }
         @media (max-width: 560px) {
           .hub-grid { grid-template-columns: 1fr !important; }
+          .hub-card > div:last-child { padding: 32px 20px 26px !important; }
         }
       `}</style>
-    </section>
-  );
-}
-
-/* ── Split story section ────────────────────────────────── */
-
-function StorySection({
-  eyebrow, title, description, href, ctaLabel, image, imageAlt, reverse,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  href: string;
-  ctaLabel: string;
-  image: string;
-  imageAlt: string;
-  reverse?: boolean;
-}) {
-  return (
-    <section className="section">
-      <div className="container-lg">
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 80,
-          alignItems: "center",
-        }} className="two-col">
-          <Reveal style={{ order: reverse ? 2 : 1 }}>
-            <div style={{ maxWidth: 520 }}>
-              <span className="eyebrow" style={{ color: "#e63946", display: "inline-block", marginBottom: 24 }}>
-                {eyebrow}
-              </span>
-              <h2 className="display" style={{
-                fontSize: "clamp(40px, 5vw, 72px)",
-                color: "#fff",
-                marginBottom: 28,
-              }}>
-                {title}
-              </h2>
-              <p style={{
-                fontSize: 17, lineHeight: 1.65,
-                color: "rgba(255,255,255,0.6)",
-                marginBottom: 36,
-              }}>
-                {description}
-              </p>
-              <Magnetic strength={10}>
-                <Link href={href} style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "14px 24px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "#fff", fontSize: 14, fontWeight: 600,
-                  textDecoration: "none",
-                }}>
-                  {ctaLabel}
-                  <ArrowUpRight size={15} />
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
-
-          <Reveal style={{ order: reverse ? 1 : 2 }} delay={0.1}>
-            <div className="frame-img" style={{
-              aspectRatio: "4/5",
-              position: "relative",
-              boxShadow: "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
-            }}>
-              <Parallax speed={50} style={{ position: "absolute", inset: "-10%" }}>
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  sizes="(max-width: 900px) 90vw, 50vw"
-                  style={{ objectFit: "cover" }}
-                />
-              </Parallax>
-            </div>
-          </Reveal>
-        </div>
-      </div>
     </section>
   );
 }
@@ -676,6 +550,7 @@ function SportsGrid() {
                   textDecoration: "none",
                   display: "block",
                   isolation: "isolate",
+                  minHeight: 44,
                 }}
                 className="sport-tile"
               >
@@ -698,10 +573,7 @@ function SportsGrid() {
                   position: "absolute", bottom: 20, left: 20, right: 20,
                   display: "flex", alignItems: "flex-end", justifyContent: "space-between",
                 }} className="sport-tile-content">
-                  <span style={{
-                    fontSize: 20, fontWeight: 800, color: "#fff",
-                    letterSpacing: "-0.02em",
-                  }} className="sport-tile-title">
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }} className="sport-tile-title">
                     {sport}
                   </span>
                   <span style={{
@@ -727,108 +599,13 @@ function SportsGrid() {
           gap: 16px;
         }
         @media (max-width: 640px) {
-          .sports-grid-layout {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-          }
-          .sport-tile {
-            aspect-ratio: 1 / 1 !important;
-            border-radius: 12px !important;
-          }
-          .sport-tile-content {
-            bottom: 12px !important; left: 12px !important; right: 12px !important;
-          }
-          .sport-tile-title {
-            font-size: 16px !important;
-          }
-          .sport-tile-icon {
-            width: 28px !important; height: 28px !important;
-          }
+          .sports-grid-layout { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          .sport-tile { aspectRatio: 1 / 1 !important; border-radius: 12px !important; }
+          .sport-tile-content { bottom: 12px !important; left: 12px !important; right: 12px !important; }
+          .sport-tile-title { font-size: 18px !important; }
+          .sport-tile-icon { display: none !important; }
         }
       `}</style>
-    </section>
-  );
-}
-
-/* ── Immersive "Connect" full-bleed section ─────────────── */
-
-function Immersive() {
-  const ref = useRef<HTMLDivElement>(null);
-  return (
-    <section ref={ref} style={{ position: "relative", minHeight: "80vh", overflow: "hidden" }}>
-      <Parallax speed={100} style={{ position: "absolute", inset: 0 }}>
-        <div style={{ position: "absolute", inset: "-10%" }}>
-          <Image
-            src={STORY.connect.src}
-            alt={STORY.connect.alt}
-            fill
-            sizes="100vw"
-            quality={85}
-            style={{ objectFit: "cover" }}
-          />
-        </div>
-      </Parallax>
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.4) 30%, rgba(5,5,5,1) 100%)",
-      }} />
-      <div style={{ position: "relative", padding: "180px 0" }}>
-        <div className="container-lg" style={{ textAlign: "center" }}>
-          <Reveal>
-            <span className="eyebrow" style={{ color: "#ff6b74", display: "block", marginBottom: 28 }}>
-              Camps · Tournaments · Community
-            </span>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <h2 className="display" style={{
-              fontSize: "clamp(44px, 7vw, 120px)",
-              color: "#fff",
-              maxWidth: 980, margin: "0 auto 40px",
-            }}>
-              Show up.{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>Belong.</span>
-            </h2>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <p style={{
-              fontSize: "clamp(16px, 1.5vw, 20px)",
-              color: "rgba(255,255,255,0.72)",
-              maxWidth: 620, margin: "0 auto 48px",
-              lineHeight: 1.6,
-            }}>
-              Summer camps that build the next generation. Tournaments that sell out
-              every weekend. A city that shows up for its own.
-            </p>
-          </Reveal>
-          <Reveal delay={0.3}>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <Magnetic strength={10}>
-                <Link href="/camps" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "16px 28px", borderRadius: 100,
-                  background: "#fff", color: "#050505",
-                  fontSize: 14, fontWeight: 700,
-                  textDecoration: "none",
-                }}>
-                  Browse camps <ArrowUpRight size={15} />
-                </Link>
-              </Magnetic>
-              <Magnetic strength={10}>
-                <Link href="/events" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "16px 28px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: "#fff", fontSize: 14, fontWeight: 600,
-                  textDecoration: "none",
-                }}>
-                  See events <ArrowRight size={15} />
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
-        </div>
-      </div>
     </section>
   );
 }
@@ -907,7 +684,6 @@ function Stats() {
               }}
               className="stat-card"
             >
-              {/* Subtle accent glow */}
               <div style={{
                 position: "absolute", top: -20, right: -20,
                 width: 100, height: 100,
@@ -927,18 +703,10 @@ function Stats() {
               </div>
 
               <div>
-                <div style={{
-                  fontFamily: "var(--font-sans)", fontWeight: 900,
-                  fontSize: "clamp(36px, 5vw, 52px)",
-                  color: "#fff", letterSpacing: "-0.04em", lineHeight: 1,
-                }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontWeight: 900, fontSize: "clamp(36px, 5vw, 52px)", color: "#fff", letterSpacing: "-0.04em", lineHeight: 1 }}>
                   <Counter to={value} suffix={suffix} />
                 </div>
-                <div style={{
-                  fontSize: 13, color: "rgba(255,255,255,0.5)",
-                  marginTop: 8, letterSpacing: "0.02em",
-                  lineHeight: 1.4,
-                }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 8, letterSpacing: "0.02em", lineHeight: 1.4 }}>
                   {label}
                 </div>
               </div>
@@ -965,17 +733,28 @@ function BigCTA() {
   return (
     <section className="section">
       <div className="container-lg" style={{ textAlign: "center" }}>
+        <div style={{ marginBottom: 20 }}>
+          <span style={{
+            padding: "6px 12px",
+            borderRadius: 100,
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#52b788",
+            background: "rgba(45, 106, 79, 0.1)",
+            border: "1px solid rgba(82,183,136,0.3)",
+            display: "inline-block",
+          }}>
+            🌴 Proudly Kozhikode
+          </span>
+        </div>
+
         <Reveal>
           <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 28 }}>
             Your move
           </span>
         </Reveal>
         <Reveal delay={0.08}>
-          <h2 className="display" style={{
-            fontSize: "clamp(48px, 8vw, 140px)",
-            color: "#fff",
-            maxWidth: 1100, margin: "0 auto 48px",
-          }}>
+          <h2 className="display" style={{ fontSize: "clamp(48px, 8vw, 140px)", color: "#fff", maxWidth: 1100, margin: "0 auto 48px" }}>
             Your next match{" "}
             <span className="display-serif" style={{ color: "#ff6b74" }}>
               starts here.
@@ -992,6 +771,7 @@ function BigCTA() {
                 boxShadow: "0 0 50px rgba(230,57,70,0.45)",
                 color: "#fff", fontSize: 15, fontWeight: 700,
                 textDecoration: "none",
+                minHeight: 44,
               }}>
                 Create free account <ArrowUpRight size={16} />
               </Link>
@@ -1004,6 +784,7 @@ function BigCTA() {
                 border: "1px solid rgba(255,255,255,0.14)",
                 color: "#fff", fontSize: 15, fontWeight: 600,
                 textDecoration: "none",
+                minHeight: 44,
               }}>
                 Browse games <ArrowRight size={16} />
               </Link>
@@ -1022,62 +803,150 @@ function Footer() {
     <footer style={{
       borderTop: "1px solid rgba(255,255,255,0.06)",
       padding: "72px 0 48px",
+      marginTop: 60,
+      background: "#0a0a0a",
     }}>
-      <div className="container-lg">
+      {/* Centered container */}
+      <div style={{
+        maxWidth: 1200,
+        margin: "0 auto",
+        padding: "0 24px",
+        width: "100%",
+      }}>
+
+        {/* 4-column grid with explicit row alignment */}
         <div style={{
-          display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr",
-          gap: 48, marginBottom: 64,
-        }} className="four-col">
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 40,
+          marginBottom: 64,
+          alignItems: "start", // Force alignment baseline to the top
+        }}>
+
+          {/* Column 1: Logo & Info */}
           <div>
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center", marginBottom: 20, textDecoration: "none" }}>
-              <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
+            <Link href="/" style={{ display: "inline-block", marginBottom: 24, textDecoration: "none" }}>
+              <img src="/logo2.png" alt="Game Ground" style={{ height: 48, width: "auto", display: "block" }} />
             </Link>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
+            <p style={{
+              fontSize: 14,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.6,
+              marginBottom: 20,
+              marginTop: 0,
+              maxWidth: "100%",
+              textAlign: "left"
+            }}>
+              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-              <MapPin size={13} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+              <MapPin size={14} />
               <span>Built in Kozhikode, Kerala</span>
             </div>
           </div>
 
-          {[
-            { title: "Discover", links: [["Coaches", "/learn"], ["Games", "/play"], ["Camps", "/camps"], ["Events", "/events"]] },
-            { title: "Company", links: [["About", "/about"], ["Search", "/search"]] },
-            { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
-          ].map(col => (
-            <div key={col.title}>
-              <div className="eyebrow" style={{ marginBottom: 16, color: "rgba(255,255,255,0.4)" }}>
-                {col.title}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {col.links.map(([label, href]) => (
-                  <Link key={href} href={href} style={{
-                    fontSize: 14, color: "rgba(255,255,255,0.7)",
-                    textDecoration: "none",
-                  }}>
-                    {label}
-                  </Link>
-                ))}
-              </div>
+          {/* Column 2: Discover */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <h4 style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.4)",
+              marginBottom: 24,
+              marginTop: 14, // Aligns perfectly down matching logo base line
+              lineHeight: 1,
+            }}>
+              DISCOVER
+            </h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", textAlign: "left" }}>
+              <Link href="/learn" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Coaches
+              </Link>
+              <Link href="/play" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Games
+              </Link>
+              <Link href="/camps" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Camps
+              </Link>
+              <Link href="/events" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Events
+              </Link>
             </div>
-          ))}
+          </div>
+
+          {/* Column 3: Company */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <h4 style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.4)",
+              marginBottom: 24,
+              marginTop: 14,
+              lineHeight: 1,
+            }}>
+              COMPANY
+            </h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", textAlign: "left" }}>
+              <Link href="/about" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                About
+              </Link>
+              <Link href="/search" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Search
+              </Link>
+            </div>
+          </div>
+
+          {/* Column 4: Legal */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <h4 style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.4)",
+              marginBottom: 24,
+              marginTop: 14,
+              lineHeight: 1,
+            }}>
+              LEGAL
+            </h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", textAlign: "left" }}>
+              <Link href="/privacy" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Privacy
+              </Link>
+              <Link href="/terms" style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block" }}>
+                Terms
+              </Link>
+            </div>
+          </div>
         </div>
 
+        {/* Bottom bar */}
         <div style={{
-          paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.05)",
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20,
-          flexWrap: "wrap", fontSize: 12, color: "rgba(255,255,255,0.35)",
+          paddingTop: 32,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 16,
         }}>
-          <span>© {new Date().getFullYear()} Game Ground. All rights reserved.</span>
-          <span>Photography by Unsplash contributors.</span>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+            © {new Date().getFullYear()} Game Ground. All rights reserved.
+          </span>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+            Photography by Unsplash contributors.
+          </span>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ── Page ───────────────────────────────────────────────── */
+/* ── Page with global styles ───────────────────────────────── */
 
 export default function LandingPage() {
   return (
@@ -1086,42 +955,46 @@ export default function LandingPage() {
       <ScrollProgress />
       <PremiumNav variant="transparent" />
 
-      <main style={{ background: "#050505", color: "#fff", position: "relative" }}>
+      {/* Global styles - background, text size, green accents, touch targets */}
+      <style jsx global>{`
+        body {
+          background: #0a0a0a !important;
+        }
+        main {
+          background: #0a0a0a;
+        }
+        body, p, li, a, button, input, textarea, select {
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .display-serif, h1.display, h2.display, h3.display {
+          letter-spacing: -0.02em !important;
+        }
+        .accent-green {
+          color: #52b788;
+        }
+        .border-green {
+          border-color: #2d6a4f;
+        }
+        .bg-green-subtle {
+          background: rgba(45, 106, 79, 0.1);
+        }
+        button, a, .clickable {
+          min-height: 44px;
+          min-width: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
+
+      <main style={{ color: "#fff", position: "relative" }}>
         <Hero />
-
         <Marquee />
-
         <QuickHub />
-
-        <StorySection
-          eyebrow="Learn"
-          title="Train with coaches who sweat for it."
-          description="50+ verified coaches and academies across Kozhikode. Filter by sport, level and timing — book your trial in a couple of taps."
-          href="/learn"
-          ctaLabel="Find your coach"
-          image={STORY.learn.src}
-          imageAlt={STORY.learn.alt}
-        />
-
         <SportsGrid />
-
-        <StorySection
-          eyebrow="Play"
-          title="Pickup games, five minutes from home."
-          description="Join open games posted by your neighbours. Host your own when the court's free. No groups, no WhatsApp scramble — just a map and a clock."
-          href="/play"
-          ctaLabel="Browse pickup games"
-          image={STORY.play.src}
-          imageAlt={STORY.play.alt}
-          reverse
-        />
-
-        <Immersive />
-
         <Stats />
-
         <BigCTA />
-
         <Footer />
       </main>
     </>
