@@ -273,7 +273,7 @@ function CoachCard({ coach }: { coach: Coach }) {
         <div style={{ padding: "22px 22px 24px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
             {[
-              { Icon: MapPin, v: coach.location, c: "rgba(255,255,255,0.55)" },
+              { Icon: MapPin, v: coach.address || coach.location, c: "rgba(255,255,255,0.55)" },
               { Icon: Clock,  v: coach.timing,   c: "rgba(255,255,255,0.55)" },
             ].map(({ Icon, v, c }) => (
               <div key={v} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>

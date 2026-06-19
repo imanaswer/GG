@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, CheckCircle, Mail, Phone, MapPin, Clock, Target, DollarSign, Calendar, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, CheckCircle, MapPin, Clock, Target, DollarSign, Calendar, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -326,12 +326,10 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                         border: "1px solid rgba(255,255,255,0.06)",
                         borderRadius: 20, padding: "24px 28px",
                       }}>
-                        <h2 className="eyebrow" style={{ marginBottom: 18 }}>Contact</h2>
+                        <h2 className="eyebrow" style={{ marginBottom: 18 }}>Location</h2>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {[
                             { Icon: MapPin, v: coach.address, href: coach.address ? mapsHref(coach) : undefined },
-                            { Icon: Phone,  v: coach.phone, href: coach.phone ? `tel:${coach.phone}` : undefined },
-                            { Icon: Mail,   v: coach.email, href: coach.email ? `mailto:${coach.email}` : undefined },
                           ].filter(row => row.v).map(({ Icon, v, href }) => (
                             <div key={v} style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
                               <Icon size={14} color="#e63946" style={{ flexShrink: 0 }} />
@@ -820,24 +818,6 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       </Magnetic>
                       </>
                     )}
-
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(coach.email);
-                        toast.success("Email copied to clipboard");
-                      }}
-                      style={{
-                        width: "100%", height: 44, borderRadius: 100,
-                        fontSize: 13, fontWeight: 600, fontFamily: "inherit",
-                        background: "rgba(255,255,255,0.03)",
-                        color: "rgba(255,255,255,0.75)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      }}
-                    >
-                      <Mail size={13} /> Contact coach
-                    </button>
                   </div>
                 </Reveal>
               </aside>
