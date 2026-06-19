@@ -201,23 +201,20 @@ function CoachCard({ coach }: { coach: Coach }) {
             />
           </motion.div>
 
-          {/* Top-left badges */}
+          {/* Top-left badge: sport only */}
           <div style={{
-            position: "absolute", top: 14, left: 14, display: "flex", gap: 6,
+            position: "absolute", top: 14, left: 14,
           }}>
             <SportBadge sport={coach.sport} />
-            <span style={{
-              fontSize: 10, fontWeight: 600, padding: "3px 9px", borderRadius: 100,
-              background: "rgba(0,0,0,0.65)", color: "#e4e4e7",
-              border: "1px solid rgba(255,255,255,0.12)",
-              backdropFilter: "blur(6px)",
-            }}>
-              {coach.type}
-            </span>
           </div>
 
-          {full && (
-            <div style={{ position: "absolute", top: 14, right: 14 }}>
+          {/* Top-right badges: type + availability, stacked on one side */}
+          <div style={{
+            position: "absolute", top: 14, right: 14,
+            display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6,
+            maxWidth: "55%",
+          }}>
+            {full && (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 100,
                 background: "rgba(239,68,68,0.18)", color: "#fca5a5",
@@ -226,8 +223,17 @@ function CoachCard({ coach }: { coach: Coach }) {
               }}>
                 Fully booked
               </span>
-            </div>
-          )}
+            )}
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: "3px 9px", borderRadius: 100,
+              background: "rgba(0,0,0,0.65)", color: "#e4e4e7",
+              border: "1px solid rgba(255,255,255,0.12)",
+              backdropFilter: "blur(6px)",
+              textAlign: "right",
+            }}>
+              {coach.type}
+            </span>
+          </div>
 
           {/* Bottom gradient + rating */}
           <div style={{
