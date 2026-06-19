@@ -7,6 +7,44 @@ export const runtime = "nodejs";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
+// Build a Cloudinary signature for a fresh upload target. Signs exactly the params
+// the client sends back (folder, public_id, timestamp); Cloudinary recomputes the
+// same sha1 over them + the secret. Shared by GET (browser direct upload) and POST.
+function signUpload(secret: string) {
+  const folder = "gameground/admin";
+  const timestamp = Math.floor(Date.now() / 1000);
+  const publicId = `admin_${timestamp}_${crypto.randomBytes(4).toString("hex")}`;
+  const paramsToSign: Record<string, string> = { folder, public_id: publicId, timestamp: String(timestamp) };
+  const signature = crypto
+    .createHash("sha1")
+    .update(Object.keys(paramsToSign).sort().map((k) => `${k}=${paramsToSign[k]}`).join("&") + secret)
+    .digest("hex");
+  return { folder, timestamp, publicId, signature };
+}
+
+// Hands the browser a short-lived signature so it can upload the file DIRECTLY to
+// Cloudinary, bypassing this app server entirely. That avoids the platform/proxy
+// request-body limits (Vercel 4.5 MB, nginx default 1 MB) that otherwise reject a
+// large multipart POST with a plain-text 413 — which is what produced the client's
+// "Unexpected token 'R', \"Request En\"... is not valid JSON" error.
+export async function GET(req: NextRequest) {
+  try {
+    if (!(await getAdminSessionFromRequest(req)))
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const cloud  = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const secret = process.env.CLOUDINARY_API_SECRET;
+    if (!cloud || !apiKey || !secret)
+      return NextResponse.json({ error: "Image uploads are not configured" }, { status: 503 });
+
+    const { folder, timestamp, publicId, signature } = signUpload(secret);
+    return NextResponse.json({ cloudName: cloud, apiKey, timestamp, signature, folder, publicId });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Could not sign upload" }, { status: 500 });
+  }
+}
+
 // Uploads go to Cloudinary, NOT the local filesystem — Vercel's runtime FS is
 // read-only, so writing to public/uploads throws (500) in production. Uses a
 // signed direct upload (no SDK needed). Always returns JSON so the client never
@@ -31,20 +69,7 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_SIZE)
       return NextResponse.json({ error: "File size must be under 5 MB" }, { status: 400 });
 
-    const folder = "gameground/admin";
-    const timestamp = Math.floor(Date.now() / 1000);
-    const publicId = `admin_${timestamp}_${crypto.randomBytes(4).toString("hex")}`;
-
-    // Cloudinary signature: sha1 of sorted "k=v" params concatenated with the secret.
-    const paramsToSign: Record<string, string> = {
-      folder,
-      public_id: publicId,
-      timestamp: String(timestamp),
-    };
-    const signature = crypto
-      .createHash("sha1")
-      .update(Object.keys(paramsToSign).sort().map((k) => `${k}=${paramsToSign[k]}`).join("&") + secret)
-      .digest("hex");
+    const { folder, timestamp, publicId, signature } = signUpload(secret);
 
     const upstream = new FormData();
     upstream.set("file", file, file.name || "upload");

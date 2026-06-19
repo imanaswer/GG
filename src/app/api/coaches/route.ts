@@ -14,7 +14,10 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.CoachWhereInput = {};
     if (sport && sport !== "all") where.sport = sport;
-    if (type  && type  !== "all") where.type  = type;
+    // `type` is a comma-joined string ("Academy, Personal Trainer"), so match on
+    // substring — a coach tagged with several types still matches a single-type
+    // filter. Safe because no COACH_TYPE is a substring of another.
+    if (type  && type  !== "all") where.type  = { contains: type, mode: "insensitive" };
     if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];
     if (available) where.seatsLeft = { gt: 0 };
 

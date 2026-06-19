@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { Badge }       from "@/components/admin/Badge";
-import { AdminModal, FormInput, FormTextarea, FormSelect, FormCombobox, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
+import { AdminModal, FormInput, FormTextarea, FormSelect, FormMultiSelect, FormCombobox, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -213,10 +213,17 @@ export default function AdminCoaches() {
             <FormInput label="Name" value={form.name ?? ""} onChange={v => update("name", v)} required />
             <FormRow>
               <FormCombobox label="Sport" value={form.sport ?? ""} onChange={v => update("sport", v)} options={SPORTS} placeholder="Type or pick a sport" />
-              <FormSelect label="Type" value={form.type ?? "Personal Trainer"} onChange={v => update("type", v)} options={COACH_TYPES.map(t => ({ value: t, label: t }))} />
-            </FormRow>
-            <FormRow>
               <FormSelect label="Skill Level" value={form.skillLevel ?? "All Levels"} onChange={v => update("skillLevel", v)} options={SKILL_LEVELS.map(l => ({ value: l, label: l }))} />
+            </FormRow>
+            {/* Type is multi-select: a coach can be e.g. both an Academy and a Personal Trainer.
+                Stored as a comma-joined string in the single `type` column (no schema change). */}
+            <FormMultiSelect
+              label="Type (pick one or more)"
+              values={(form.type ?? "").split(",").map(s => s.trim()).filter(Boolean)}
+              onChange={v => update("type", v.join(", "))}
+              options={COACH_TYPES}
+            />
+            <FormRow>
               <FormSelect label="Status" value={form.status ?? "active"} onChange={v => update("status", v)} options={[{ value: "active", label: "Active" }, { value: "pending_approval", label: "Pending" }, { value: "inactive", label: "Inactive" }]} />
             </FormRow>
             <FormRow>

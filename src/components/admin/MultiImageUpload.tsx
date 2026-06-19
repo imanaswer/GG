@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 
 export function MultiImageUpload({
   label = "Photos",
@@ -30,12 +31,7 @@ export function MultiImageUpload({
       try {
         const uploaded: string[] = [];
         for (const file of toUpload) {
-          const fd = new FormData();
-          fd.append("file", file);
-          const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error || "Upload failed");
-          uploaded.push(json.url);
+          uploaded.push(await uploadToCloudinary(file));
         }
         onChange([...value, ...uploaded]);
       } catch (e) {

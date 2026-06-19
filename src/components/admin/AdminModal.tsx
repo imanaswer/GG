@@ -215,6 +215,56 @@ export function FormSelect({
   );
 }
 
+// Toggleable pill group for picking one OR several options (e.g. a coach that is
+// both an Academy and a Personal Trainer). Values are stored as a string[].
+export function FormMultiSelect({
+  label,
+  values,
+  onChange,
+  options,
+  style,
+}: {
+  label: string;
+  values: string[];
+  onChange: (v: string[]) => void;
+  options: readonly string[];
+  style?: React.CSSProperties;
+}) {
+  const toggle = (opt: string) =>
+    onChange(values.includes(opt) ? values.filter((v) => v !== opt) : [...values, opt]);
+  return (
+    <FormField label={label} style={style}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {options.map((opt) => {
+          const active = values.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => toggle(opt)}
+              style={{
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                borderRadius: 8,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                background: active ? "rgba(230,57,70,0.15)" : "#0d0d0d",
+                color: active ? "#e63946" : "#9ca3af",
+                border: `1px solid ${active ? "rgba(230,57,70,0.5)" : "rgba(255,255,255,0.1)"}`,
+                transition: "all 0.12s",
+              }}
+            >
+              {active ? "✓ " : ""}
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </FormField>
+  );
+}
+
 export function FormCombobox({
   label,
   value,
