@@ -388,6 +388,7 @@ img {
   .hide-mobile { display: none !important; }
   .two-col     { grid-template-columns: 1fr !important; }
   .three-col   { grid-template-columns: 1fr !important; }
+}
 
 @media (max-width: 640px) {
   .four-col    { grid-template-columns: repeat(3,1fr) !important; gap: 24px !important; }
