@@ -107,6 +107,7 @@ function Hero() {
           position: "relative", zIndex: 2,
           height: "100%",
           display: "flex", flexDirection: "column", justifyContent: "center",
+          paddingTop: 72,
           y, opacity,
         }}
       >

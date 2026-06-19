@@ -125,7 +125,23 @@
       "Bash(sed -n '1,40p' \"src/app/api/games/route.test.ts\")",
       "Bash(grep *)",
       "Bash(rg -rn \"SLOT MINS|Slot mins|slotMins|Bulk generate\" src --ignore-case -l)",
-      "Bash(rg -rn \"SLOT MINS|Bulk generate slots\" src --ignore-case)"
+      "Bash(rg -rn \"SLOT MINS|Bulk generate slots\" src --ignore-case)",
+      "Bash(echo \"=== EXIT $? ===\")",
+      "Bash(sed -n '1,30p' src/app/api/workshops/[id]/route.ts)",
+      "Bash(sed -n '60,80p' src/lib/ratelimit.ts)",
+      "Bash(xxd)",
+      "Bash(echo \"===TSC_EXIT=$?===\")",
+      "Bash(sed -n '/model CoachAgreement/,/^}/p' prisma/schema.prisma)",
+      "Bash(sed -n '/model CoachAgreementAuditLog/,/^}/p' prisma/schema.prisma)",
+      "Bash(sed -n '1,70p' src/app/admin/coaches/page.tsx)",
+      "Bash(sed -n '1,50p' src/app/admin/page.tsx)",
+      "Bash(sed -n '60,90p' src/app/api/coach/agreements/route.ts)",
+      "Bash(sed -n '1,35p' src/lib/email.ts)",
+      "Bash(tee /tmp/e2e_sign.json)",
+      "Bash(command -v pdftotext)",
+      "Bash(pdftotext /tmp/e2e_agreement.pdf -)",
+      "Bash(tee /tmp/sign.json)",
+      "Bash(echo \"started pid $!\")"
     ]
   }
 }

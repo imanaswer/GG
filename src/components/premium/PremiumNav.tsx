@@ -94,7 +94,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
         </Link>
 
         {/* Desktop links */}
-        <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 2 }}>
           {LINKS.map(link => {
             const active = path === link.href || path.startsWith(link.href + "/");
             return (
@@ -228,7 +228,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
       </div>
 
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .mobile-menu-btn { display: inline-flex !important; }
         }
 
@@ -237,7 +237,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
           position: relative;
           display: inline-flex;
           align-items: center;
-          padding: 8px 14px;
+          padding: 8px 11px;
           font-size: 13px;
           font-weight: 500;
           color: rgba(255,255,255,0.6);
@@ -255,8 +255,8 @@ export function PremiumNav({ variant = "solid" }: Props) {
         .pn-link::after {
           content: "";
           position: absolute;
-          left: 14px;
-          right: 14px;
+          left: 11px;
+          right: 11px;
           bottom: 4px;
           height: 2px;
           border-radius: 2px;
