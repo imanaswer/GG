@@ -248,8 +248,8 @@ export default function AdminCoaches() {
               </FormRow>
             )}
             <FormTextarea label="Description" value={form.description ?? ""} onChange={v => update("description", v)} rows={3} />
-            <ImageUpload label="Profile Photo (portrait & listing card)" value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} />
-            <ImageUpload label="Cover Photo (detail page background)" value={form.coverImageUrl ?? ""} onChange={v => update("coverImageUrl", v)} />
+            <ImageUpload label="Profile Photo (portrait & listing card)" value={form.imageUrl ?? ""} onChange={v => update("imageUrl", v)} aspect={5 / 4} />
+            <ImageUpload label="Cover Photo (detail page background)" value={form.coverImageUrl ?? ""} onChange={v => update("coverImageUrl", v)} aspect={16 / 9} />
             <MultiImageUpload label="Facility Photos" value={form.photos ?? []} onChange={v => update("photos", v as never)} />
             <FormTextarea label="Features (one per line)" value={(form.features ?? []).join("\n")} onChange={v => update("features", v.split("\n").filter(Boolean) as never)} rows={3} placeholder="Professional training equipment&#10;Personalized coaching&#10;Video analysis" />
             <FormTextarea label="Certifications (one per line)" value={(form.certifications ?? []).join("\n")} onChange={v => update("certifications", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="AFC C License&#10;SAI Certified" />

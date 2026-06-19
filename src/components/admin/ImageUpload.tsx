@@ -2,20 +2,25 @@
 import { useState, useRef, useCallback } from "react";
 import { Upload, X, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
+import { ImageCropModal } from "@/components/admin/ImageCropModal";
 
 export function ImageUpload({
   value,
   onChange,
   label = "Cover Photo",
+  aspect,
 }: {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  // When set, a picked file opens the crop dialog (locked to this ratio) before upload.
+  aspect?: number;
 }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"upload" | "url">("upload");
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
@@ -33,23 +38,33 @@ export function ImageUpload({
     [onChange],
   );
 
+  // With an aspect set, route the file through the crop dialog first; otherwise upload as-is.
+  const accept = useCallback(
+    (file: File) => {
+      setError("");
+      if (aspect) setCropFile(file);
+      else upload(file);
+    },
+    [aspect, upload],
+  );
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
       const file = e.dataTransfer.files[0];
-      if (file?.type.startsWith("image/")) upload(file);
+      if (file?.type.startsWith("image/")) accept(file);
       else setError("Please drop an image file");
     },
-    [upload],
+    [accept],
   );
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) upload(file);
+      if (file) accept(file);
     },
-    [upload],
+    [accept],
   );
 
   const hasImage = !!value;
@@ -167,7 +182,7 @@ export function ImageUpload({
             ref={inputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
-            onChange={handleFileChange}
+            onChange={(e) => { handleFileChange(e); e.target.value = ""; }}
             style={{ display: "none" }}
           />
           <div
@@ -252,6 +267,15 @@ export function ImageUpload({
 
       {error && (
         <p style={{ fontSize: 12, color: "#f87171", marginTop: 6, marginBottom: 0 }}>{error}</p>
+      )}
+
+      {cropFile && aspect && (
+        <ImageCropModal
+          file={cropFile}
+          aspect={aspect}
+          onCancel={() => setCropFile(null)}
+          onCropped={(cropped) => { setCropFile(null); upload(cropped); }}
+        />
       )}
     </div>
   );
