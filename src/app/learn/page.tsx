@@ -364,6 +364,16 @@ function LearnContent() {
 
   const { data, isLoading, error } = useCoaches({ ...filters, q: debounced || undefined });
 
+  // Unfiltered list — used only to build the Sport chips from the sports
+  // coaches were actually entered with (so e.g. "Boxing/Kick" shows up).
+  const { data: allCoaches } = useCoaches({});
+  const sportOptions = useMemo(() => {
+    const sports = new Set<string>();
+    (allCoaches ?? []).forEach(c => { if (c.sport) sports.add(c.sport); });
+    const fromData = [...sports].sort((a, b) => a.localeCompare(b));
+    return fromData.length ? fromData : [...SPORTS];
+  }, [allCoaches]);
+
   const set = (k: keyof CoachFilters, v: string) =>
     setFilters(p => ({ ...p, [k]: v === "all" || !v ? undefined : v }));
 
@@ -447,7 +457,7 @@ function LearnContent() {
                     </AnimatePresence>
                   </div>
 
-                  <PillGroup label="Sport"     options={SPORTS} value={filters.sport}      onChange={v => set("sport", v)} />
+                  <PillGroup label="Sport"     options={sportOptions} value={filters.sport}      onChange={v => set("sport", v)} />
                   <PillGroup label="Level"     options={LEVELS} value={filters.skillLevel} onChange={v => set("skillLevel", v)} />
                   <PillGroup label="Type"      options={TYPES}  value={filters.type}       onChange={v => set("type", v)} />
                 </div>
