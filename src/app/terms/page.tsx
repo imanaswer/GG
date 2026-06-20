@@ -35,7 +35,7 @@ export default function Terms() {
         </Section>
 
         <Section title="4. Payments and Refunds">
-          <p>Payments for sessions, camps, and events are processed through Razorpay. Refund policies vary by service and are determined by the organiser or coach. Game Ground collects a service fee on applicable transactions. In case of a payment dispute, contact us at support@gameground.in within 7 days of the transaction.</p>
+          <p>Payments for sessions, camps, and events are processed through Razorpay. Refund policies vary by service and are determined by the organiser or coach. Game Ground collects a service fee on applicable transactions. In case of a payment dispute, contact us at hello@gameground.net within 7 days of the transaction.</p>
         </Section>
 
         <Section title="5. User Conduct">
@@ -59,7 +59,7 @@ export default function Terms() {
         </Section>
 
         <Section title="10. Contact">
-          <p>For questions about these Terms, contact us at <a href="mailto:legal@gameground.in" style={{ color: "#e63946" }}>legal@gameground.in</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
+          <p>For questions about these Terms, contact us at <a href="mailto:hello@gameground.net" style={{ color: "#e63946" }}>hello@gameground.net</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
         </Section>
 
         <p style={{ fontSize: 13, color: "#4b5563", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 24, marginTop: 8 }}>

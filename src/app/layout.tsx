@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Game Ground" }],
   creator: "Game Ground",
   publisher: "Game Ground",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://gameground.in"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net"),
   openGraph: {
     type: "website",
     locale: "en_IN",

@@ -60,7 +60,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="8. Contact">
-          <p>For privacy requests, data access, or deletion requests: <a href="mailto:privacy@gameground.in" style={{ color: "#e63946" }}>privacy@gameground.in</a></p>
+          <p>For privacy requests, data access, or deletion requests: <a href="mailto:hello@gameground.net" style={{ color: "#e63946" }}>hello@gameground.net</a></p>
         </Section>
 
         <p style={{ fontSize: 13, color: "#4b5563", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 24, marginTop: 8 }}>

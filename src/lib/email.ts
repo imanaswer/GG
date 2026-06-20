@@ -13,7 +13,7 @@ interface EmailPayload {
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.FROM_EMAIL ?? "noreply@gameground.in";
+  const from = process.env.FROM_EMAIL ?? "hello@gameground.net";
 
   if (!apiKey) {
     console.log(`[EMAIL — no RESEND_API_KEY] To: ${payload.to} | Subject: ${payload.subject}`);
@@ -42,7 +42,7 @@ const brand = `
 `;
 const footer = `
     <div style="padding:20px 28px;background:#111;font-size:12px;color:#666;text-align:center">
-      Game Ground · Kozhikode, Kerala · <a href="https://gameground.in/privacy" style="color:#e63946">Privacy</a>
+      Game Ground · Kozhikode, Kerala · <a href="https://www.gameground.net/privacy" style="color:#e63946">Privacy</a>
     </div>
   </div>
 `;

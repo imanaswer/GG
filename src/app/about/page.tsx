@@ -355,7 +355,7 @@ export default function About() {
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <a href="mailto:hello@gameground.in" style={{
+              <a href="mailto:hello@gameground.net" style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "space-between",
                 gap: 10, padding: "18px 22px", borderRadius: 14,
                 background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
@@ -363,7 +363,7 @@ export default function About() {
                 fontSize: 14, fontWeight: 700,
                 boxShadow: "0 10px 32px rgba(230,57,70,0.3), inset 0 1px 0 rgba(255,255,255,0.16)",
               }}>
-                <span>hello@gameground.in</span>
+                <span>hello@gameground.net</span>
                 <ArrowRight size={16} />
               </a>
               <a href="https://wa.me/919876543210" style={{
