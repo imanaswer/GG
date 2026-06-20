@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { Providers } from "@/context/Providers";
 import { PWARegister } from "@/components/PWARegister";
 import { PostHogPageView } from "@/components/PostHogPageView";
+import { siteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Game Ground" }],
   creator: "Game Ground",
   publisher: "Game Ground",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net"),
+  metadataBase: new URL(siteUrl()),
   openGraph: {
     type: "website",
     locale: "en_IN",

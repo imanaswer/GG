@@ -1,21 +1,15 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/siteUrl";
 
 // Regenerate the sitemap at most once an hour so we don't need DB access at
 // build time and don't hammer the DB on every crawl.
 export const revalidate = 3600;
 
-/** Normalize NEXT_PUBLIC_APP_URL (may lack a scheme / have a trailing slash). */
-function baseUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net").trim();
-  const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
-  return withScheme.replace(/\/+$/, "");
-}
-
 type Entry = MetadataRoute.Sitemap[number];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = baseUrl();
+  const base = siteUrl();
   const now = new Date();
 
   // Public, crawlable pages. Auth-gated/personal pages (profile, bookings,

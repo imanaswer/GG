@@ -1,14 +1,8 @@
 import type { MetadataRoute } from "next";
-
-/** Normalize NEXT_PUBLIC_APP_URL (may lack a scheme / have a trailing slash). */
-function baseUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net").trim();
-  const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
-  return withScheme.replace(/\/+$/, "");
-}
+import { siteUrl } from "@/lib/siteUrl";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = baseUrl();
+  const base = siteUrl();
   return {
     rules: {
       userAgent: "*",
