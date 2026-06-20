@@ -5,6 +5,9 @@ describe("isInstantPayEligible", () => {
   it("is true when priceMin equals priceMax and is positive", () => {
     expect(isInstantPayEligible({ priceMin: 2000, priceMax: 2000 })).toBe(true);
   });
+  it("is true for a single price stored as min>0 / max=0 (the 'leave 0' convention)", () => {
+    expect(isInstantPayEligible({ priceMin: 3000, priceMax: 0 })).toBe(true);
+  });
   it("is false for a price range", () => {
     expect(isInstantPayEligible({ priceMin: 1000, priceMax: 2000 })).toBe(false);
   });
@@ -16,6 +19,9 @@ describe("isInstantPayEligible", () => {
 describe("coachInstantChargeRupees", () => {
   it("returns the fixed price for an eligible coach", () => {
     expect(coachInstantChargeRupees({ priceMin: 2000, priceMax: 2000 })).toBe(2000);
+  });
+  it("returns priceMin for a single price stored with max=0", () => {
+    expect(coachInstantChargeRupees({ priceMin: 3000, priceMax: 0 })).toBe(3000);
   });
   it("throws for an ineligible coach", () => {
     expect(() => coachInstantChargeRupees({ priceMin: 1000, priceMax: 2000 })).toThrow();
