@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, CheckCircle, MapPin, Clock, Target, DollarSign, Calendar, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
@@ -14,6 +15,8 @@ import { useCoach, useCreateBooking, useCancelBooking } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { COACH_FALLBACKS, HERO_BACKDROPS, pickFallback } from "@/lib/premium-images";
 import { mapsHref } from "@/lib/maps";
+import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
+import { isInstantPayEligible } from "@/lib/coachPayment";
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -58,6 +61,40 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
   const [review, setReview] = useState({ rating: 5, text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [phone, setPhone] = useState("");
+  const [paying, setPaying] = useState(false);
+  const qc = useQueryClient();
+  const fixedPrice = coach ? isInstantPayEligible(coach) : false;
+
+  const handleInstantPay = async (batchId?: string) => {
+    if (!user) { toast.error("Please sign in to book a session"); return; }
+    if (!coach) return;
+    const cleanedPhone = phone.trim();
+    if (!cleanedPhone) { toast.error("Please add a mobile number so the team can reach you"); return; }
+    if (!/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) { toast.error("Please enter a valid mobile number"); return; }
+    setPaying(true);
+    try {
+      const order = await createPaymentOrder({ entityType: "coach", entityId: id });
+      const success = await openRazorpayCheckout({
+        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
+        name: "Game Ground", description: `Session with ${coach.name}`,
+        prefill: { name: user.name, email: user.email, contact: cleanedPhone },
+      });
+      await verifyPayment({
+        success, entityType: "coach", entityId: id, amount: order.amount,
+        registration: { entityType: "coach", batchId: batchId ?? selectedBatch ?? undefined, phone: cleanedPhone },
+        devMode: order.devMode,
+      });
+      setJustBooked(true);
+      qc.invalidateQueries({ queryKey: ["coach"] });
+      qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Session booked & paid! 🎉");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payment failed");
+    } finally {
+      setPaying(false);
+    }
+  };
 
   const handleReview = async () => {
     if (!user) { toast.error("Please sign in to leave a review"); return; }
@@ -411,8 +448,8 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               )}
                               {!isFull && (
                                 <button
-                                  onClick={ev => { ev.stopPropagation(); setSelectedBatch(batch.id); handleBook(batch.id); }}
-                                  disabled={book.isPending}
+                                  onClick={ev => { ev.stopPropagation(); setSelectedBatch(batch.id); if (fixedPrice) { handleInstantPay(batch.id); } else { handleBook(batch.id); } }}
+                                  disabled={book.isPending || paying}
                                   style={{
                                     padding: "8px 18px", borderRadius: 100,
                                     fontSize: 12, fontWeight: 700,
@@ -792,6 +829,21 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                           </p>
                         </div>
                       )}
+                      {fixedPrice && coach.seatsLeft > 0 && (
+                        <button
+                          onClick={() => handleInstantPay()}
+                          disabled={paying}
+                          style={{
+                            width: "100%", height: 52, borderRadius: 100, marginBottom: 10,
+                            fontSize: 14, fontWeight: 700, fontFamily: "inherit", border: "none",
+                            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            color: "#fff", cursor: paying ? "not-allowed" : "pointer",
+                            opacity: paying ? 0.7 : 1, boxShadow: "0 0 28px rgba(230,57,70,0.35)",
+                          }}
+                        >
+                          {paying ? "Processing…" : `Pay & book instantly · ₹${coach.priceMin}`}
+                        </button>
+                      )}
                       <Magnetic strength={6}>
                         <button
                           onClick={() => handleBook()}
@@ -813,7 +865,8 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             ? "Booking…"
                             : coach.seatsLeft === 0
                               ? "Join waitlist"
-                              : selectedBatch ? "Book selected batch" : "Book a session"}
+                              : selectedBatch ? "Book selected batch"
+                                : fixedPrice ? "Request session instead" : "Book a session"}
                         </button>
                       </Magnetic>
                       </>
