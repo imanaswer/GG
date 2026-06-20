@@ -518,16 +518,28 @@ with:
                                 : fixedPrice ? "Request session instead" : "Book a session"}
 ```
 
-- [ ] **Step 4: Typecheck + lint the page**
+- [ ] **Step 4: Route the per-batch action to instant pay for fixed-price coaches**
+
+The per-batch "book" button (`src/app/coach/[id]/page.tsx:414`) currently does an immediate FREE booking: `onClick={ev => { ev.stopPropagation(); setSelectedBatch(batch.id); handleBook(batch.id); }}`. For a fixed-price coach this would silently bypass payment. Replace that `onClick` (and add `paying` to the disabled guard) so it routes to instant pay when the coach is fixed-price:
+
+```tsx
+                                <button
+                                  onClick={ev => { ev.stopPropagation(); setSelectedBatch(batch.id); fixedPrice ? handleInstantPay(batch.id) : handleBook(batch.id); }}
+                                  disabled={book.isPending || paying}
+```
+
+Leave the rest of that button (styles, label) unchanged. Result: for a fixed-price coach, booking a specific batch opens the payment flow scoped to that batch (`handleInstantPay(batch.id)` passes `batchId` through to `verify`, which decrements that batch's seats); for a range/free coach it stays the existing free request.
+
+- [ ] **Step 5: Typecheck + lint the page**
 
 Run: `npx tsc --noEmit && npx next lint --file src/app/coach/[id]/page.tsx`
 Expected: PASS (no type errors; lint clean for the file).
 
-- [ ] **Step 5: Manual dev-mode verification**
+- [ ] **Step 6: Manual verification**
 
-With no Razorpay keys set (dev mode), run `npm run dev`, open a fixed-price coach (e.g. priceMin === priceMax) at `/coach/<id>`, enter a phone number, click **"Pay & book instantly"**, and complete the mock checkout. Confirm: toast "Session booked & paid!", the panel flips to the booked/pending state, and the booking shows as `approved` in the DB (`npm run db:studio` → Booking row with `status: approved`, `paymentStatus: paid`, `amountPaid` = price×100). Then open a range-priced coach and confirm only the plain "Book a session" button is shown (no instant-pay button).
+End-to-end payment requires **Razorpay test keys** in `.env.local` (`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`) — with no keys, `create-order` returns a placeholder key and the Razorpay modal cannot complete (there is no dev-mode modal bypass in this codebase; payment UIs are otherwise exercised via Playwright API interception, per project convention). With test keys set: run `npm run dev`, open a fixed-price coach (`priceMin === priceMax`) at `/coach/<id>`, enter a phone number, click **"Pay & book instantly"**, complete the Razorpay test checkout, and confirm the toast "Session booked & paid!" plus a DB row (`npm run db:studio` → Booking with `status: approved`, `paymentStatus: paid`, `amountPaid` = price×100, and a matching `Payment` row whose `entityType: "coach"` / `entityId` = the booking id). Then open a range-priced coach and confirm only the plain "Book a session" button is shown (no instant-pay button). The no-keys path is covered by the unit tests (Task 1) and typecheck; do not assert it works through the live modal.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/app/coach/[id]/page.tsx
@@ -584,7 +596,15 @@ git commit -m "feat(admin): show payment status on coach booking rows"
 **Files:**
 - Modify: `src/app/api/admin/revenue/route.ts:12-21` (queries), `:23-32` (transactions/breakdown), `:37`
 
-- [ ] **Step 1: Fetch paid coach bookings**
+- [ ] **Step 1: Remove the now-unused import**
+
+In `src/app/api/admin/revenue/route.ts`, delete the import on line 4 (its only usage is replaced in this task; leaving it triggers a no-unused-vars lint failure under `npm run build`):
+
+```ts
+import { BILLABLE_STATUSES } from "@/lib/bookings";
+```
+
+- [ ] **Step 2: Fetch paid coach bookings**
 
 In `src/app/api/admin/revenue/route.ts`, replace the `confirmedBookings` query inside the `Promise.all` (line 13):
 
@@ -613,7 +633,7 @@ with:
   const [paidBookings, campRegs, eventRegs, gamePlayers] = await Promise.all([
 ```
 
-- [ ] **Step 2: Compute coach revenue (paise → rupees) and add to the feed**
+- [ ] **Step 3: Compute coach revenue (paise → rupees) and add to the feed**
 
 In the same file, after the `gameRevenue` line (line 21), add:
 
@@ -630,7 +650,7 @@ Then add coach transactions to the `transactions` array (line 23-27), appending 
     ...paidBookings.map(b => ({ id: b.id, type: "Coach", description: b.coach?.name ?? "Coach session", player: b.user?.name, amount: Math.round(b.amountPaid / 100), date: b.approvedAt ?? b.createdAt, status: "paid" })),
 ```
 
-- [ ] **Step 3: Include coach revenue in totals and the breakdown**
+- [ ] **Step 4: Include coach revenue in totals and the breakdown**
 
 In the same file, update the `total` (line 29). Replace:
 
@@ -656,12 +676,12 @@ with:
       { category: "Coach Bookings",      transactions: paidBookings.length,       total: coachRevenue, avg: paidBookings.length > 0 ? Math.round(coachRevenue / paidBookings.length) : 0 },
 ```
 
-- [ ] **Step 4: Typecheck**
+- [ ] **Step 5: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/app/api/admin/revenue/route.ts
@@ -689,9 +709,9 @@ Expected: PASS.
 Run: `npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 4: Manual end-to-end (dev mode)**
+- [ ] **Step 4: Manual end-to-end (requires Razorpay test keys)**
 
-With `npm run dev`: (a) fixed-price coach → instant pay → confirmed `approved`/`paid` booking visible in `/profile` bookings and `/admin/bookings/coaches` with a "paid" payment value; (b) range-priced coach → only "Book a session" (free request → `pending`, unchanged); (c) `/admin` revenue page shows the coach booking in the transactions feed with the real amount (not a flat 1045).
+With `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` test keys in `.env.local` and `npm run dev`: (a) fixed-price coach → instant pay → confirmed `approved`/`paid` booking visible in `/profile` bookings and `/admin/bookings/coaches` with a "paid" payment value; (b) fixed-price coach → book a specific batch → payment flow opens and that batch's seats decrement; (c) range-priced coach → only "Book a session" (free request → `pending`, unchanged); (d) `/admin` revenue page shows the coach booking in the transactions feed with the real amount (not a flat 1045). Without test keys, this step cannot complete through the live modal — rely on Steps 1–3 (unit tests, typecheck, build) for the no-keys path.
 
 - [ ] **Step 5: Final commit (if any verification fixups were needed)**
 
@@ -708,3 +728,4 @@ git commit -m "test(coach): verify direct-pay end to end"
 - **Dev mode:** when `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` are unset, `create-order` returns a mock order and `verify` skips signature checking (existing behavior). The coach branch must still create the booking in dev mode so local testing works — it does, because the transaction runs regardless of `liveVerification`.
 - **Seat consistency:** the free request path decrements the seat at request time (`pending` holds it); the paid path decrements only on successful `verify`. Both release on `cancelled`/`rejected` via `transitionBooking`.
 - **Units:** `Booking.amountPaid` and `Payment.amount` are paise; `coachInstantChargeRupees` returns rupees. Multiply by 100 when persisting, divide by 100 for rupee revenue figures.
+- **Idempotency (accepted v1 risk):** the coach `verify` branch has no dedup guard, so a `verify` fired twice for the *same* payment would create two paid bookings + a double seat decrement (camp/event/workshop avoid this via their "already registered" checks). The spec intentionally allows a user to book multiple sessions, so no unique guard is added now — but note this is a retry risk, distinct from intentional re-booking. If it surfaces in practice, dedup on `razorpayPaymentId` in the `Payment` table.
