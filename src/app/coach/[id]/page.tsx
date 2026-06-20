@@ -51,10 +51,13 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
 
   const bookingStatus = coach?.userBooking?.status ?? null;
   const [justBooked, setJustBooked] = useState(false);
+  const [justPaid, setJustPaid] = useState(false);
   // Only pending/approved count as an active booking that blocks re-booking.
   // Rejected/completed fall through so the player can request again.
+  // A just-completed instant payment is approved immediately (justPaid), before the
+  // coach query refetches — so it must not fall into the "pending / waiting" branch.
   const effectiveStatus =
-    bookingStatus === "approved" ? "approved"
+    (justPaid || bookingStatus === "approved") ? "approved"
     : (justBooked || bookingStatus === "pending") ? "pending"
     : bookingStatus; // "rejected" | "completed" | null
   const activeBooking = effectiveStatus === "pending" || effectiveStatus === "approved";
@@ -84,7 +87,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
         registration: { entityType: "coach", batchId: batchId ?? selectedBatch ?? undefined, phone: cleanedPhone },
         devMode: order.devMode,
       });
-      setJustBooked(true);
+      setJustPaid(true);
       qc.invalidateQueries({ queryKey: ["coach"] });
       qc.invalidateQueries({ queryKey: ["coaches"] });
       qc.invalidateQueries({ queryKey: ["bookings"] });
@@ -832,7 +835,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       {fixedPrice && coach.seatsLeft > 0 && (
                         <button
                           onClick={() => handleInstantPay()}
-                          disabled={paying}
+                          disabled={paying || book.isPending}
                           style={{
                             width: "100%", height: 52, borderRadius: 100, marginBottom: 10,
                             fontSize: 14, fontWeight: 700, fontFamily: "inherit", border: "none",
@@ -847,7 +850,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       <Magnetic strength={6}>
                         <button
                           onClick={() => handleBook()}
-                          disabled={book.isPending || coach.seatsLeft === 0}
+                          disabled={book.isPending || paying || coach.seatsLeft === 0}
                           style={{
                             width: "100%", height: 52, borderRadius: 100,
                             fontSize: 14, fontWeight: 700, fontFamily: "inherit",
@@ -856,8 +859,8 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               ? "transparent"
                               : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
                             color: coach.seatsLeft === 0 ? "rgba(255,255,255,0.55)" : "#fff",
-                            cursor: (book.isPending || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
-                            opacity: book.isPending ? 0.7 : 1,
+                            cursor: (book.isPending || paying || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
+                            opacity: (book.isPending || paying) ? 0.7 : 1,
                             boxShadow: coach.seatsLeft === 0 ? "none" : "0 0 28px rgba(230,57,70,0.35)",
                           }}
                         >
