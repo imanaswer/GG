@@ -74,7 +74,7 @@ export async function openRazorpayCheckout(args: CheckoutArgs): Promise<Razorpay
   });
 }
 
-export async function createPaymentOrder(input: { amount: number; entityType: "camp" | "event" | "game" | "workshop"; entityId: string }): Promise<{ orderId: string; amount: number; currency: string; keyId: string; devMode?: boolean }> {
+export async function createPaymentOrder(input: { amount?: number; entityType: "camp" | "event" | "game" | "workshop" | "coach"; entityId: string }): Promise<{ orderId: string; amount: number; currency: string; keyId: string; devMode?: boolean }> {
   const r = await fetch("/api/payments/create-order", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
   const j = await r.json();
   if (!j.ok) throw new Error(j.error ?? "Failed to create payment order");
@@ -85,11 +85,12 @@ export type VerifyRegistration =
   | { entityType: "camp"; childName: string; childAge: number }
   | { entityType: "event"; teamName?: string }
   | { entityType: "game" }
-  | { entityType: "workshop"; participantName: string; participantAge?: number; registrationType: string };
+  | { entityType: "workshop"; participantName: string; participantAge?: number; registrationType: string }
+  | { entityType: "coach"; batchId?: string; phone?: string; note?: string };
 
 export async function verifyPayment(input: {
   success: RazorpaySuccess;
-  entityType: "camp" | "event" | "game" | "workshop";
+  entityType: "camp" | "event" | "game" | "workshop" | "coach";
   entityId: string;
   amount: number;
   registration: VerifyRegistration;
