@@ -41,7 +41,9 @@ function toRow(b: Prisma.BookingGetPayload<{ include: typeof INCLUDE }>): Bookin
       coachNote: b.coachNote ?? "",
       note: b.note ?? "",
     },
-    payment: null,
+    payment: b.paymentStatus === "paid"
+      ? { amount: b.amountPaid, currency: "INR", status: "paid", razorpayPaymentId: null, paidAt: b.approvedAt?.toISOString() ?? null }
+      : null,
   };
 }
 
