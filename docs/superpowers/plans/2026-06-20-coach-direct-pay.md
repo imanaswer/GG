@@ -1,0 +1,710 @@
+# Coach Session Direct-Pay Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Let a client pay for a fixed-price coach session and have it confirmed instantly, while keeping the existing free admin-confirmed "Request session" path.
+
+**Architecture:** Reuse the existing Razorpay rail (`create-order` → checkout → `verify`) by adding a `coach` branch to both routes. The "fixed price only" eligibility rule and charge amount live in a new pure module (`src/lib/coachPayment.ts`) that is unit-tested in isolation — matching how `src/lib/eventPricing.ts` is structured and tested. A paid booking is written directly as `status: "approved"`, `paymentStatus: "paid"`, with a matching `Payment` row. Two new `Booking` columns (`paymentStatus`, `amountPaid`) surface payment state to the admin/coach dashboards and the revenue report.
+
+**Tech Stack:** Next.js (App Router) API routes, Prisma 7 (pg adapter), Razorpay, React Query, Vitest.
+
+**Reference spec:** `docs/superpowers/specs/2026-06-20-coach-direct-pay-design.md`
+
+---
+
+## File Structure
+
+| File | Change | Responsibility |
+|------|--------|----------------|
+| `src/lib/coachPayment.ts` | Create | Pure rules: instant-pay eligibility + charge amount (rupees) |
+| `src/lib/coachPayment.test.ts` | Create | Unit tests for the pure rules |
+| `prisma/schema.prisma` | Modify | Add `paymentStatus`, `amountPaid` to `Booking` |
+| `prisma/migrations/.../migration.sql` | Create (via CLI) | DB migration for the two columns |
+| `src/app/api/payments/create-order/route.ts` | Modify | Server-authoritative `coach` order branch |
+| `src/app/api/payments/verify/route.ts` | Modify | `coach` verify branch: Booking + Payment + seat decrement |
+| `src/lib/razorpay.ts` | Modify | Extend client helpers' entity/registration unions to `coach` |
+| `src/app/coach/[id]/page.tsx` | Modify | "Pay & book instantly" button + handler |
+| `src/app/api/admin/bookings/coaches/route.ts` | Modify | Surface `payment` on coach rows |
+| `src/app/api/admin/revenue/route.ts` | Modify | Replace `* 1045` placeholder with real coach revenue |
+
+---
+
+## Task 1: Pure coach-payment rules module
+
+**Files:**
+- Create: `src/lib/coachPayment.ts`
+- Test: `src/lib/coachPayment.test.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/lib/coachPayment.test.ts`:
+
+```ts
+import { describe, it, expect } from "vitest";
+import { isInstantPayEligible, coachInstantChargeRupees } from "./coachPayment";
+
+describe("isInstantPayEligible", () => {
+  it("is true when priceMin equals priceMax and is positive", () => {
+    expect(isInstantPayEligible({ priceMin: 2000, priceMax: 2000 })).toBe(true);
+  });
+  it("is false for a price range", () => {
+    expect(isInstantPayEligible({ priceMin: 1000, priceMax: 2000 })).toBe(false);
+  });
+  it("is false when the price is zero", () => {
+    expect(isInstantPayEligible({ priceMin: 0, priceMax: 0 })).toBe(false);
+  });
+});
+
+describe("coachInstantChargeRupees", () => {
+  it("returns the fixed price for an eligible coach", () => {
+    expect(coachInstantChargeRupees({ priceMin: 2000, priceMax: 2000 })).toBe(2000);
+  });
+  it("throws for an ineligible coach", () => {
+    expect(() => coachInstantChargeRupees({ priceMin: 1000, priceMax: 2000 })).toThrow();
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/lib/coachPayment.test.ts`
+Expected: FAIL — `Failed to resolve import "./coachPayment"`.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/lib/coachPayment.ts`:
+
+```ts
+// Pure rules for instant ("pay & book") coach sessions. No Prisma / IO — unit-testable.
+// Instant pay is offered ONLY when the coach has a single fixed price (priceMin === priceMax > 0).
+// Coaches with a price range or no price stay request-only (free, admin-confirmed).
+
+export interface CoachPrice {
+  priceMin: number;
+  priceMax: number;
+}
+
+export function isInstantPayEligible(coach: CoachPrice): boolean {
+  return coach.priceMin > 0 && coach.priceMin === coach.priceMax;
+}
+
+/** Charge amount in RUPEES. Throws if the coach is not instant-pay eligible. */
+export function coachInstantChargeRupees(coach: CoachPrice): number {
+  if (!isInstantPayEligible(coach)) {
+    throw new Error("Coach is not eligible for instant pay");
+  }
+  return coach.priceMin;
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/lib/coachPayment.test.ts`
+Expected: PASS (5 tests).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/lib/coachPayment.ts src/lib/coachPayment.test.ts
+git commit -m "feat(coach): pure instant-pay eligibility + charge rules"
+```
+
+---
+
+## Task 2: Booking payment columns (schema + migration)
+
+**Files:**
+- Modify: `prisma/schema.prisma:218-236` (`Booking` model)
+- Create: `prisma/migrations/<timestamp>_booking_payment_fields/migration.sql` (generated by CLI)
+
+- [ ] **Step 1: Add the two columns to the Booking model**
+
+In `prisma/schema.prisma`, inside `model Booking`, add the two fields right after the `cancelledAt` line (line 230):
+
+```prisma
+  cancelledAt DateTime?
+  paymentStatus String  @default("unpaid") // "unpaid" | "paid"
+  amountPaid    Int     @default(0)         // paise; matches Payment.amount units
+  createdAt DateTime @default(now())
+```
+
+- [ ] **Step 2: Generate the migration**
+
+Run: `npm run db:migrate -- --name booking_payment_fields`
+Expected: Prisma creates `prisma/migrations/<timestamp>_booking_payment_fields/migration.sql` containing two `ALTER TABLE "Booking" ADD COLUMN` statements with defaults, applies it, and regenerates the client. (Connection URL resolves through `prisma.config.ts`, which loads `DIRECT_URL`/`DATABASE_URL` from `.env.local` — ensure one is set.)
+
+- [ ] **Step 3: Verify the client picked up the fields**
+
+Run: `npx tsc --noEmit`
+Expected: PASS — no errors (new fields are now on the generated `Booking` type). If unrelated pre-existing errors appear, confirm none reference `Booking.paymentStatus` / `Booking.amountPaid`.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add prisma/schema.prisma prisma/migrations
+git commit -m "feat(db): add paymentStatus + amountPaid to Booking"
+```
+
+---
+
+## Task 3: Server-authoritative coach order branch
+
+**Files:**
+- Modify: `src/app/api/payments/create-order/route.ts:19-32`
+
+- [ ] **Step 1: Import the coach rule**
+
+At the top of `src/app/api/payments/create-order/route.ts`, add below the existing `computeEventCharge` import (line 5):
+
+```ts
+import { computeEventCharge } from "@/lib/eventPricing";
+import { isInstantPayEligible, coachInstantChargeRupees } from "@/lib/coachPayment";
+```
+
+- [ ] **Step 2: Add the coach branch**
+
+In the same file, replace the existing event/else block (lines 20-32):
+
+```ts
+    // Events: server-authoritative — never trust the client-sent amount.
+    if (entityType === "event") {
+      const event = await prisma.sportEvent.findUnique({
+        where: { id: entityId },
+        select: { entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true },
+      });
+      if (!event) return fail("Event not found", 404);
+      const total = computeEventCharge(event).total;
+      if (total <= 0) return fail("This is a free event", 400);
+      amount = total;
+      currency = event.currency || "INR";
+    } else if (!amount) {
+      return fail("amount, entityType, entityId required", 400);
+    }
+```
+
+with this (adds a `coach` branch, keeps everything else identical):
+
+```ts
+    // Events: server-authoritative — never trust the client-sent amount.
+    if (entityType === "event") {
+      const event = await prisma.sportEvent.findUnique({
+        where: { id: entityId },
+        select: { entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true },
+      });
+      if (!event) return fail("Event not found", 404);
+      const total = computeEventCharge(event).total;
+      if (total <= 0) return fail("This is a free event", 400);
+      amount = total;
+      currency = event.currency || "INR";
+    } else if (entityType === "coach") {
+      // Server-authoritative: instant pay only for a single fixed price.
+      const coach = await prisma.coach.findUnique({
+        where: { id: entityId },
+        select: { priceMin: true, priceMax: true, seatsLeft: true },
+      });
+      if (!coach) return fail("Coach not found", 404);
+      if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+      if (!isInstantPayEligible(coach)) return fail("This coach is not available for instant pay", 400);
+      amount = coachInstantChargeRupees(coach);
+      currency = "INR";
+    } else if (!amount) {
+      return fail("amount, entityType, entityId required", 400);
+    }
+```
+
+- [ ] **Step 3: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/app/api/payments/create-order/route.ts
+git commit -m "feat(payments): coach instant-pay order branch (fixed price only)"
+```
+
+---
+
+## Task 4: Coach verify branch (create Booking + Payment + decrement seats)
+
+**Files:**
+- Modify: `src/app/api/payments/verify/route.ts:9-18` (Body type), `:38` (new branch before `camp`)
+
+- [ ] **Step 1: Import the coach rule and extend the Body type**
+
+At the top of `src/app/api/payments/verify/route.ts`, add the import below `computeEventCharge` (line 6):
+
+```ts
+import { computeEventCharge } from "@/lib/eventPricing";
+import { coachInstantChargeRupees } from "@/lib/coachPayment";
+```
+
+Then widen the `Body` type (lines 13-17). Replace:
+
+```ts
+  entityType: "camp" | "event" | "game" | "workshop";
+  entityId: string;
+  amount: number;
+  registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string };
+  devMode?: boolean;
+```
+
+with:
+
+```ts
+  entityType: "camp" | "event" | "game" | "workshop" | "coach";
+  entityId: string;
+  amount: number;
+  registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string; batchId?: string; phone?: string; note?: string };
+  devMode?: boolean;
+```
+
+- [ ] **Step 2: Add the coach branch**
+
+In the same file, immediately before the `if (entityType === "camp") {` block (line 38), insert:
+
+```ts
+    if (entityType === "coach") {
+      const { batchId, phone, note } = registration ?? {};
+      const coach = await prisma.coach.findUnique({
+        where: { id: entityId },
+        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true },
+      });
+      if (!coach) return fail("Coach not found", 404);
+      if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+
+      // Re-derive the charge server-side (never trust the client amount). Throws if
+      // the coach is no longer fixed-price, e.g. price edited between order and verify.
+      let chargeRupees: number;
+      try {
+        chargeRupees = coachInstantChargeRupees(coach);
+      } catch {
+        return fail("This coach is not available for instant pay", 400);
+      }
+      const chargePaise = chargeRupees * 100;
+
+      const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
+      if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
+        return fail("Please enter a valid mobile number", 400);
+      }
+
+      const booking = await prisma.$transaction(async (tx) => {
+        if (cleanedPhone) {
+          await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
+        }
+        if (batchId) {
+          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+          if (batch && batch.coachId === entityId && batch.seats > 0) {
+            await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+          }
+        }
+        await tx.coach.update({ where: { id: entityId }, data: { seatsLeft: { decrement: 1 } } });
+
+        const created = await tx.booking.create({
+          data: {
+            userId: session.id,
+            coachId: entityId,
+            batchId: batchId ?? null,
+            status: "approved",
+            approvedAt: new Date(),
+            note: note ?? null,
+            paymentStatus: "paid",
+            amountPaid: chargePaise,
+          },
+        });
+
+        await tx.payment.create({
+          data: {
+            userId: session.id, entityType, entityId: created.id,
+            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+            amount: chargePaise, currency: "INR",
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+          },
+        });
+        return created;
+      });
+
+      return ok({ verified: true, bookingId: booking.id });
+    }
+
+    if (entityType === "camp") {
+```
+
+(Note: `entityId: created.id` ties the Payment to the specific booking, per the spec.)
+
+- [ ] **Step 3: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/app/api/payments/verify/route.ts
+git commit -m "feat(payments): coach verify branch confirms paid booking + seat decrement"
+```
+
+---
+
+## Task 5: Extend client Razorpay helpers for coach
+
+**Files:**
+- Modify: `src/lib/razorpay.ts:77-82` (`createPaymentOrder`), `:84-113` (`verifyPayment` + union)
+
+- [ ] **Step 1: Widen `createPaymentOrder`**
+
+In `src/lib/razorpay.ts`, replace the `createPaymentOrder` signature (line 77). Replace:
+
+```ts
+export async function createPaymentOrder(input: { amount: number; entityType: "camp" | "event" | "game" | "workshop"; entityId: string }): Promise<{ orderId: string; amount: number; currency: string; keyId: string; devMode?: boolean }> {
+```
+
+with:
+
+```ts
+export async function createPaymentOrder(input: { amount?: number; entityType: "camp" | "event" | "game" | "workshop" | "coach"; entityId: string }): Promise<{ orderId: string; amount: number; currency: string; keyId: string; devMode?: boolean }> {
+```
+
+- [ ] **Step 2: Widen the `VerifyRegistration` union and `verifyPayment`**
+
+In the same file, replace the `VerifyRegistration` union (lines 84-88):
+
+```ts
+export type VerifyRegistration =
+  | { entityType: "camp"; childName: string; childAge: number }
+  | { entityType: "event"; teamName?: string }
+  | { entityType: "game" }
+  | { entityType: "workshop"; participantName: string; participantAge?: number; registrationType: string };
+```
+
+with:
+
+```ts
+export type VerifyRegistration =
+  | { entityType: "camp"; childName: string; childAge: number }
+  | { entityType: "event"; teamName?: string }
+  | { entityType: "game" }
+  | { entityType: "workshop"; participantName: string; participantAge?: number; registrationType: string }
+  | { entityType: "coach"; batchId?: string; phone?: string; note?: string };
+```
+
+Then widen the `verifyPayment` `entityType` parameter (line 92). Replace:
+
+```ts
+  entityType: "camp" | "event" | "game" | "workshop";
+```
+
+with:
+
+```ts
+  entityType: "camp" | "event" | "game" | "workshop" | "coach";
+```
+
+- [ ] **Step 3: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/lib/razorpay.ts
+git commit -m "feat(payments): allow coach entityType in client checkout helpers"
+```
+
+---
+
+## Task 6: "Pay & book instantly" button + handler on the coach page
+
+**Files:**
+- Modify: `src/app/coach/[id]/page.tsx` (imports, handler near line 76, button area near line 795)
+
+- [ ] **Step 1: Import the helpers and eligibility rule**
+
+At the top of `src/app/coach/[id]/page.tsx`, add these imports alongside the existing imports:
+
+```ts
+import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
+import { isInstantPayEligible } from "@/lib/coachPayment";
+import { useQueryClient } from "@tanstack/react-query";
+```
+
+(If `useQueryClient` or any of these is already imported, do not duplicate it.)
+
+- [ ] **Step 2: Add instant-pay state + handler**
+
+In the component, just after the existing `const [phone, setPhone] = useState("");` line (line 60), add:
+
+```ts
+  const [paying, setPaying] = useState(false);
+  const qc = useQueryClient();
+  const fixedPrice = coach ? isInstantPayEligible(coach) : false;
+
+  const handleInstantPay = async (batchId?: string) => {
+    if (!user) { toast.error("Please sign in to book a session"); return; }
+    if (!coach) return;
+    const cleanedPhone = phone.trim();
+    if (!cleanedPhone) { toast.error("Please add a mobile number so the team can reach you"); return; }
+    if (!/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) { toast.error("Please enter a valid mobile number"); return; }
+    setPaying(true);
+    try {
+      const order = await createPaymentOrder({ entityType: "coach", entityId: id });
+      const success = await openRazorpayCheckout({
+        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
+        name: "Game Ground", description: `Session with ${coach.name}`,
+        prefill: { name: user.name, email: user.email, contact: cleanedPhone },
+      });
+      await verifyPayment({
+        success, entityType: "coach", entityId: id, amount: order.amount,
+        registration: { entityType: "coach", batchId: batchId ?? selectedBatch ?? undefined, phone: cleanedPhone },
+        devMode: order.devMode,
+      });
+      setJustBooked(true);
+      qc.invalidateQueries({ queryKey: ["coach"] });
+      qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Session booked & paid! 🎉");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Payment failed");
+    } finally {
+      setPaying(false);
+    }
+  };
+```
+
+(`user.name` / `user.email` come from the same `user` object already used by `handleReview`. If those properties are not present on the `user` type, drop them from `prefill` — `contact` is the only one that matters.)
+
+- [ ] **Step 3: Render the instant-pay button above the existing "Book a session" button**
+
+In `src/app/coach/[id]/page.tsx`, find the `<Magnetic strength={6}>` block that wraps the `onClick={() => handleBook()}` button (around line 795). Immediately BEFORE that `<Magnetic strength={6}>` opening tag, insert a fixed-price instant-pay button:
+
+```tsx
+                      {fixedPrice && coach.seatsLeft > 0 && (
+                        <button
+                          onClick={() => handleInstantPay()}
+                          disabled={paying}
+                          style={{
+                            width: "100%", height: 52, borderRadius: 100, marginBottom: 10,
+                            fontSize: 14, fontWeight: 700, fontFamily: "inherit", border: "none",
+                            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            color: "#fff", cursor: paying ? "not-allowed" : "pointer",
+                            opacity: paying ? 0.7 : 1, boxShadow: "0 0 28px rgba(230,57,70,0.35)",
+                          }}
+                        >
+                          {paying ? "Processing…" : `Pay & book instantly · ₹${coach.priceMin}`}
+                        </button>
+                      )}
+```
+
+Then, so the original button reads as the secondary (free) option when instant pay is shown, change the original button's label expression (inside the existing `<Magnetic>` button, the final ternary around line 813). Replace:
+
+```tsx
+                          {book.isPending
+                            ? "Booking…"
+                            : coach.seatsLeft === 0
+                              ? "Join waitlist"
+                              : selectedBatch ? "Book selected batch" : "Book a session"}
+```
+
+with:
+
+```tsx
+                          {book.isPending
+                            ? "Booking…"
+                            : coach.seatsLeft === 0
+                              ? "Join waitlist"
+                              : selectedBatch ? "Book selected batch"
+                                : fixedPrice ? "Request session instead" : "Book a session"}
+```
+
+- [ ] **Step 4: Typecheck + lint the page**
+
+Run: `npx tsc --noEmit && npx next lint --file src/app/coach/[id]/page.tsx`
+Expected: PASS (no type errors; lint clean for the file).
+
+- [ ] **Step 5: Manual dev-mode verification**
+
+With no Razorpay keys set (dev mode), run `npm run dev`, open a fixed-price coach (e.g. priceMin === priceMax) at `/coach/<id>`, enter a phone number, click **"Pay & book instantly"**, and complete the mock checkout. Confirm: toast "Session booked & paid!", the panel flips to the booked/pending state, and the booking shows as `approved` in the DB (`npm run db:studio` → Booking row with `status: approved`, `paymentStatus: paid`, `amountPaid` = price×100). Then open a range-priced coach and confirm only the plain "Book a session" button is shown (no instant-pay button).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/app/coach/[id]/page.tsx
+git commit -m "feat(coach): Pay & book instantly button for fixed-price coaches"
+```
+
+---
+
+## Task 7: Surface payment on admin coach booking rows
+
+**Files:**
+- Modify: `src/app/api/admin/bookings/coaches/route.ts:23-48` (`INCLUDE` + `toRow`)
+
+- [ ] **Step 1: Select the new columns**
+
+In `src/app/api/admin/bookings/coaches/route.ts`, the `INCLUDE` object (lines 23-27) selects relations only; the scalar columns `paymentStatus` and `amountPaid` are returned by default on `findMany`, so no change to `INCLUDE` is needed. Confirm `toRow`'s payload type `Prisma.BookingGetPayload<{ include: typeof INCLUDE }>` already carries `b.paymentStatus` and `b.amountPaid` (it does, since they're scalar fields on `Booking`).
+
+- [ ] **Step 2: Populate `payment` in `toRow`**
+
+In the same file, replace the final line of the `toRow` return (line 46):
+
+```ts
+    payment: null,
+  };
+}
+```
+
+with:
+
+```ts
+    payment: b.paymentStatus === "paid"
+      ? { amount: b.amountPaid, currency: "INR", status: "paid", razorpayPaymentId: null, paidAt: b.approvedAt?.toISOString() ?? null }
+      : null,
+  };
+}
+```
+
+- [ ] **Step 3: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS — the object matches the `PaymentInfo` interface (`amount`, `currency`, `status`, `razorpayPaymentId`, `paidAt`).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/app/api/admin/bookings/coaches/route.ts
+git commit -m "feat(admin): show payment status on coach booking rows"
+```
+
+---
+
+## Task 8: Real coach revenue (replace the `* 1045` placeholder)
+
+**Files:**
+- Modify: `src/app/api/admin/revenue/route.ts:12-21` (queries), `:23-32` (transactions/breakdown), `:37`
+
+- [ ] **Step 1: Fetch paid coach bookings**
+
+In `src/app/api/admin/revenue/route.ts`, replace the `confirmedBookings` query inside the `Promise.all` (line 13):
+
+```ts
+    prisma.booking.count({ where: { status: { in: BILLABLE_STATUSES } } }),
+```
+
+with a fetch of the paid bookings (amount + metadata for the feed):
+
+```ts
+    prisma.booking.findMany({
+      where: { paymentStatus: "paid" },
+      select: { id: true, amountPaid: true, approvedAt: true, createdAt: true, coach: { select: { name: true } }, user: { select: { name: true } } },
+    }),
+```
+
+and rename the destructured variable (line 12). Replace:
+
+```ts
+  const [confirmedBookings, campRegs, eventRegs, gamePlayers] = await Promise.all([
+```
+
+with:
+
+```ts
+  const [paidBookings, campRegs, eventRegs, gamePlayers] = await Promise.all([
+```
+
+- [ ] **Step 2: Compute coach revenue (paise → rupees) and add to the feed**
+
+In the same file, after the `gameRevenue` line (line 21), add:
+
+```ts
+  const gameRevenue  = gamePlayers.reduce((a, gp) => a + (gp.game?.costAmount ?? 0), 0);
+  // Booking.amountPaid is in paise; revenue figures here are in rupees.
+  const coachRevenue = paidBookings.reduce((a, b) => a + Math.round(b.amountPaid / 100), 0);
+```
+
+Then add coach transactions to the `transactions` array (line 23-27), appending after the `gamePlayers` spread:
+
+```ts
+    ...gamePlayers.filter(gp => (gp.game?.costAmount ?? 0) > 0).map(gp => ({ id: gp.id, type: "Game", description: gp.game?.title ?? "Game", player: gp.user?.name, amount: gp.game?.costAmount ?? 0, date: gp.joinedAt, status: "paid" })),
+    ...paidBookings.map(b => ({ id: b.id, type: "Coach", description: b.coach?.name ?? "Coach session", player: b.user?.name, amount: Math.round(b.amountPaid / 100), date: b.approvedAt ?? b.createdAt, status: "paid" })),
+```
+
+- [ ] **Step 3: Include coach revenue in totals and the breakdown**
+
+In the same file, update the `total` (line 29). Replace:
+
+```ts
+  const total = campRevenue + eventRevenue + gameRevenue;
+```
+
+with:
+
+```ts
+  const total = campRevenue + eventRevenue + gameRevenue + coachRevenue;
+```
+
+Then replace the Coach Bookings breakdown row (line 37):
+
+```ts
+      { category: "Coach Bookings",      transactions: confirmedBookings,         total: confirmedBookings * 1045, avg: 1045 },
+```
+
+with:
+
+```ts
+      { category: "Coach Bookings",      transactions: paidBookings.length,       total: coachRevenue, avg: paidBookings.length > 0 ? Math.round(coachRevenue / paidBookings.length) : 0 },
+```
+
+- [ ] **Step 4: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/app/api/admin/revenue/route.ts
+git commit -m "feat(admin): real coach-booking revenue from paid bookings"
+```
+
+---
+
+## Task 9: Full regression + final verification
+
+**Files:** none (verification only)
+
+- [ ] **Step 1: Run the full unit suite**
+
+Run: `npm test`
+Expected: PASS — all existing suites plus the new `coachPayment.test.ts`. The booking state-machine tests (`bookingStatus.test.ts`, `adminBookings/*`) must remain green (no transitions changed).
+
+- [ ] **Step 2: Full typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: PASS.
+
+- [ ] **Step 3: Build**
+
+Run: `npm run build`
+Expected: build succeeds.
+
+- [ ] **Step 4: Manual end-to-end (dev mode)**
+
+With `npm run dev`: (a) fixed-price coach → instant pay → confirmed `approved`/`paid` booking visible in `/profile` bookings and `/admin/bookings/coaches` with a "paid" payment value; (b) range-priced coach → only "Book a session" (free request → `pending`, unchanged); (c) `/admin` revenue page shows the coach booking in the transactions feed with the real amount (not a flat 1045).
+
+- [ ] **Step 5: Final commit (if any verification fixups were needed)**
+
+```bash
+git add -A
+git commit -m "test(coach): verify direct-pay end to end"
+```
+
+---
+
+## Notes for the implementer
+
+- **Out of scope:** automated refunds. Cancelling a paid booking releases the seat through the existing state machine (`approved → cancelled`), but money-back is handled manually by an admin — identical to paid events today. Do not build refund logic.
+- **Dev mode:** when `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` are unset, `create-order` returns a mock order and `verify` skips signature checking (existing behavior). The coach branch must still create the booking in dev mode so local testing works — it does, because the transaction runs regardless of `liveVerification`.
+- **Seat consistency:** the free request path decrements the seat at request time (`pending` holds it); the paid path decrements only on successful `verify`. Both release on `cancelled`/`rejected` via `transitionBooking`.
+- **Units:** `Booking.amountPaid` and `Payment.amount` are paise; `coachInstantChargeRupees` returns rupees. Multiply by 100 when persisting, divide by 100 for rupee revenue figures.
