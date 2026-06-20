@@ -4,16 +4,17 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { computeEventCharge } from "@/lib/eventPricing";
+import { coachInstantChargeRupees } from "@/lib/coachPayment";
 import crypto from "crypto";
 
 type Body = {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  entityType: "camp" | "event" | "game" | "workshop";
+  entityType: "camp" | "event" | "game" | "workshop" | "coach";
   entityId: string;
   amount: number;
-  registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string };
+  registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string; batchId?: string; phone?: string; note?: string };
   devMode?: boolean;
 };
 
@@ -33,6 +34,69 @@ export async function POST(req: NextRequest) {
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
       if (expected !== razorpay_signature) return fail("Invalid payment signature", 400);
+    }
+
+    if (entityType === "coach") {
+      const { batchId, phone, note } = registration ?? {};
+      const coach = await prisma.coach.findUnique({
+        where: { id: entityId },
+        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true },
+      });
+      if (!coach) return fail("Coach not found", 404);
+      if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+
+      // Re-derive the charge server-side (never trust the client amount). Throws if
+      // the coach is no longer fixed-price, e.g. price edited between order and verify.
+      let chargeRupees: number;
+      try {
+        chargeRupees = coachInstantChargeRupees(coach);
+      } catch {
+        return fail("This coach is not available for instant pay", 400);
+      }
+      const chargePaise = chargeRupees * 100;
+
+      const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
+      if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
+        return fail("Please enter a valid mobile number", 400);
+      }
+
+      const booking = await prisma.$transaction(async (tx) => {
+        if (cleanedPhone) {
+          await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
+        }
+        if (batchId) {
+          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+          if (batch && batch.coachId === entityId && batch.seats > 0) {
+            await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+          }
+        }
+        await tx.coach.update({ where: { id: entityId }, data: { seatsLeft: { decrement: 1 } } });
+
+        const created = await tx.booking.create({
+          data: {
+            userId: session.id,
+            coachId: entityId,
+            batchId: batchId ?? null,
+            status: "approved",
+            approvedAt: new Date(),
+            note: note ?? null,
+            paymentStatus: "paid",
+            amountPaid: chargePaise,
+          },
+        });
+
+        await tx.payment.create({
+          data: {
+            userId: session.id, entityType, entityId: created.id,
+            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+            amount: chargePaise, currency: "INR",
+            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+          },
+        });
+        return created;
+      });
+
+      return ok({ verified: true, bookingId: booking.id });
     }
 
     if (entityType === "camp") {
