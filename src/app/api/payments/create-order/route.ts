@@ -3,6 +3,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { computeEventCharge } from "@/lib/eventPricing";
+import { isInstantPayEligible, coachInstantChargeRupees } from "@/lib/coachPayment";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,17 @@ export async function POST(req: NextRequest) {
       if (total <= 0) return fail("This is a free event", 400);
       amount = total;
       currency = event.currency || "INR";
+    } else if (entityType === "coach") {
+      // Server-authoritative: instant pay only for a single fixed price.
+      const coach = await prisma.coach.findUnique({
+        where: { id: entityId },
+        select: { priceMin: true, priceMax: true, seatsLeft: true },
+      });
+      if (!coach) return fail("Coach not found", 404);
+      if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+      if (!isInstantPayEligible(coach)) return fail("This coach is not available for instant pay", 400);
+      amount = coachInstantChargeRupees(coach);
+      currency = "INR";
     } else if (!amount) {
       return fail("amount, entityType, entityId required", 400);
     }
