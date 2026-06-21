@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Users, Trophy, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
@@ -13,6 +15,8 @@ import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
+
+if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 const HeroParticles = dynamic(() => import("@/components/premium/HeroParticles"), {
   ssr: false,
@@ -625,10 +629,6 @@ function QuickHub() {
 
 /* ── Stats counter (used in the closing conversion section) ── */
 
-// Count-up driven by IntersectionObserver, not GSAP ScrollTrigger. The previous
-// ScrollTrigger version silently stayed at 0 on the live site, so this is
-// deliberately self-contained: the real number ALWAYS renders (the animation is
-// pure progressive enhancement). If IO is unavailable, jump straight to the value.
 function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suffix?: string }) {
   const [val, setVal] = useState(from);
   const ref = useRef<HTMLSpanElement>(null);
@@ -636,39 +636,15 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    let raf = 0;
-
-    // Ancient browsers with no IntersectionObserver: still guarantee the number.
-    if (typeof IntersectionObserver === "undefined") {
-      raf = requestAnimationFrame(() => setVal(to));
-      return () => cancelAnimationFrame(raf);
-    }
-
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let started = false;
-    const animate = () => {
-      const duration = 1600;
-      const t0 = performance.now();
-      const tick = (now: number) => {
-        const p = Math.min(1, (now - t0) / duration);
-        const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-        setVal(Math.round(from + (to - from) * eased));
-        if (p < 1) raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
-    };
-
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting && !started) {
-        started = true;
-        if (reduce) setVal(to); else animate(); // reduced-motion → no count-up, just the value
-        io.disconnect();
-      }
-    }, { threshold: 0.4 });
-    io.observe(el);
-
-    return () => { io.disconnect(); cancelAnimationFrame(raf); };
+    const obj = { n: from };
+    const tween = gsap.to(obj, {
+      n: to,
+      duration: 2,
+      ease: "power3.out",
+      onUpdate: () => setVal(Math.round(obj.n)),
+      scrollTrigger: { trigger: el, start: "top 90%", once: true },
+    });
+    return () => { tween.scrollTrigger?.kill(); tween.kill(); };
   }, [from, to]);
 
   return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
@@ -676,13 +652,11 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
 
 /* ── Closing conversion section (Immersive + Stats + CTA merged) ── */
 
-// Kept consistent with the hero trust strip (147+ players, 12 coaches) and the
-// sport pills (7 sports) — a mismatch here reads as "the product is empty".
 const CLOSE_STATS = [
-  { value: 147, suffix: "+", label: "Players onboard" },
-  { value: 12, suffix: "", label: "Founding coaches" },
-  { value: 7, suffix: "", label: "Sports live" },
-  { value: 1, suffix: "", label: "City — more coming" },
+  { value: 147, suffix: "+", label: "Players on the waitlist" },
+  { value: 12, suffix: "", label: "Founding coaches onboard" },
+  { value: 3, suffix: "", label: "Sports at launch" },
+  { value: 1, suffix: "", label: "City, more coming" },
 ];
 
 function ConversionClose() {
