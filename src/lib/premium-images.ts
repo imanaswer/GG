@@ -37,8 +37,8 @@ export const SPORT_TILES: Record<string, PremiumImage> = {
 
 // Story sections — immersive full-bleed
 export const STORY: Record<"learn" | "play" | "connect", PremiumImage> = {
-  learn:   { src: u("photo-1526232761682-d26e03ac148e"), alt: "Coach mentoring young athlete", credit: "Unsplash / Clique Images" },
-  play:    { src: u("photo-1517649763962-0c623066013b"), alt: "Pickup game in action", credit: "Unsplash / Jeffrey F Lin" },
+  learn:   { src: u("photo-1729027696167-0f3aa8e92e64"), alt: "Cricketer batting in practice nets at an academy, India", credit: "Unsplash" },
+  play:    { src: u("photo-1753443279716-b2aaadb7e08f"), alt: "Street cricket pickup game on a city road, India", credit: "Unsplash / Zoshua Colah" },
   connect: { src: u("photo-1552879890-3a06dd3a06c2"), alt: "Team celebrating together", credit: "Unsplash / Nathan Shively" },
 };
 
@@ -69,16 +69,16 @@ export const GAME_FALLBACKS: PremiumImage[] = [
 
 // Camp / event atmosphere
 export const CAMP_IMAGE: PremiumImage = {
-  src: u("photo-1526506118085-60ce8714f8c5"),
-  alt: "Training camp", credit: "Unsplash / Tadeusz Lakota",
+  src: u("photo-1643294358128-0d2da3b4ea7a"),
+  alt: "Cricketer in full kit training on a ground in India", credit: "Unsplash",
 };
 export const EVENT_IMAGE: PremiumImage = {
-  src: u("photo-1540747913346-19e32dc3e97e"),
-  alt: "Tournament night",credit: "Unsplash / Elianne Dipp",
+  src: u("photo-1730739463889-34c7279277a9"),
+  alt: "Packed cricket stadium during a match, India", credit: "Unsplash / Zoshua Colah",
 };
 export const WORKSHOP_IMAGE: PremiumImage = {
-  src: u("photo-1571019614242-c5c5dee9f50b"),
-  alt: "Workshop training session", credit: "Unsplash / Geert Pieters",
+  src: u("photo-1722087642932-9b070e9a066e"),
+  alt: "Badminton player leaping for a jump smash", credit: "Unsplash",
 };
 
 export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
