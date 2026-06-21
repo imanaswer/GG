@@ -42,7 +42,7 @@ export function RouteErrorView({
               display: "inline-flex", alignItems: "center", gap: 7,
               padding: "10px 18px", borderRadius: 100,
               fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-              background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
               color: "#fff", border: "none", cursor: "pointer",
               boxShadow: "0 4px 16px rgba(152,8,8,0.35)",
             }}

@@ -138,7 +138,7 @@ export default function EditProfile() {
             <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
               <div style={{
                 width: 72, height: 72, borderRadius: "50%",
-                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "#fff", fontSize: 26, fontWeight: 800,
                 overflow: "hidden",
@@ -174,7 +174,7 @@ export default function EditProfile() {
                 style={{
                   padding: "8px 14px", borderRadius: 100,
                   fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-                  background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                   color: "#fff",
                   border: "none",
                   cursor: uploading ? "not-allowed" : "pointer",
@@ -223,7 +223,7 @@ export default function EditProfile() {
                       aspectRatio: "1",
                       borderRadius: "50%",
                       padding: 3,
-                      background: selected ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.04)",
+                      background: selected ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
                       border: selected ? "none" : "1px solid rgba(255,255,255,0.08)",
                       cursor: "pointer",
                       transition: "transform 160ms",
@@ -321,7 +321,7 @@ export default function EditProfile() {
                       cursor: "pointer",
                       border: "1px solid",
                       fontFamily: "inherit",
-                      background: active ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.02)",
+                      background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
                       color: active ? "#fff" : "rgba(255,255,255,0.6)",
                       borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
                       boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
@@ -367,7 +367,7 @@ export default function EditProfile() {
               style={{
                 height: 44, padding: "0 22px", borderRadius: 12,
                 fontSize: 13.5, fontWeight: 700,
-                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", border: "none",
                 cursor: saving ? "not-allowed" : "pointer",
                 opacity: saving ? 0.6 : 1,

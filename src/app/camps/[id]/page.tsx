@@ -471,7 +471,7 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
                         }}>
                           <div style={{
                             width: 58, height: 58, borderRadius: "50%",
-                            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: 22, fontWeight: 800, color: "#fff",
                             flexShrink: 0,
@@ -526,7 +526,7 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <div style={{
                                 width: 42, height: 42, borderRadius: "50%",
-                                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontWeight: 700, fontSize: 16, color: "#fff",
                               }}>
@@ -714,7 +714,7 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
                               fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                               background: (spotsLeft <= 0 || regClosed || !agreed)
                                 ? "rgba(255,255,255,0.04)"
-                                : "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                                : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                               color: (spotsLeft <= 0 || regClosed || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
                               border: (spotsLeft <= 0 || regClosed || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
                               cursor: (!agreed || spotsLeft <= 0 || regClosed || paying) ? "not-allowed" : "pointer",
@@ -899,7 +899,7 @@ export default function CampDetail({ params }: { params: Promise<{ id: string }>
                     style={{
                       flex: 1, height: 48, borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: paying ? "not-allowed" : "pointer",
                       opacity: paying ? 0.7 : 1,

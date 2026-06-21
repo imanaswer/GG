@@ -306,7 +306,7 @@ export default function About() {
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontWeight: 800, color: "#fff", fontSize: 15,
                 boxShadow: "0 4px 14px rgba(152,8,8,0.35)",
@@ -358,7 +358,7 @@ export default function About() {
               <a href="mailto:hello@gameground.net" style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "space-between",
                 gap: 10, padding: "18px 22px", borderRadius: 14,
-                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", textDecoration: "none",
                 fontSize: 14, fontWeight: 700,
                 boxShadow: "0 10px 32px rgba(152,8,8,0.3), inset 0 1px 0 rgba(255,255,255,0.16)",

@@ -455,7 +455,7 @@ export default function RegisterCoach() {
                     <button onClick={() => setStep(s => s + 1)} style={{
                       height: 48, padding: "0 28px", borderRadius: 12,
                       fontSize: 13.5, fontWeight: 700,
-                      background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: "pointer", fontFamily: "inherit",
                       display: "inline-flex", alignItems: "center", gap: 8,
@@ -471,7 +471,7 @@ export default function RegisterCoach() {
                     <button onClick={submit} disabled={submitting} style={{
                       height: 48, padding: "0 30px", borderRadius: 12,
                       fontSize: 13.5, fontWeight: 700,
-                      background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: submitting ? "not-allowed" : "pointer",
                       opacity: submitting ? 0.6 : 1,

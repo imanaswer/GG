@@ -56,7 +56,7 @@ export default function Offline() {
           <span style={{ position: "absolute", inset: 0, borderRadius: 26, border: "1px solid rgba(152,8,8,0.5)", animation: "ggRing 2.4s ease-out infinite", animationDelay: "1.2s" }} />
           <div style={{
             position: "absolute", inset: 0, borderRadius: 26,
-            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 12px 44px rgba(152,8,8,0.4)",
             animation: "ggFloat 4s ease-in-out infinite",
@@ -110,7 +110,7 @@ export default function Offline() {
           <button onClick={retry} disabled={retrying} className="gg-cta" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9,
             height: 48, padding: "0 26px", borderRadius: 12, fontSize: 14.5, fontWeight: 700,
-            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)", color: "#fff",
+            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)", color: "#fff",
             border: "none", cursor: retrying ? "wait" : "pointer", fontFamily: "inherit",
             boxShadow: "0 8px 28px rgba(152,8,8,0.4)", transition: "transform .15s, box-shadow .15s",
           }}>

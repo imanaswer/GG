@@ -98,6 +98,18 @@ function Hero() {
         }}
       />
 
+      {/* Signature swoosh watermark — the logo mark as oversized brand texture */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", right: "-6%", bottom: "-12%",
+          color: "#980808", opacity: 0.07, pointerEvents: "none",
+          zIndex: 1, lineHeight: 0,
+        }}
+        className="hero-swoosh"
+      >
+        <Swoosh size={760} />
+      </div>
 
       {/* Content */}
       <motion.div
@@ -189,7 +201,7 @@ function Hero() {
               <Link href="/learn" style={{
                 display: "inline-flex", alignItems: "center", gap: 10,
                 padding: "16px 28px", borderRadius: 100,
-                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", fontSize: 15, fontWeight: 600,
                 boxShadow: "0 0 40px rgba(152,8,8,0.45)",
                 textDecoration: "none",
@@ -772,7 +784,7 @@ function ConversionClose() {
                 <Link href="/register" style={{
                   display: "inline-flex", alignItems: "center", gap: 10,
                   padding: "18px 32px", borderRadius: 100,
-                  background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                   boxShadow: "0 0 50px rgba(152,8,8,0.45)",
                   color: "#fff", fontSize: 15, fontWeight: 700,
                   textDecoration: "none",

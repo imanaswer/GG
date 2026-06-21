@@ -14,7 +14,7 @@ type BtnSize    = "sm" | "md" | "lg" | "icon";
 
 const variantBase: Record<BtnVariant, React.CSSProperties> = {
   primary: {
-    background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+    background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
     color: "#fff", border: "none",
     boxShadow: "0 2px 14px rgba(152,8,8,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
   },

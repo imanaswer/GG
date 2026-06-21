@@ -96,7 +96,7 @@ function Hero({ count }: { count: number | null }) {
             <Link href="/create-game" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
               boxShadow: "0 0 32px rgba(152,8,8,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
               textDecoration: "none",
@@ -319,7 +319,7 @@ function GameCard({ game }: { game: Game }) {
                 border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
                 background: isFull
                   ? "transparent"
-                  : "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                  : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: isFull ? "rgba(255,255,255,0.55)" : "#fff",
                 opacity: join.isPending ? 0.6 : 1,
                 boxShadow: isFull ? "none" : "0 2px 14px rgba(152,8,8,0.3)",
@@ -540,7 +540,7 @@ function PlayContent() {
                   <Link href="/create-game" style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "14px 24px", borderRadius: 100,
-                    background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
+                    background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                     color: "#fff", fontSize: 14, fontWeight: 700,
                     textDecoration: "none",
                     boxShadow: "0 0 28px rgba(152,8,8,0.35)",
