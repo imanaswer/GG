@@ -94,7 +94,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: "#6b7280" }}>Filtered:</span>
           {filterChips.map(c => (
-            <span key={c} style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(152,8,8,0.12)", color: "#fca5a5", border: "1px solid rgba(152,8,8,0.3)" }}>{c}</span>
+            <span key={c} style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(230,57,70,0.12)", color: "#fca5a5", border: "1px solid rgba(230,57,70,0.3)" }}>{c}</span>
           ))}
           <button onClick={clearFilters} style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
         </div>
@@ -128,7 +128,7 @@ export function BookingsCategoryView({ config }: { config: CategoryConfig }) {
                     >
                       <span style={{ fontSize: 12, color: "#6b7280" }}>{isOpen ? "▼" : "▶"}</span>
                       <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{BUCKET_LABELS[b]}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{buckets[b].length}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{buckets[b].length}</span>
                     </button>
                     {isOpen && (
                       <BookingsTable

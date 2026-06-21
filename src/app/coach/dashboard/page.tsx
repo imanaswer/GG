@@ -42,7 +42,7 @@ export default function CoachDashboard() {
   const stats = [
     { icon: Calendar, label: "Pending Requests",  value: bookings?.pending ?? "—",   color: "#eab308" },
     { icon: Users,    label: "Approved Students", value: bookings?.approved ?? "—", color: "#4ade80" },
-    { icon: Star,     label: "Your Rating",        value: "4.8",  color: "#980808" },
+    { icon: Star,     label: "Your Rating",        value: "4.8",  color: "#e63946" },
     { icon: Clock,    label: "Active Batches",     value: "3",    color: "#60a5fa" },
   ];
 
@@ -56,7 +56,7 @@ export default function CoachDashboard() {
             <p style={{ fontSize: 14, color: "#6b7280" }}>Welcome back, {user.name.split(" ")[0]} 👋</p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <Link href="/coach/dashboard/bookings" style={{ padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, background: "#980808", color: "#fff", textDecoration: "none" }}>
+            <Link href="/coach/dashboard/bookings" style={{ padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, background: "#e63946", color: "#fff", textDecoration: "none" }}>
               Manage Bookings
             </Link>
             <Link href="/coach/profile/edit" style={{ padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none" }}>
@@ -80,7 +80,7 @@ export default function CoachDashboard() {
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "18px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Recent Bookings</h2>
-              <Link href="/coach/dashboard/bookings" style={{ fontSize: 12, color: "#980808", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+              <Link href="/coach/dashboard/bookings" style={{ fontSize: 12, color: "#e63946", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                 View all <ChevronRight size={12} />
               </Link>
             </div>
@@ -133,10 +133,10 @@ export default function CoachDashboard() {
                 <>
                   <AgreementStatusBadge status={agreement.agreement.status} />
                   <a href={`/api/coach/agreements/${agreement.agreement.id}/pdf`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#9ca3af", textDecoration: "none", fontWeight: 600 }}>View Agreement</a>
-                  <a href={`/api/coach/agreements/${agreement.agreement.id}/pdf`} style={{ fontSize: 13, color: "#fff", background: "#980808", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Download PDF</a>
+                  <a href={`/api/coach/agreements/${agreement.agreement.id}/pdf`} style={{ fontSize: 13, color: "#fff", background: "#e63946", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Download PDF</a>
                 </>
               ) : (
-                <Link href="/onboarding-terms" style={{ fontSize: 13, color: "#fff", background: "#980808", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Sign now</Link>
+                <Link href="/onboarding-terms" style={{ fontSize: 13, color: "#fff", background: "#e63946", padding: "8px 14px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>Sign now</Link>
               )}
             </div>
           </div>

@@ -13,8 +13,8 @@ export function SummaryCards({
         const sel = active === status;
         return (
           <button key={status} onClick={() => onPick(status)} style={{
-            textAlign: "left", background: sel ? "rgba(152,8,8,0.10)" : "#0d0d0d",
-            border: `1px solid ${sel ? "rgba(152,8,8,0.4)" : "rgba(255,255,255,0.07)"}`,
+            textAlign: "left", background: sel ? "rgba(230,57,70,0.10)" : "#0d0d0d",
+            border: `1px solid ${sel ? "rgba(230,57,70,0.4)" : "rgba(255,255,255,0.07)"}`,
             borderRadius: 12, padding: "12px 14px", cursor: "pointer", fontFamily: "inherit",
           }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{count}</div>

@@ -84,7 +84,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           {tab === "Bookings" && isOwn && <BookingsTab bookings={profile.bookings ?? []} registrations={profile.registrations} />}
           {tab === "Achievements" && <AchievementsRail achievements={achievements} variant="grid" />}
           {tab === "Settings" && isOwn && (
-            <Link href="/profile/edit" style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 46, padding: "0 20px", borderRadius: 100, background: "linear-gradient(135deg,#980808,#6b0505)", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 14, alignSelf: "flex-start" }}>Edit profile & settings</Link>
+            <Link href="/profile/edit" style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 46, padding: "0 20px", borderRadius: 100, background: "linear-gradient(135deg,#e63946,#b91c2d)", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 14, alignSelf: "flex-start" }}>Edit profile & settings</Link>
           )}
         </div>
       </main>

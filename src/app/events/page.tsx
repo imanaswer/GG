@@ -86,7 +86,7 @@ function Hero({ count, liveCount }: { count: number | null; liveCount: number })
       }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(152,8,8,0.14), transparent 70%)",
+        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(230,57,70,0.14), transparent 70%)",
       }} />
 
       <div className="container-lg" style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
@@ -95,8 +95,8 @@ function Hero({ count, liveCount }: { count: number | null; liveCount: number })
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "8px 16px", borderRadius: 100,
-              background: liveCount > 0 ? "rgba(239,68,68,0.1)" : "rgba(152,8,8,0.08)",
-              border: liveCount > 0 ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(152,8,8,0.25)",
+              background: liveCount > 0 ? "rgba(239,68,68,0.1)" : "rgba(230,57,70,0.08)",
+              border: liveCount > 0 ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(230,57,70,0.25)",
               marginBottom: 28,
             }}>
               {liveCount > 0 ? (
@@ -106,11 +106,11 @@ function Hero({ count, liveCount }: { count: number | null; liveCount: number })
                   style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 12px #ef4444" }}
                 />
               ) : (
-                <Trophy size={13} color="#d64545" />
+                <Trophy size={13} color="#ff6b74" />
               )}
               <span style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-                textTransform: "uppercase", color: liveCount > 0 ? "#fca5a5" : "#d64545",
+                textTransform: "uppercase", color: liveCount > 0 ? "#fca5a5" : "#ff6b74",
               }}>
                 {liveCount > 0
                   ? `${liveCount} event${liveCount === 1 ? "" : "s"} live right now`
@@ -127,7 +127,7 @@ function Hero({ count, liveCount }: { count: number | null; liveCount: number })
               color: "#fff", maxWidth: 1100,
             }}>
               Step onto{" "}
-              <span className="display-serif" style={{ color: "#d64545" }}>the big stage.</span>
+              <span className="display-serif" style={{ color: "#ff6b74" }}>the big stage.</span>
             </h1>
           </Reveal>
 
@@ -147,8 +147,8 @@ function Hero({ count, liveCount }: { count: number | null; liveCount: number })
             <Link href="#events" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
-              boxShadow: "0 0 32px rgba(152,8,8,0.4)",
+              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+              boxShadow: "0 0 32px rgba(230,57,70,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
               textDecoration: "none",
             }}>
@@ -187,9 +187,9 @@ function PillGroup({ label, options, value, onChange }: PillGroupProps) {
               padding: "6px 14px", borderRadius: 100,
               fontSize: 12, fontWeight: 500, cursor: "pointer",
               border: "1px solid", fontFamily: "inherit",
-              background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
-              color: active ? "#d64545" : "rgba(255,255,255,0.6)",
-              borderColor: active ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.07)",
+              background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
+              color: active ? "#ff6b74" : "rgba(255,255,255,0.6)",
+              borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
               transition: "all 180ms",
             }}
           >
@@ -218,7 +218,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
       style={{
         textDecoration: "none", display: "flex", flexDirection: "column",
         background: "#0a0a0a",
-        border: `1px solid ${isLive ? "rgba(239,68,68,0.45)" : "rgba(152,8,8,0.3)"}`,
+        border: `1px solid ${isLive ? "rgba(239,68,68,0.45)" : "rgba(230,57,70,0.3)"}`,
         borderRadius: 24, overflow: "hidden",
         transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
         boxShadow: isLive ? "0 0 28px rgba(239,68,68,0.18)" : "none",
@@ -260,7 +260,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-              background: "rgba(152,8,8,0.95)", color: "#fff",
+              background: "rgba(230,57,70,0.95)", color: "#fff",
             }}>{event.sport}</span>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
@@ -300,7 +300,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
               display: "flex", alignItems: "center", gap: 8,
               fontSize: 13, color: "rgba(255,255,255,0.6)",
             }}>
-              <Icon size={13} color="#980808" style={{ flexShrink: 0 }} />
+              <Icon size={13} color="#e63946" style={{ flexShrink: 0 }} />
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
             </div>
           ))}
@@ -318,7 +318,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 height: "100%",
-                background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#980808",
+                background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#e63946",
               }}
             />
           </div>
@@ -334,7 +334,7 @@ function FeaturedCard({ event }: { event: SportEvent }) {
             </p>
             <p style={{
               fontSize: 24, fontWeight: 800,
-              color: hasPrize ? "#d64545" : event.entryFeeAmount === 0 ? "#4ade80" : "#fff",
+              color: hasPrize ? "#ff6b74" : event.entryFeeAmount === 0 ? "#4ade80" : "#fff",
               letterSpacing: "-0.03em", margin: 0,
             }}>
               {hasPrize ? event.prizePool : event.entryFee}
@@ -343,9 +343,9 @@ function FeaturedCard({ event }: { event: SportEvent }) {
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             padding: "11px 20px", borderRadius: 100,
-            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
             color: "#fff", fontSize: 13, fontWeight: 700,
-            boxShadow: "0 2px 18px rgba(152,8,8,0.3)",
+            boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
           }}>
             Register
             <ChevronRight size={14} />
@@ -416,7 +416,7 @@ function CompactCard({ event }: { event: SportEvent }) {
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{
             fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-            background: "rgba(152,8,8,0.14)", color: "#d64545",
+            background: "rgba(230,57,70,0.14)", color: "#ff6b74",
             letterSpacing: "0.04em",
           }}>{event.sport}</span>
           <span style={{
@@ -435,11 +435,11 @@ function CompactCard({ event }: { event: SportEvent }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Calendar size={12} color="#980808" style={{ flexShrink: 0 }} />
+            <Calendar size={12} color="#e63946" style={{ flexShrink: 0 }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.date}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Users size={12} color="#980808" style={{ flexShrink: 0 }} />
+            <Users size={12} color="#e63946" style={{ flexShrink: 0 }} />
             <span>{event.participants}/{event.maxParticipants} spots</span>
           </div>
         </div>
@@ -454,7 +454,7 @@ function CompactCard({ event }: { event: SportEvent }) {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             style={{
               height: "100%",
-              background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#980808",
+              background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#e63946",
             }}
           />
         </div>
@@ -469,7 +469,7 @@ function CompactCard({ event }: { event: SportEvent }) {
             </p>
             <p style={{
               fontSize: 16, fontWeight: 800,
-              color: hasPrize ? "#d64545" : event.entryFeeAmount === 0 ? "#4ade80" : "#fff",
+              color: hasPrize ? "#ff6b74" : event.entryFeeAmount === 0 ? "#4ade80" : "#fff",
               letterSpacing: "-0.02em", margin: 0,
             }}>
               {hasPrize ? event.prizePool : event.entryFee}
@@ -562,7 +562,7 @@ function EventsContent() {
                       borderRadius: 12, color: "#fff", outline: "none",
                       fontFamily: "inherit",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                   />
                 </div>
@@ -657,12 +657,12 @@ function EventsContent() {
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 20,
-                  background: "rgba(152,8,8,0.08)",
-                  border: "1px solid rgba(152,8,8,0.18)",
+                  background: "rgba(230,57,70,0.08)",
+                  border: "1px solid rgba(230,57,70,0.18)",
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 20,
                 }}>
-                  <Trophy size={24} color="#d64545" />
+                  <Trophy size={24} color="#ff6b74" />
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.02em" }}>
                   No events match those filters.
@@ -677,7 +677,7 @@ function EventsContent() {
                   <div style={{ marginBottom: 72 }}>
                     <Reveal>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                        <Sparkles size={20} color="#980808" />
+                        <Sparkles size={20} color="#e63946" />
                         <h2 className="display" style={{
                           fontSize: "clamp(24px, 3vw, 32px)",
                           color: "#fff", margin: 0,
@@ -731,13 +731,13 @@ function EventsContent() {
 
       <style>{`
         .event-card:hover {
-          border-color: rgba(152,8,8,0.3);
-          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(152,8,8,0.12);
+          border-color: rgba(230,57,70,0.3);
+          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(230,57,70,0.12);
           transform: translateY(-4px);
         }
         .event-card-featured:hover {
-          border-color: rgba(152,8,8,0.5);
-          box-shadow: 0 30px 80px rgba(152,8,8,0.18), 0 0 0 1px rgba(152,8,8,0.2);
+          border-color: rgba(230,57,70,0.5);
+          box-shadow: 0 30px 80px rgba(230,57,70,0.18), 0 0 0 1px rgba(230,57,70,0.2);
         }
         .event-card-img img { transition: transform 700ms cubic-bezier(0.16,1,0.3,1), filter 500ms; }
         .event-card:hover .event-card-img img { transform: scale(1.05); filter: saturate(1); }

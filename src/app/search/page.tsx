@@ -15,7 +15,7 @@ const TYPE_META: Record<ResultType, { label: string; color: string; Icon: typeof
   coach: { label: "Coach",  color: "#60a5fa", Icon: GraduationCap },
   game:  { label: "Game",   color: "#4ade80", Icon: Users },
   camp:  { label: "Camp",   color: "#f59e0b", Icon: CalendarClock },
-  event: { label: "Event",  color: "#980808", Icon: Trophy },
+  event: { label: "Event",  color: "#e63946", Icon: Trophy },
 };
 
 type FilterKey = "all" | ResultType;
@@ -81,7 +81,7 @@ function SearchResults() {
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "120px 24px 80px" }}>
         {/* Hero */}
         <div style={{ marginBottom: 36 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#980808", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
             Search
           </div>
           <h1 style={{
@@ -119,7 +119,7 @@ function SearchResults() {
             placeholder="Try &ldquo;basketball coach&rdquo; or &ldquo;pickup football Calicut&rdquo;"
             value={q}
             onChange={e => setQ(e.target.value)}
-            onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.4)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(152,8,8,0.12)"; }}
+            onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.4)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(230,57,70,0.12)"; }}
             onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; }}
             autoFocus
           />
@@ -158,11 +158,11 @@ function SearchResults() {
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "inherit",
-                    background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.03)",
+                    background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.03)",
                     color: active ? "#fff" : "rgba(255,255,255,0.65)",
                     border: "1px solid",
                     borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-                    boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
+                    boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
                     display: "inline-flex", alignItems: "center", gap: 8,
                     transition: "all 160ms ease",
                   }}
@@ -196,11 +196,11 @@ function SearchResults() {
             <div style={{
               width: 64, height: 64, borderRadius: 18,
               margin: "0 auto 22px",
-              background: "rgba(152,8,8,0.1)",
-              border: "1px solid rgba(152,8,8,0.25)",
+              background: "rgba(230,57,70,0.1)",
+              border: "1px solid rgba(230,57,70,0.25)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <Search size={24} color="#980808" />
+              <Search size={24} color="#e63946" />
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 8, letterSpacing: "-0.02em" }}>
               Start typing to search
@@ -330,7 +330,7 @@ function ResultRow({ r }: { r: SearchResult }) {
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLDivElement;
-          el.style.borderColor = "rgba(152,8,8,0.25)";
+          el.style.borderColor = "rgba(230,57,70,0.25)";
           el.style.background = "#101010";
           el.style.transform = "translateX(4px)";
         }}

@@ -39,7 +39,7 @@ function Sidebar({
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0d0d0d", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
       <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <img src="/logo2.png" alt="Game Ground" style={{ height: 38, width: "auto", marginBottom: 6 }} />
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#980808", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin Dashboard</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin Dashboard</div>
       </div>
       <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
         {NAV.map(({ href, label, icon: Icon, children }: { href: string; label: string; icon: LucideIcon; children?: { href: string; label: string }[] }) => {
@@ -50,9 +50,9 @@ function Sidebar({
                 display: "flex", alignItems: "center", gap: 11, padding: "9px 12px",
                 borderRadius: 9, marginBottom: 3, textDecoration: "none", fontSize: 13,
                 fontWeight: active ? 700 : 500,
-                background: active ? "rgba(152,8,8,0.12)" : "transparent",
+                background: active ? "rgba(230,57,70,0.12)" : "transparent",
                 color: active ? "#fff" : "#6b7280",
-                borderLeft: active ? "2px solid #980808" : "2px solid transparent",
+                borderLeft: active ? "2px solid #e63946" : "2px solid transparent",
                 transition: "all 0.15s",
               }}>
                 <Icon size={16} />{label}
@@ -68,7 +68,7 @@ function Sidebar({
                         textDecoration: "none", fontSize: 12.5,
                         fontWeight: cActive ? 700 : 500,
                         color: cActive ? "#fff" : "#6b7280",
-                        background: cActive ? "rgba(152,8,8,0.10)" : "transparent",
+                        background: cActive ? "rgba(230,57,70,0.10)" : "transparent",
                       }}>{c.label}</Link>
                     );
                   })}

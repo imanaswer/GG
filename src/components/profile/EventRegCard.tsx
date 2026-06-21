@@ -53,7 +53,7 @@ export function EventRegCard({ reg, onCancel, cancelling }: {
       {(showTicket || canCancel) && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {showTicket && (
-            <Link href={`/events/${reg.entityId}/ticket`} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "rgba(152,8,8,0.12)", border: "1px solid rgba(152,8,8,0.3)", color: "#d64545", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+            <Link href={`/events/${reg.entityId}/ticket`} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)", color: "#ff6b74", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
               <Ticket size={13} /> Download ticket
             </Link>
           )}

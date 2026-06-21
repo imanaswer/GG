@@ -43,7 +43,7 @@ export function BookingsTable({
               {config.columns.map(c => <td key={c.key} style={td}>{c.render(r)}</td>)}
               <td style={td}><Badge status={r.status} /></td>
               <td style={td}>
-                <button onClick={() => onView(r)} style={{ fontSize: 12, color: "#980808", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View</button>
+                <button onClick={() => onView(r)} style={{ fontSize: 12, color: "#e63946", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View</button>
               </td>
             </tr>
           ))}

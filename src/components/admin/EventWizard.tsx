@@ -82,7 +82,7 @@ function ScheduleEditor({ rows, onChange }: { rows: EventForm["schedule"]; onCha
           <FormInput label="Location" value={r.location} onChange={v => set(i, "location", v)} placeholder="e.g. Main Arena" />
         </div>
       ))}
-      <button type="button" onClick={add} style={{ display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", padding: "8px 14px", borderRadius: 8, background: "rgba(152,8,8,0.12)", border: "1px solid rgba(152,8,8,0.3)", color: "#d64545", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+      <button type="button" onClick={add} style={{ display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", padding: "8px 14px", borderRadius: 8, background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)", color: "#ff6b74", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
         <Plus size={13} /> Add schedule entry
       </button>
     </div>
@@ -116,7 +116,7 @@ export function EventWizard({
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {STEPS.map((label, i) => (
           <div key={label} style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ height: 4, borderRadius: 100, background: i <= step ? "#980808" : "rgba(255,255,255,0.1)", marginBottom: 6 }} />
+            <div style={{ height: 4, borderRadius: 100, background: i <= step ? "#e63946" : "rgba(255,255,255,0.1)", marginBottom: 6 }} />
             <span style={{ fontSize: 10, fontWeight: 700, color: i === step ? "#fff" : "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
           </div>
         ))}
@@ -146,9 +146,9 @@ export function EventWizard({
               {[{ v: false, l: "Free Registration" }, { v: true, l: "Paid Registration" }].map(opt => (
                 <button key={opt.l} type="button" onClick={() => u("paid", opt.v)}
                   style={{ flex: 1, padding: "12px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700,
-                    background: form.paid === opt.v ? "rgba(152,8,8,0.15)" : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${form.paid === opt.v ? "rgba(152,8,8,0.4)" : "rgba(255,255,255,0.08)"}`,
-                    color: form.paid === opt.v ? "#d64545" : "#9ca3af" }}>{opt.l}</button>
+                    background: form.paid === opt.v ? "rgba(230,57,70,0.15)" : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${form.paid === opt.v ? "rgba(230,57,70,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    color: form.paid === opt.v ? "#ff6b74" : "#9ca3af" }}>{opt.l}</button>
               ))}
             </div>
             {form.paid && (
@@ -251,11 +251,11 @@ export function EventWizard({
           <ChevronLeft size={15} /> {step === 0 ? "Cancel" : "Back"}
         </button>
         {step < STEPS.length - 1 ? (
-          <button type="button" onClick={next} style={{ ...navBtn, background: "#980808", color: "#fff", border: "none" }}>Next <ChevronRight size={15} /></button>
+          <button type="button" onClick={next} style={{ ...navBtn, background: "#e63946", color: "#fff", border: "none" }}>Next <ChevronRight size={15} /></button>
         ) : (
           <div style={{ display: "flex", gap: 10 }}>
             <button type="button" disabled={saving} onClick={() => submit(false)} style={navBtn}>Save Draft</button>
-            <button type="button" disabled={saving} onClick={() => submit(true)} style={{ ...navBtn, background: "#980808", color: "#fff", border: "none" }}>{saving ? "Publishing…" : "Publish"}</button>
+            <button type="button" disabled={saving} onClick={() => submit(true)} style={{ ...navBtn, background: "#e63946", color: "#fff", border: "none" }}>{saving ? "Publishing…" : "Publish"}</button>
           </div>
         )}
       </div>

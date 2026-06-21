@@ -97,7 +97,7 @@ export default function AdminEvents() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Events Manager</h1>
-            <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#980808", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+            <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#e63946", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
               <Plus size={15} />Add Event
             </button>
           </div>
@@ -121,7 +121,7 @@ export default function AdminEvents() {
                   )}
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6, marginBottom: 8 }}>{e.type} · {e.prizePool}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: e.status === "Live" ? "#ef4444" : "#980808" }}>{e.participants}/{e.maxParticipants}</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: e.status === "Live" ? "#ef4444" : "#e63946" }}>{e.participants}/{e.maxParticipants}</div>
                 {e.status === "Live" && (
                   <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4, fontWeight: 700 }}>Auto-refreshing every 30s</div>
                 )}

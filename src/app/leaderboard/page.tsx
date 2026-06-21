@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
         <section style={{ paddingBottom: 28 }}>
           <div className="container-lg">
             <Reveal>
-              <span className="eyebrow" style={{ color: "#980808", display: "block", marginBottom: 14 }}>
+              <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 14 }}>
                 Game Ground · Kozhikode
               </span>
               <h1 className="display" style={{ fontSize: "clamp(40px, 5.5vw, 76px)", color: "#fff", marginBottom: 14 }}>
@@ -66,10 +66,10 @@ export default function LeaderboardPage() {
                     style={{
                       padding: "9px 18px", borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: type === t.key ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "transparent",
+                      background: type === t.key ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "transparent",
                       color: type === t.key ? "#fff" : "rgba(255,255,255,0.6)",
                       border: "none", cursor: "pointer",
-                      boxShadow: type === t.key ? "0 0 20px rgba(152,8,8,0.4)" : "none",
+                      boxShadow: type === t.key ? "0 0 20px rgba(230,57,70,0.4)" : "none",
                       transition: "all 200ms",
                     }}
                   >
@@ -210,7 +210,7 @@ function PodiumCard({ row, position, type }: { row: LeaderboardRow; position: "f
           ) : (
             <div style={{
               width: "100%", height: "100%",
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "#fff", fontWeight: 800, fontSize: position === "first" ? 28 : 22,
             }}>
@@ -288,7 +288,7 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#fff", fontWeight: 800, fontSize: 17,
           }}>{row.name[0]?.toUpperCase()}</div>
@@ -326,7 +326,7 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
       </div>
 
       <style>{`
-        .lb-row:hover { border-color: rgba(152,8,8,0.35) !important; transform: translateY(-1px); }
+        .lb-row:hover { border-color: rgba(230,57,70,0.35) !important; transform: translateY(-1px); }
         @media (max-width: 640px) {
           .lb-row {
             grid-template-columns: 28px 40px minmax(0, 1fr) auto !important;
@@ -364,9 +364,9 @@ function EmptyState({ period }: { period: LeaderboardPeriod }) {
         style={{
           display: "inline-flex", alignItems: "center", gap: 6, marginTop: 24,
           padding: "10px 20px", borderRadius: 100,
-          background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+          background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
           color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none",
-          boxShadow: "0 0 24px rgba(152,8,8,0.35)",
+          boxShadow: "0 0 24px rgba(230,57,70,0.35)",
         }}
       >
         Find a game <ArrowUpRight size={14} />

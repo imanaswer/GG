@@ -104,7 +104,7 @@ function OnboardingTerms() {
     return (
       <main style={{ minHeight: "100vh", background: "#fff", color: "#111", display: "grid", placeItems: "center", padding: 24 }}>
         <div style={{ maxWidth: 420, textAlign: "center" }}>
-          <strong style={{ color: "#980808", fontSize: 18 }}>GAME GROUND</strong>
+          <strong style={{ color: "#e63946", fontSize: 18 }}>GAME GROUND</strong>
           <p style={{ color: "#555", marginTop: 16 }}>{blocked}</p>
         </div>
       </main>
@@ -138,11 +138,11 @@ function OnboardingTerms() {
     <main style={{ minHeight: "100vh", background: "#fff", color: "#111" }}>
       <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#fff", borderBottom: "1px solid #eee", padding: "12px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 820, margin: "0 auto" }}>
-          <strong style={{ color: "#980808" }}>GAME GROUND</strong>
+          <strong style={{ color: "#e63946" }}>GAME GROUND</strong>
           <span style={{ fontSize: 13, color: "#666" }}>~{readMins} min read · {progress}% read</span>
         </div>
         <div style={{ height: 3, background: "#eee", marginTop: 8, maxWidth: 820, marginInline: "auto" }}>
-          <div style={{ height: 3, width: `${progress}%`, background: "#980808" }} />
+          <div style={{ height: 3, width: `${progress}%`, background: "#e63946" }} />
         </div>
       </div>
 
@@ -232,5 +232,5 @@ const card: React.CSSProperties = { background: "#fff", border: "1px solid #eee"
 const h2: React.CSSProperties = { fontSize: 16, fontWeight: 800, marginBottom: 12 };
 const lbl: React.CSSProperties = { display: "block", fontSize: 13, color: "#444", marginBottom: 4, fontWeight: 600 };
 const input: React.CSSProperties = { width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 14 };
-const btnPrimary: React.CSSProperties = { background: "#980808", color: "#fff", padding: "12px 18px", borderRadius: 9, fontWeight: 700, border: "none", textDecoration: "none", display: "inline-block" };
+const btnPrimary: React.CSSProperties = { background: "#e63946", color: "#fff", padding: "12px 18px", borderRadius: 9, fontWeight: 700, border: "none", textDecoration: "none", display: "inline-block" };
 const btnGhost: React.CSSProperties = { background: "#fff", color: "#111", padding: "12px 18px", borderRadius: 9, fontWeight: 700, border: "1px solid #ddd", cursor: "pointer" };

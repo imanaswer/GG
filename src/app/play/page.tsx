@@ -43,7 +43,7 @@ function Hero({ count }: { count: number | null }) {
       }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(152,8,8,0.14), transparent 70%)",
+        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(230,57,70,0.14), transparent 70%)",
       }} />
 
       <div className="container-lg" style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
@@ -52,17 +52,17 @@ function Hero({ count }: { count: number | null }) {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "8px 16px", borderRadius: 100,
-              background: "rgba(152,8,8,0.08)",
-              border: "1px solid rgba(152,8,8,0.25)",
+              background: "rgba(230,57,70,0.08)",
+              border: "1px solid rgba(230,57,70,0.25)",
               marginBottom: 28,
             }}>
               <span style={{
                 width: 6, height: 6, borderRadius: "50%",
-                background: "#980808", boxShadow: "0 0 12px #980808",
+                background: "#e63946", boxShadow: "0 0 12px #e63946",
               }} />
               <span style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-                textTransform: "uppercase", color: "#d64545",
+                textTransform: "uppercase", color: "#ff6b74",
               }}>
                 {count !== null ? `${count} pickup games live today` : "Pickup games · Kozhikode"}
               </span>
@@ -75,7 +75,7 @@ function Hero({ count }: { count: number | null }) {
               color: "#fff", maxWidth: 1100,
             }}>
               Your{" "}
-              <span className="display-serif" style={{ color: "#d64545" }}>next game</span>{" "}
+              <span className="display-serif" style={{ color: "#ff6b74" }}>next game</span>{" "}
               is five minutes away.
             </h1>
           </Reveal>
@@ -96,8 +96,8 @@ function Hero({ count }: { count: number | null }) {
             <Link href="/create-game" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
-              boxShadow: "0 0 32px rgba(152,8,8,0.4)",
+              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+              boxShadow: "0 0 32px rgba(230,57,70,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
               textDecoration: "none",
             }}>
@@ -136,9 +136,9 @@ function PillGroup({ label, options, value, onChange }: PillGroupProps) {
               padding: "6px 14px", borderRadius: 100,
               fontSize: 12, fontWeight: 500, cursor: "pointer",
               border: "1px solid", fontFamily: "inherit",
-              background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
-              color: active ? "#d64545" : "rgba(255,255,255,0.6)",
-              borderColor: active ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.07)",
+              background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
+              color: active ? "#ff6b74" : "rgba(255,255,255,0.6)",
+              borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
               transition: "all 180ms",
             }}
           >
@@ -276,7 +276,7 @@ function GameCard({ game }: { game: Game }) {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 height: "100%",
-                background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#980808",
+                background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#e63946",
               }}
             />
           </div>
@@ -319,10 +319,10 @@ function GameCard({ game }: { game: Game }) {
                 border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
                 background: isFull
                   ? "transparent"
-                  : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                  : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
                 color: isFull ? "rgba(255,255,255,0.55)" : "#fff",
                 opacity: join.isPending ? 0.6 : 1,
-                boxShadow: isFull ? "none" : "0 2px 14px rgba(152,8,8,0.3)",
+                boxShadow: isFull ? "none" : "0 2px 14px rgba(230,57,70,0.3)",
                 flexShrink: 0,
                 transition: "transform 200ms",
               }}
@@ -427,7 +427,7 @@ function PlayContent() {
                       border: "1px solid rgba(255,255,255,0.07)",
                       borderRadius: 12, color: "#fff", outline: "none",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                   />
                 </div>
@@ -523,12 +523,12 @@ function PlayContent() {
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 20,
-                  background: "rgba(152,8,8,0.08)",
-                  border: "1px solid rgba(152,8,8,0.18)",
+                  background: "rgba(230,57,70,0.08)",
+                  border: "1px solid rgba(230,57,70,0.18)",
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 20,
                 }}>
-                  <Users size={24} color="#d64545" />
+                  <Users size={24} color="#ff6b74" />
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.02em" }}>
                   No games yet today.
@@ -540,10 +540,10 @@ function PlayContent() {
                   <Link href="/create-game" style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "14px 24px", borderRadius: 100,
-                    background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                    background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
                     color: "#fff", fontSize: 14, fontWeight: 700,
                     textDecoration: "none",
-                    boxShadow: "0 0 28px rgba(152,8,8,0.35)",
+                    boxShadow: "0 0 28px rgba(230,57,70,0.35)",
                   }}>
                     <Plus size={15} /> Host a game
                   </Link>
@@ -568,7 +568,7 @@ function PlayContent() {
       </main>
 
       <style>{`
-        .game-card:hover { border-color: rgba(152,8,8,0.3); box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(152,8,8,0.12); transform: translateY(-4px); }
+        .game-card:hover { border-color: rgba(230,57,70,0.3); box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(230,57,70,0.12); transform: translateY(-4px); }
         .game-card:hover .game-card-img-wrap img { transform: scale(1.05); filter: saturate(1); }
         .game-card-img-wrap img { transition: transform 700ms cubic-bezier(0.16,1,0.3,1), filter 500ms; }
       `}</style>

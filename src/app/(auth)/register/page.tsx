@@ -243,7 +243,7 @@ function RegisterForm() {
         }
         .orb-1 {
           width: 400px; height: 400px;
-          background: rgba(152, 8, 8, 0.4);
+          background: rgba(230, 57, 70, 0.4);
           top: -10%; left: -10%;
           animation: float 8s ease-in-out infinite alternate;
         }
@@ -286,7 +286,7 @@ function RegisterForm() {
         }
         .reg-card-glow {
           position: absolute; top: 0; left: 0; right: 0; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(152,8,8,0.8), transparent);
+          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent);
           opacity: 0.6;
         }
 
@@ -298,10 +298,10 @@ function RegisterForm() {
         }
         .reg-subtitle { font-size: 15px; color: #a1a1aa; }
         .reg-link {
-          color: #980808; font-weight: 600; text-decoration: none;
+          color: #e63946; font-weight: 600; text-decoration: none;
           transition: color 0.2s ease;
         }
-        .reg-link:hover { color: #bb1a1a; }
+        .reg-link:hover { color: #ff4d5d; }
 
         .reg-role-toggle {
           display: flex; gap: 8px; margin-bottom: 28px;
@@ -322,9 +322,9 @@ function RegisterForm() {
         .reg-role-btn.active { color: #fff; }
         .role-active-bg {
           position: absolute; inset: 0; z-index: -1;
-          background: linear-gradient(135deg, #980808, #6b0505);
+          background: linear-gradient(135deg, #e63946, #b91c2d);
           border-radius: 12px;
-          box-shadow: 0 4px 15px rgba(152,8,8,0.4);
+          box-shadow: 0 4px 15px rgba(230,57,70,0.4);
         }
 
         .reg-form { display: flex; flex-direction: column; gap: 20px; }
@@ -344,8 +344,8 @@ function RegisterForm() {
         }
         .input-wrapper:focus-within {
           background: rgba(255,255,255,0.06);
-          border-color: rgba(152,8,8,0.5);
-          box-shadow: 0 0 0 4px rgba(152,8,8,0.1);
+          border-color: rgba(230,57,70,0.5);
+          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
         }
         .input-wrapper input {
           background: transparent !important;
@@ -393,12 +393,12 @@ function RegisterForm() {
           font-size: 16px; font-weight: 700; font-family: inherit;
           color: #fff; border: none; cursor: pointer;
           position: relative; overflow: hidden;
-          background: #980808;
-          box-shadow: 0 10px 30px -10px rgba(152,8,8,0.6);
+          background: #e63946;
+          box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
         }
         .reg-submit-bg {
           position: absolute; inset: 0;
-          background: linear-gradient(135deg, #bb1a1a, #6b0505);
+          background: linear-gradient(135deg, #ff4d5d, #b91c2d);
           transition: opacity 0.3s ease;
         }
         .reg-submit:hover .reg-submit-bg { opacity: 0.8; }

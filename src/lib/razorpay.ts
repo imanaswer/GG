@@ -66,7 +66,7 @@ export async function openRazorpayCheckout(args: CheckoutArgs): Promise<Razorpay
       description: args.description,
       order_id: args.orderId,
       prefill: args.prefill,
-      theme: { color: "#980808" },
+      theme: { color: "#e63946" },
       handler: (resp) => resolve(resp),
       modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
     });

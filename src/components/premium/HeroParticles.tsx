@@ -79,7 +79,7 @@ function WireSphere() {
     <mesh ref={meshRef} scale={2.4}>
       <icosahedronGeometry args={[1, 1]} />
       <meshBasicMaterial
-        color="#980808"
+        color="#e63946"
         wireframe
         transparent
         opacity={0.18}
@@ -100,7 +100,7 @@ function Glow() {
     <mesh ref={meshRef}>
       <sphereGeometry args={[1, 32, 32]} />
       <meshBasicMaterial
-        color="#980808"
+        color="#e63946"
         transparent
         opacity={0.035}
         side={THREE.BackSide}

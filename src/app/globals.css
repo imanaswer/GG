@@ -5,11 +5,8 @@
   --color-bg2: #0a0a0a;
   --color-bg3: #111111;
   --color-card: #0d0d0d;
-  --color-primary: #980808;
-  --color-primary-light: #bb1a1a;
-  --color-maroon: #980808;
-  --color-gold: #c9a227;
-  --color-charcoal: #0e0e10;
+  --color-primary: #e63946;
+  --color-primary-light: #ff4d5a;
   --color-text: #ffffff;
   --color-text2: #a1a1aa;
   --color-text3: #52525b;
@@ -35,17 +32,10 @@
   --card: #0d0d0d;
   --border: rgba(255,255,255,0.06);
   --border2: rgba(255,255,255,0.1);
-  --primary: #980808;
-  --primary-light: #bb1a1a;
-  --primary-dim: rgba(152,8,8,0.08);
-  --primary-border: rgba(152,8,8,0.22);
-  --maroon: #980808;
-  --maroon-light: #d64545;
-  --gold: #c9a227;
-  --gold-light: #e3c25a;
-  --gold-dim: rgba(201,162,39,0.12);
-  --gold-border: rgba(201,162,39,0.32);
-  --charcoal: #0e0e10;
+  --primary: #e63946;
+  --primary-light: #ff4d5a;
+  --primary-dim: rgba(230,57,70,0.08);
+  --primary-border: rgba(230,57,70,0.22);
   --text: #ffffff;
   --text2: #a1a1aa;
   --text3: #52525b;
@@ -209,7 +199,7 @@ img {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #980808 0%, #d64545 50%, #980808 100%);
+  background: linear-gradient(135deg, #e63946 0%, #ff6b74 50%, #e63946 100%);
   background-size: 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -262,10 +252,10 @@ img {
 
 /* Glow button effect */
 .glow-primary {
-  box-shadow: 0 0 24px rgba(152,8,8,0.35);
+  box-shadow: 0 0 24px rgba(230,57,70,0.35);
 }
 .glow-primary:hover {
-  box-shadow: 0 0 40px rgba(152,8,8,0.55);
+  box-shadow: 0 0 40px rgba(230,57,70,0.55);
 }
 
 /* Slot bar */
@@ -329,7 +319,7 @@ img {
    wrapped in inline-block (.char-mask > [data-char]); apply the
    gradient to each animated char so the text actually renders. */
 .gradient-red [data-char] {
-  background-image: linear-gradient(135deg, #980808 0%, #d64545 100%);
+  background-image: linear-gradient(135deg, #e63946 0%, #ff6b74 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -364,8 +354,8 @@ img {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(152,8,8,0.18), transparent 60%),
-    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(152,8,8,0.10), transparent 70%);
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(230,57,70,0.18), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(230,57,70,0.10), transparent 70%);
   pointer-events: none;
 }
 
@@ -449,4 +439,4 @@ img {
 }
 .pac-item:hover { background: rgba(255, 255, 255, 0.05); }
 .pac-item-query { color: #fff; }
-.pac-matched { color: #d64545; }
+.pac-matched { color: #ff6b7a; }

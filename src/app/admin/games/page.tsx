@@ -82,7 +82,7 @@ function AdminGamesInner() {
       >
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{g.title}</span>
-          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{g.sport}</span>
+          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{g.sport}</span>
           {(g.status === "completed" || g.status === "archived") && (g.pointsAwarded
             ? <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#4ade80" }}>✓ finalized</span>
             : <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#eab308" }}>● awaiting review</span>)}
@@ -96,7 +96,7 @@ function AdminGamesInner() {
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div style={{ fontSize: 12, color: "#fff", marginBottom: 4 }}>{filled}/{g.slots}</div>
           <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, width: 70, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#ef4444" : "#980808", borderRadius: 99 }} />
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
           </div>
         </td>
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.cost === "Free" ? "#4ade80" : "#fff" }}>{g.cost}</td>
@@ -119,7 +119,7 @@ function AdminGamesInner() {
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", marginBottom: 20 }}>Games Tracker</h1>
 
           {weekOnly && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(152,8,8,0.10)", border: "1px solid rgba(152,8,8,0.3)", width: "fit-content" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(230,57,70,0.10)", border: "1px solid rgba(230,57,70,0.3)", width: "fit-content" }}>
               <span style={{ fontSize: 12.5, fontWeight: 600, color: "#fca5a5" }}>Showing open/full games scheduled within the last 7 days</span>
               <Link href="/admin/games" style={{ fontSize: 12, fontWeight: 700, color: "#fff", textDecoration: "none", lineHeight: 1 }} aria-label="Clear filter">✕</Link>
             </div>
@@ -149,7 +149,7 @@ function AdminGamesInner() {
                     >
                       <span style={{ fontSize: 13, color: "#6b7280" }}>{isOpen ? "▼" : "▶"}</span>
                       <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{BUCKET_LABELS[b]}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{gameBuckets[b].length}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{gameBuckets[b].length}</span>
                     </button>
                     {isOpen && (
                       <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>

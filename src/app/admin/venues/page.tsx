@@ -305,10 +305,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const input: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit" };
-const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9, border: "none", background: "#980808", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" };
+const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9, border: "none", background: "#e63946", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
 const dangerBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#f87171", fontSize: 12, fontWeight: 600, cursor: "pointer" };
 const sportTag: React.CSSProperties = { padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "#9ca3af", fontSize: 11, fontWeight: 600 };
-const pillOn: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid #980808", background: "rgba(152,8,8,0.15)", color: "#fff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
+const pillOn: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid #e63946", background: "rgba(230,57,70,0.15)", color: "#fff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 const pillOff: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#9ca3af", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 const errBox: React.CSSProperties = { padding: "10px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: 13, marginBottom: 14 };

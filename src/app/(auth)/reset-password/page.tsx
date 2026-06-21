@@ -115,7 +115,7 @@ function ResetForm() {
             <>
               <div data-a className="reg-header">
                 <div className="icon-badge">
-                  <Lock size={22} color="#980808" />
+                  <Lock size={22} color="#e63946" />
                 </div>
                 <h1 className="reg-title" style={{ fontSize: 32 }}>New password</h1>
                 <p className="reg-subtitle">
@@ -200,7 +200,7 @@ function ResetForm() {
           position: absolute; border-radius: 50%; filter: blur(80px); z-index: 1; pointer-events: none;
         }
         .orb-1 {
-          width: 400px; height: 400px; background: rgba(152, 8, 8, 0.4);
+          width: 400px; height: 400px; background: rgba(230, 57, 70, 0.4);
           top: -10%; left: -10%; animation: float 8s ease-in-out infinite alternate;
         }
         .orb-2 {
@@ -226,12 +226,12 @@ function ResetForm() {
         }
         .reg-card-glow {
           position: absolute; top: 0; left: 0; right: 0; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(152,8,8,0.8), transparent); opacity: 0.6;
+          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent); opacity: 0.6;
         }
 
         .icon-badge {
           width: 48px; height: 48px; border-radius: 14px;
-          background: rgba(152,8,8,0.1); border: 1px solid rgba(152,8,8,0.25);
+          background: rgba(230,57,70,0.1); border: 1px solid rgba(230,57,70,0.25);
           display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
         }
 
@@ -251,8 +251,8 @@ function ResetForm() {
           border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease;
         }
         .input-wrapper:focus-within {
-          background: rgba(255,255,255,0.06); border-color: rgba(152,8,8,0.5);
-          box-shadow: 0 0 0 4px rgba(152,8,8,0.1);
+          background: rgba(255,255,255,0.06); border-color: rgba(230,57,70,0.5);
+          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
         }
         .input-wrapper input {
           background: transparent !important; border: none !important; box-shadow: none !important;
@@ -273,10 +273,10 @@ function ResetForm() {
         .reg-submit {
           width: 100%; height: 56px; border-radius: 16px; font-size: 16px; font-weight: 700;
           color: #fff; border: none; cursor: pointer; position: relative; overflow: hidden;
-          background: #980808; box-shadow: 0 10px 30px -10px rgba(152,8,8,0.6);
+          background: #e63946; box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
         }
         .reg-submit-bg {
-          position: absolute; inset: 0; background: linear-gradient(135deg, #bb1a1a, #6b0505); transition: opacity 0.3s ease;
+          position: absolute; inset: 0; background: linear-gradient(135deg, #ff4d5d, #b91c2d); transition: opacity 0.3s ease;
         }
         .reg-submit:hover .reg-submit-bg { opacity: 0.8; }
         .reg-submit-text { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
