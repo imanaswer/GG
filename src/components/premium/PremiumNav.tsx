@@ -197,7 +197,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
                   display: "inline-flex", alignItems: "center", gap: 6,
                   fontSize: 13, fontWeight: 600, color: "#fff",
                   padding: "9px 16px", borderRadius: 100,
-                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                  background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                   boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                   textDecoration: "none",
                 }}
@@ -386,7 +386,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
                     }}>Sign in</Link>
                     <Link href="/register" onClick={closeMenu} style={{
                       flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
-                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                      background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                       color: "#fff", fontWeight: 700, fontSize: 14,
                       textDecoration: "none",
                     }}>Get started</Link>

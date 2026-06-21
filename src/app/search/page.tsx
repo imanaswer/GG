@@ -158,7 +158,7 @@ function SearchResults() {
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "inherit",
-                    background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.03)",
+                    background: active ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.03)",
                     color: active ? "#fff" : "rgba(255,255,255,0.65)",
                     border: "1px solid",
                     borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",

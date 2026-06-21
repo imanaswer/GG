@@ -281,7 +281,7 @@ export default function CreateGamePage() {
                 style={{
                   height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: (step === 1 ? step1Valid : step2Valid) ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
+                  background: (step === 1 ? step1Valid : step2Valid) ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.04)",
                   color: (step === 1 ? step1Valid : step2Valid) ? "#fff" : "rgba(255,255,255,0.4)",
                   border: (step === 1 ? step1Valid : step2Valid) ? "none" : "1px solid rgba(255,255,255,0.06)",
                   cursor: (step === 1 ? step1Valid : step2Valid) ? "pointer" : "not-allowed",
@@ -298,7 +298,7 @@ export default function CreateGamePage() {
                 style={{
                   height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: canSubmit ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
+                  background: canSubmit ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.04)",
                   color: canSubmit ? "#fff" : "rgba(255,255,255,0.4)",
                   border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.06)",
                   cursor: (createGame.isPending || !canSubmit) ? "not-allowed" : "pointer",
@@ -335,7 +335,7 @@ function ProgressSteps({ step }: { step: 1 | 2 | 3 }) {
           <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{
               height: 4, borderRadius: 100,
-              background: on ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.08)",
+              background: on ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.08)",
             }} />
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{
@@ -361,7 +361,7 @@ function CostToggle({ active, label, onClick }: { active: boolean; label: string
     <button type="button" onClick={onClick} style={{
       padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
       border: "1px solid",
-      background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
+      background: active ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.02)",
       color: active ? "#fff" : "rgba(255,255,255,0.6)",
       borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
       boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
@@ -408,7 +408,7 @@ function AuthGate() {
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/login" style={{
               height: 44, padding: "0 22px", borderRadius: 12,
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)", color: "#fff", textDecoration: "none",
+              background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)", color: "#fff", textDecoration: "none",
               fontSize: 13.5, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 7,
               boxShadow: "0 6px 24px rgba(152,8,8,0.3)",
             }}>
@@ -470,7 +470,7 @@ function PillSelect({ options, value, onChange }: { options: { l: string; v: str
           <button key={String(o.v)} type="button" onClick={() => onChange(String(o.v))} style={{
             padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: "pointer",
             border: "1px solid", fontFamily: "inherit",
-            background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
+            background: active ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.02)",
             color: active ? "#fff" : "rgba(255,255,255,0.6)",
             borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
             boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
@@ -526,7 +526,7 @@ function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; 
                   style={{
                     padding: "8px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
                     cursor: disabled ? "not-allowed" : "pointer",
-                    background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
+                    background: active ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "rgba(255,255,255,0.04)",
                     color: active ? "#fff" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.8)",
                     border: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
                     textDecoration: disabled ? "line-through" : "none",

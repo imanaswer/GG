@@ -329,9 +329,9 @@ img {
    wrapped in inline-block (.char-mask > [data-char]); apply the
    gradient to each animated char so the text actually renders. */
 .gradient-red [data-char] {
-  /* Intentional lighter coral accent for the hero "Connect." word (per request),
-     an exception to the maroon brand palette used elsewhere. */
-  background-image: linear-gradient(135deg, #e63946 0%, #db7373 100%);
+  /* Intentional coral accent for the hero "Connect." word (per request),
+     shared with the primary buttons. */
+  background-image: linear-gradient(135deg, #891720 0%, #f37c7c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

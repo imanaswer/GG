@@ -456,7 +456,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                                   style={{
                                     padding: "8px 18px", borderRadius: 100,
                                     fontSize: 12, fontWeight: 700,
-                                    background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                                    background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                                     color: "#fff", border: "none",
                                     cursor: book.isPending ? "not-allowed" : "pointer",
                                     opacity: book.isPending ? 0.6 : 1,
@@ -586,7 +586,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               style={{
                                 padding: "9px 20px", borderRadius: 100,
                                 fontSize: 13, fontWeight: 700,
-                                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                                background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                                 color: "#fff", border: "none",
                                 cursor: submittingReview ? "not-allowed" : "pointer",
                                 opacity: submittingReview ? 0.7 : 1,
@@ -839,7 +839,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                           style={{
                             width: "100%", height: 52, borderRadius: 100, marginBottom: 10,
                             fontSize: 14, fontWeight: 700, fontFamily: "inherit", border: "none",
-                            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                             color: "#fff", cursor: paying ? "not-allowed" : "pointer",
                             opacity: paying ? 0.7 : 1, boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                           }}
@@ -857,7 +857,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             border: coach.seatsLeft === 0 ? "1px solid rgba(255,255,255,0.1)" : "none",
                             background: coach.seatsLeft === 0
                               ? "transparent"
-                              : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                              : "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                             color: coach.seatsLeft === 0 ? "rgba(255,255,255,0.55)" : "#fff",
                             cursor: (book.isPending || paying || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
                             opacity: (book.isPending || paying) ? 0.7 : 1,

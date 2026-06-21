@@ -347,7 +347,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         >
                           <div style={{
                             width: 34, height: 34, borderRadius: "50%",
-                            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontWeight: 800, color: "#fff", fontSize: 13, flexShrink: 0,
                           }}>
@@ -421,7 +421,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{
                         width: 46, height: 46, borderRadius: "50%",
-                        background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                        background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0,
                         boxShadow: "0 4px 16px rgba(152,8,8,0.35)",
@@ -605,7 +605,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                             border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
                             background: (!agreed || isFull)
                               ? "transparent"
-                              : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                              : "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                             color: (!agreed || isFull) ? "rgba(255,255,255,0.55)" : "#fff",
                             cursor: (!agreed || join.isPending || paying) ? "not-allowed" : "pointer",
                             opacity: (!agreed || join.isPending || paying) ? 0.5 : 1,
@@ -641,7 +641,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         display: "flex", alignItems: "center", justifyContent: "center",
                         height: 52, borderRadius: 100,
                         fontSize: 14, fontWeight: 700,
-                        background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                        background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                         color: "#fff", textDecoration: "none",
                         boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                       }}

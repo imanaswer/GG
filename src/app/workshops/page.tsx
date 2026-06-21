@@ -132,7 +132,7 @@ function Hero({ count }: { count: number | null }) {
             <Link href="#workshops" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+              background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
               boxShadow: "0 0 32px rgba(152,8,8,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
               textDecoration: "none",
@@ -340,7 +340,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             padding: "11px 20px", borderRadius: 100,
-            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
             color: "#fff", fontSize: 13, fontWeight: 700,
             boxShadow: "0 2px 18px rgba(152,8,8,0.3)",
           }}>

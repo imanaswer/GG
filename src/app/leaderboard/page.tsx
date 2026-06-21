@@ -66,7 +66,7 @@ export default function LeaderboardPage() {
                     style={{
                       padding: "9px 18px", borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: type === t.key ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "transparent",
+                      background: type === t.key ? "linear-gradient(135deg, #891720 0%, #f37c7c 100%)" : "transparent",
                       color: type === t.key ? "#fff" : "rgba(255,255,255,0.6)",
                       border: "none", cursor: "pointer",
                       boxShadow: type === t.key ? "0 0 20px rgba(152,8,8,0.4)" : "none",
@@ -210,7 +210,7 @@ function PodiumCard({ row, position, type }: { row: LeaderboardRow; position: "f
           ) : (
             <div style={{
               width: "100%", height: "100%",
-              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+              background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "#fff", fontWeight: 800, fontSize: position === "first" ? 28 : 22,
             }}>
@@ -288,7 +288,7 @@ function ListRow({ row, type }: { row: LeaderboardRow; type: LeaderboardType }) 
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+            background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#fff", fontWeight: 800, fontSize: 17,
           }}>{row.name[0]?.toUpperCase()}</div>
@@ -364,7 +364,7 @@ function EmptyState({ period }: { period: LeaderboardPeriod }) {
         style={{
           display: "inline-flex", alignItems: "center", gap: 6, marginTop: 24,
           padding: "10px 20px", borderRadius: 100,
-          background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+          background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
           color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none",
           boxShadow: "0 0 24px rgba(152,8,8,0.35)",
         }}

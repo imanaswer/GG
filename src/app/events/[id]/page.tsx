@@ -838,7 +838,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                               fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                               background: (regClosed || spotsLeft <= 0 || !agreed)
                                 ? "rgba(255,255,255,0.04)"
-                                : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                                : "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                               color: (regClosed || spotsLeft <= 0 || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
                               border: (regClosed || spotsLeft <= 0 || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
                               cursor: (!agreed || regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer",
@@ -985,7 +985,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                     style={{
                       flex: 1, height: 48, borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                      background: "linear-gradient(135deg, #891720 0%, #f37c7c 100%)",
                       color: "#fff", border: "none",
                       cursor: (reg.isPending || paying) ? "not-allowed" : "pointer",
                       opacity: (reg.isPending || paying) ? 0.7 : 1,
