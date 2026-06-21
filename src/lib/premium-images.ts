@@ -69,16 +69,16 @@ export const GAME_FALLBACKS: PremiumImage[] = [
 
 // Camp / event atmosphere
 export const CAMP_IMAGE: PremiumImage = {
-  src: u("photo-1526506118085-60ce8714f8c5"),
-  alt: "Training camp", credit: "Unsplash / Tadeusz Lakota",
+  src: u("photo-1551280857-2b9bbe52acf4"),
+  alt: "Young footballer striking the ball on a sunlit pitch", credit: "Unsplash",
 };
 export const EVENT_IMAGE: PremiumImage = {
   src: u("photo-1540747913346-19e32dc3e97e"),
   alt: "Tournament night",credit: "Unsplash / Elianne Dipp",
 };
 export const WORKSHOP_IMAGE: PremiumImage = {
-  src: u("photo-1571019614242-c5c5dee9f50b"),
-  alt: "Workshop training session", credit: "Unsplash / Geert Pieters",
+  src: u("photo-1518614368389-5160c0b0de72"),
+  alt: "Indoor basketball training session", credit: "Unsplash",
 };
 
 export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
