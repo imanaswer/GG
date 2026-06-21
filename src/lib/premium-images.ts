@@ -37,7 +37,7 @@ export const SPORT_TILES: Record<string, PremiumImage> = {
 
 // Story sections — immersive full-bleed
 export const STORY: Record<"learn" | "play" | "connect", PremiumImage> = {
-  learn:   { src: u("photo-1729027696167-0f3aa8e92e64"), alt: "Cricketer batting in practice nets at an academy, India", credit: "Unsplash" },
+  learn:   { src: u("photo-1526232761682-d26e03ac148e"), alt: "Coach mentoring young athlete", credit: "Unsplash / Clique Images" },
   play:    { src: u("photo-1753443279716-b2aaadb7e08f"), alt: "Street cricket pickup game on a city road, India", credit: "Unsplash / Zoshua Colah" },
   connect: { src: u("photo-1552879890-3a06dd3a06c2"), alt: "Team celebrating together", credit: "Unsplash / Nathan Shively" },
 };
