@@ -13,7 +13,6 @@ import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Parallax } from "@/components/premium/Parallax";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
-import { Swoosh } from "@/components/brand/Swoosh";
 
 const HeroParticles = dynamic(() => import("@/components/premium/HeroParticles"), {
   ssr: false,
@@ -97,19 +96,6 @@ function Hero() {
           WebkitMaskImage: "radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%)",
         }}
       />
-
-      {/* Signature swoosh watermark — the logo mark as oversized brand texture */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute", right: "-6%", bottom: "-12%",
-          color: "#980808", opacity: 0.07, pointerEvents: "none",
-          zIndex: 1, lineHeight: 0,
-        }}
-        className="hero-swoosh"
-      >
-        <Swoosh size={760} />
-      </div>
 
       {/* Content */}
       <motion.div
@@ -699,18 +685,6 @@ const CLOSE_STATS = [
   { value: 1, suffix: "", label: "City — more coming" },
 ];
 
-// Signature divider — the swoosh mark flanked by maroon hairlines, with a gold glint.
-function SectionMark() {
-  return (
-    <div aria-hidden style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 28 }}>
-      <span style={{ height: 1, width: 56, background: "linear-gradient(90deg, transparent, rgba(152,8,8,0.7))" }} />
-      <Swoosh size={38} color="#980808" />
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 10px var(--gold)" }} />
-      <span style={{ height: 1, width: 56, background: "linear-gradient(90deg, rgba(152,8,8,0.7), transparent)" }} />
-    </div>
-  );
-}
-
 function ConversionClose() {
   return (
     <section style={{ position: "relative", overflow: "hidden" }}>
@@ -735,9 +709,6 @@ function ConversionClose() {
       <div style={{ position: "relative", padding: "140px 0" }} className="close-pad">
         <div className="container-lg" style={{ textAlign: "center" }}>
           <Reveal>
-            <SectionMark />
-          </Reveal>
-          <Reveal delay={0.04}>
             <span className="eyebrow" style={{ color: "#d64545", display: "block", marginBottom: 28 }}>
               Camps · Tournaments · Community
             </span>

@@ -369,11 +369,6 @@ img {
   pointer-events: none;
 }
 
-/* Signature swoosh watermark — scale down so it stays a hint, not a wall, on phones */
-.hero-swoosh { transform-origin: bottom right; }
-@media (max-width: 900px) { .hero-swoosh { transform: scale(0.6); opacity: 0.06; } }
-@media (max-width: 560px) { .hero-swoosh { transform: scale(0.42); } }
-
 /* Premium image frame — adds subtle vignette + border */
 .frame-img {
   position: relative;
