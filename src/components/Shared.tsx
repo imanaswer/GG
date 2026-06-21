@@ -98,8 +98,12 @@ export function SportBadge({ sport }: { sport: string }) {
     <span style={{
       display: "inline-flex", padding: "3px 10px", borderRadius: 100,
       fontSize: 11, fontWeight: 700,
-      background: "rgba(230,57,70,0.1)", color: "#e63946",
-      border: "1px solid rgba(230,57,70,0.2)",
+      // Solid fill + white text so it stays legible over any card photo
+      // (the faint tinted version vanished against the images).
+      background: "rgba(230,57,70,0.92)", color: "#fff",
+      border: "1px solid rgba(255,107,116,0.55)",
+      backdropFilter: "blur(4px)",
+      boxShadow: "0 1px 6px rgba(0,0,0,0.3)",
     }}>
       {sport}
     </span>
