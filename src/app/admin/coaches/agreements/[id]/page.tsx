@@ -55,7 +55,7 @@ export default function AdminAgreementDetail() {
                   <div style={{ marginTop: 6 }}><AgreementStatusBadge status={a.status} /></div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <a href={`/api/coach/agreements/${a.id}/pdf`} style={{ ...btn, background: "#e63946", color: "#fff" }}>Download PDF</a>
+                  <a href={`/api/coach/agreements/${a.id}/pdf`} style={{ ...btn, background: "#980808", color: "#fff" }}>Download PDF</a>
                   <a href={`/api/coach/agreements/${a.id}/pdf`} target="_blank" rel="noopener noreferrer" style={{ ...btn, background: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)" }}>View PDF</a>
                 </div>
               </div>

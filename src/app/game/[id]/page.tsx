@@ -72,7 +72,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
             <Link href="/play" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 22px", borderRadius: 100,
-              background: "#e63946", color: "#fff",
+              background: "#980808", color: "#fff",
               textDecoration: "none", fontWeight: 700, fontSize: 14,
             }}>
               <ArrowLeft size={14} /> Back to games
@@ -262,11 +262,11 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
             <Reveal delay={0.18}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 20, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <MapPin size={14} color="#e63946" /> {game.location}
+                  <MapPin size={14} color="#980808" /> {game.location}
                 </div>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Clock size={14} color="#e63946" /> {fmtDate(game.scheduledAt)} · {game.duration}min
+                  <Clock size={14} color="#980808" /> {fmtDate(game.scheduledAt)} · {game.duration}min
                 </div>
               </div>
             </Reveal>
@@ -307,7 +307,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {rules.map((r, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                            <CheckCircle size={15} color="#e63946" style={{ flexShrink: 0, marginTop: 2 }} />
+                            <CheckCircle size={15} color="#980808" style={{ flexShrink: 0, marginTop: 2 }} />
                             <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{r}</span>
                           </div>
                         ))}
@@ -347,7 +347,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         >
                           <div style={{
                             width: 34, height: 34, borderRadius: "50%",
-                            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontWeight: 800, color: "#fff", fontSize: 13, flexShrink: 0,
                           }}>
@@ -363,7 +363,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
                               {p.tier && <TierBadge tier={p.tier} score={p.reputationScore} size="xs" />}
                               {p.userId === game.organizerId && (
-                                <span style={{ fontSize: 9.5, color: "#ff6b74", fontWeight: 700, letterSpacing: "0.06em" }}>
+                                <span style={{ fontSize: 9.5, color: "#d64545", fontWeight: 700, letterSpacing: "0.06em" }}>
                                   ORGANIZER
                                 </span>
                               )}
@@ -421,10 +421,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{
                         width: 46, height: 46, borderRadius: "50%",
-                        background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                        background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0,
-                        boxShadow: "0 4px 16px rgba(230,57,70,0.35)",
+                        boxShadow: "0 4px 16px rgba(152,8,8,0.35)",
                       }}>
                         {game.organizerName?.[0]?.toUpperCase() ?? "?"}
                       </div>
@@ -468,7 +468,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                         style={{
                           height: "100%",
-                          background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#e63946",
+                          background: pct >= 100 ? "#ef4444" : pct >= 75 ? "#eab308" : "#980808",
                         }}
                       />
                     </div>
@@ -504,7 +504,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                     }}>
                       <h2 className="eyebrow" style={{ marginBottom: 12 }}>Location</h2>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.55 }}>
-                        <MapPin size={14} color="#e63946" style={{ flexShrink: 0, marginTop: 2 }} />
+                        <MapPin size={14} color="#980808" style={{ flexShrink: 0, marginTop: 2 }} />
                         <span>{game.address}</span>
                       </div>
                       {hasMapTarget(game) && (
@@ -515,8 +515,8 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           style={{
                             display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14,
                             padding: "8px 14px", borderRadius: 10, textDecoration: "none",
-                            background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)",
-                            color: "#ff6b7a", fontSize: 12.5, fontWeight: 700,
+                            background: "rgba(152,8,8,0.12)", border: "1px solid rgba(152,8,8,0.3)",
+                            color: "#d64545", fontSize: 12.5, fontWeight: 700,
                           }}
                         >
                           <Navigation size={13} /> Get directions
@@ -589,7 +589,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           type="checkbox"
                           checked={agreed}
                           onChange={e => setAgreed(e.target.checked)}
-                          style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                          style={{ marginTop: 2, accentColor: "#980808", width: 16, height: 16, flexShrink: 0 }}
                         />
                         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
                           I agree that cancellations are only allowed up to 90 minutes before the start time
@@ -605,11 +605,11 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                             border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
                             background: (!agreed || isFull)
                               ? "transparent"
-                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                              : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                             color: (!agreed || isFull) ? "rgba(255,255,255,0.55)" : "#fff",
                             cursor: (!agreed || join.isPending || paying) ? "not-allowed" : "pointer",
                             opacity: (!agreed || join.isPending || paying) ? 0.5 : 1,
-                            boxShadow: (agreed && !isFull) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                            boxShadow: (agreed && !isFull) ? "0 0 28px rgba(152,8,8,0.35)" : "none",
                           }}
                         >
                           {(join.isPending || paying)
@@ -641,9 +641,9 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                         display: "flex", alignItems: "center", justifyContent: "center",
                         height: 52, borderRadius: 100,
                         fontSize: 14, fontWeight: 700,
-                        background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                        background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                         color: "#fff", textDecoration: "none",
-                        boxShadow: "0 0 28px rgba(230,57,70,0.35)",
+                        boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                       }}
                     >
                       Sign in to join
@@ -656,10 +656,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{
                       padding: "12px 16px", borderRadius: 14,
-                      background: "rgba(230,57,70,0.08)",
-                      border: "1px solid rgba(230,57,70,0.22)",
+                      background: "rgba(152,8,8,0.08)",
+                      border: "1px solid rgba(152,8,8,0.22)",
                       textAlign: "center",
-                      fontSize: 13, color: "#ff6b74", fontWeight: 600,
+                      fontSize: 13, color: "#d64545", fontWeight: 600,
                     }}>
                       You organized this game
                     </div>

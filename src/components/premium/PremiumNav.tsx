@@ -197,8 +197,8 @@ export function PremiumNav({ variant = "solid" }: Props) {
                   display: "inline-flex", alignItems: "center", gap: 6,
                   fontSize: 13, fontWeight: 600, color: "#fff",
                   padding: "9px 16px", borderRadius: 100,
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  boxShadow: "0 0 28px rgba(230,57,70,0.35)",
+                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                  boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                   textDecoration: "none",
                 }}
               >
@@ -244,7 +244,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
           border-radius: 8px;
           text-decoration: none;
           background: transparent;
-          box-shadow: 0 0 0 rgba(230,57,70,0);
+          box-shadow: 0 0 0 rgba(152,8,8,0);
           transition:
             color 200ms cubic-bezier(.2,.6,.2,1),
             background-color 200ms cubic-bezier(.2,.6,.2,1),
@@ -260,7 +260,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
           bottom: 4px;
           height: 2px;
           border-radius: 2px;
-          background: linear-gradient(90deg, #e63946 0%, #b91c2d 100%);
+          background: linear-gradient(90deg, #980808 0%, #6b0505 100%);
           transform: scaleX(0);
           transform-origin: left center;
           transition: transform 220ms cubic-bezier(.2,.6,.2,1);
@@ -270,7 +270,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
           color: #fff;
           background: rgba(255,255,255,0.06);
           transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(230,57,70,0.18);
+          box-shadow: 0 6px 18px rgba(152,8,8,0.18);
         }
         .pn-link:hover::after,
         .pn-link[data-active]::after {
@@ -283,7 +283,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
         .pn-link:focus-visible {
           outline: none;
           color: #fff;
-          box-shadow: 0 0 0 2px rgba(230,57,70,0.6);
+          box-shadow: 0 0 0 2px rgba(152,8,8,0.6);
         }
         @media (prefers-reduced-motion: reduce) {
           .pn-link { transition: color 200ms ease, background-color 200ms ease; }
@@ -319,9 +319,9 @@ export function PremiumNav({ variant = "solid" }: Props) {
           background: rgba(255,255,255,0.06);
           color: #fff;
         }
-        .pn-menu-item-danger { color: #ff6b78; }
+        .pn-menu-item-danger { color: #d64545; }
         .pn-menu-item-danger:hover {
-          background: rgba(230,57,70,0.14);
+          background: rgba(152,8,8,0.14);
           color: #ff8a94;
         }
       `}</style>
@@ -369,8 +369,8 @@ export function PremiumNav({ variant = "solid" }: Props) {
                       style={{
                         flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                         padding: "12px", borderRadius: 100,
-                        background: "rgba(230,57,70,0.12)", color: "#ff6b78",
-                        border: "1px solid rgba(230,57,70,0.25)",
+                        background: "rgba(152,8,8,0.12)", color: "#d64545",
+                        border: "1px solid rgba(152,8,8,0.25)",
                         fontWeight: 600, fontSize: 14, fontFamily: "inherit", cursor: "pointer",
                       }}
                     >
@@ -386,7 +386,7 @@ export function PremiumNav({ variant = "solid" }: Props) {
                     }}>Sign in</Link>
                     <Link href="/register" onClick={closeMenu} style={{
                       flex: 1, textAlign: "center", padding: "12px", borderRadius: 100,
-                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", fontWeight: 700, fontSize: 14,
                       textDecoration: "none",
                     }}>Get started</Link>

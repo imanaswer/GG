@@ -44,8 +44,8 @@ export default function BookingsLanding() {
                   borderRadius: 14, padding: 18, display: "block", transition: "border-color .15s",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(230,57,70,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Icon size={18} color="#e63946" />
+                    <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(152,8,8,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Icon size={18} color="#980808" />
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{label}</div>
                     <div style={{ marginLeft: "auto", fontSize: 12, color: "#6b7280" }}>{m ? `${m.total} total` : "…"}</div>

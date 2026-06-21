@@ -41,7 +41,7 @@ export default function AdminOverview() {
             <StatCard value={m?.gamesThisWeek   ?? "—"} label="Games This Week"    sub="Open + full"          icon={Gamepad2}       href="/admin/games?range=week" />
             <StatCard value={m?.campRegistrations?? "—"} label="Camp Registrations" sub="All camps"           icon={Tent}           href="/admin/bookings/camps?date=all" />
             <StatCard value={m?.workshopRegistrations ?? "—"} label="Workshop Sign-ups" sub="All workshops"   icon={Lightbulb}      href="/admin/bookings/workshops?date=all" />
-            <StatCard value={`₹${(m?.revenueMonth ?? 0).toLocaleString("en-IN")}`} label="Revenue (Month)" sub="Paid transactions" icon={IndianRupee} accent color="#e63946" href="/admin/revenue" />
+            <StatCard value={`₹${(m?.revenueMonth ?? 0).toLocaleString("en-IN")}`} label="Revenue (Month)" sub="Paid transactions" icon={IndianRupee} accent color="#980808" href="/admin/revenue" />
           </div>
 
           {/* Health row */}
@@ -124,7 +124,7 @@ export default function AdminOverview() {
                   { href: "/admin/revenue",   label: "💰 Revenue Report"   },
                 ].map(({ href, label }) => (
                   <a key={href} href={href} style={{ display: "block", padding: "12px 14px", borderRadius: 10, background: "#141414", border: "1px solid rgba(255,255,255,0.07)", textDecoration: "none", fontSize: 13, color: "#e5e7eb", fontWeight: 600, transition: "border-color 0.15s" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(230,57,70,0.4)"}
+                    onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(152,8,8,0.4)"}
                     onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.07)"}
                   >{label}</a>
                 ))}
@@ -134,7 +134,7 @@ export default function AdminOverview() {
             {/* Activity Feed */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <Clock size={15} color="#e63946" />
+                <Clock size={15} color="#980808" />
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Live Activity</h2>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>LIVE</span>
               </div>

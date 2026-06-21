@@ -45,7 +45,7 @@ function Hero({ count }: { count: number | null }) {
       }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 70% 60% at 50% 30%, rgba(230,57,70,0.14), transparent 70%)",
+        background: "radial-gradient(ellipse 70% 60% at 50% 30%, rgba(152,8,8,0.14), transparent 70%)",
       }} />
 
       <div className="container-lg" style={{ position: "relative" }}>
@@ -53,17 +53,17 @@ function Hero({ count }: { count: number | null }) {
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             padding: "8px 16px", borderRadius: 100,
-            background: "rgba(230,57,70,0.08)",
-            border: "1px solid rgba(230,57,70,0.25)",
+            background: "rgba(152,8,8,0.08)",
+            border: "1px solid rgba(152,8,8,0.25)",
             marginBottom: 28,
           }}>
             <span style={{
               width: 6, height: 6, borderRadius: "50%",
-              background: "#e63946", boxShadow: "0 0 12px #e63946",
+              background: "#980808", boxShadow: "0 0 12px #980808",
             }} />
             <span style={{
               fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-              textTransform: "uppercase", color: "#ff6b74",
+              textTransform: "uppercase", color: "#d64545",
             }}>
               {count !== null ? `${count} coaches live in Kozhikode` : "Verified coaches · Kozhikode"}
             </span>
@@ -77,7 +77,7 @@ function Hero({ count }: { count: number | null }) {
             maxWidth: 1100,
           }}>
             Train with{" "}
-            <span className="display-serif" style={{ color: "#ff6b74" }}>
+            <span className="display-serif" style={{ color: "#d64545" }}>
               coaches
             </span>{" "}
             who sweat for it.
@@ -131,9 +131,9 @@ function PillGroup({ label, options, value, onChange, compact }: PillGroupProps)
               cursor: "pointer",
               border: "1px solid",
               fontFamily: "inherit",
-              background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-              color: active ? "#ff6b74" : "rgba(255,255,255,0.6)",
-              borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
+              background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+              color: active ? "#d64545" : "rgba(255,255,255,0.6)",
+              borderColor: active ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.07)",
               transition: "all 180ms",
             }}
           >
@@ -175,8 +175,8 @@ function CoachCard({ coach }: { coach: Coach }) {
         onHoverStart={(e) => {
           const el = e.currentTarget as HTMLElement | null;
           if (!el) return;
-          el.style.borderColor = "rgba(230,57,70,0.3)";
-          el.style.boxShadow = "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(230,57,70,0.1)";
+          el.style.borderColor = "rgba(152,8,8,0.3)";
+          el.style.boxShadow = "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(152,8,8,0.1)";
         }}
         onHoverEnd={(e) => {
           const el = e.currentTarget as HTMLElement | null;
@@ -424,7 +424,7 @@ function LearnContent() {
                       color: "#fff",
                       outline: "none",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                   />
                 </div>
@@ -515,12 +515,12 @@ function LearnContent() {
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 20,
-                  background: "rgba(230,57,70,0.08)",
-                  border: "1px solid rgba(230,57,70,0.18)",
+                  background: "rgba(152,8,8,0.08)",
+                  border: "1px solid rgba(152,8,8,0.18)",
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 20,
                 }}>
-                  <Search size={24} color="#ff6b74" />
+                  <Search size={24} color="#d64545" />
                 </div>
                 <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
                   No coaches matched.

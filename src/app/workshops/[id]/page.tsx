@@ -27,9 +27,9 @@ function TabButton({ id, active, onClick, label, count }: { id: Tab; active: Tab
         padding: "10px 18px", borderRadius: 100,
         fontSize: 13, fontWeight: 600,
         border: "1px solid",
-        background: isActive ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-        color: isActive ? "#ff6b74" : "rgba(255,255,255,0.55)",
-        borderColor: isActive ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.06)",
+        background: isActive ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+        color: isActive ? "#d64545" : "rgba(255,255,255,0.55)",
+        borderColor: isActive ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.06)",
         cursor: "pointer", fontFamily: "inherit",
         transition: "all 180ms",
       }}
@@ -109,7 +109,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
             <Link href="/workshops" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 22px", borderRadius: 100,
-              background: "#e63946", color: "#fff",
+              background: "#980808", color: "#fff",
               textDecoration: "none", fontWeight: 700, fontSize: 14,
             }}>
               <ArrowLeft size={14} /> Back to workshops
@@ -250,7 +250,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
-                  background: "rgba(230,57,70,0.95)", color: "#fff",
+                  background: "rgba(152,8,8,0.95)", color: "#fff",
                 }}>{workshop.sport}</span>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
@@ -271,8 +271,8 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                 {spotsLeft <= 10 && spotsLeft > 0 && (
                   <span style={{
                     fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 100,
-                    background: "#e63946", color: "#fff",
-                    boxShadow: "0 4px 16px rgba(230,57,70,0.4)",
+                    background: "#980808", color: "#fff",
+                    boxShadow: "0 4px 16px rgba(152,8,8,0.4)",
                   }}>
                     Only {spotsLeft} spots left
                   </span>
@@ -292,19 +292,19 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
             <Reveal delay={0.18}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 20, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <Star size={14} color="#e63946" fill="#e63946" />
+                  <Star size={14} color="#980808" fill="#980808" />
                   <span style={{ color: "#fff", fontWeight: 700 }}>{workshop.rating}</span>
                   <span style={{ color: "rgba(255,255,255,0.4)" }}>({workshop.reviewCount} reviews)</span>
                 </div>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <Calendar size={14} color="#e63946" /> {dateRange}
+                  <Calendar size={14} color="#980808" /> {dateRange}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <MapPin size={14} color="#e63946" /> {workshop.location}
+                  <MapPin size={14} color="#980808" /> {workshop.location}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <Users size={14} color="#e63946" /> {audienceLabel}
+                  <Users size={14} color="#980808" /> {audienceLabel}
                 </div>
               </div>
             </Reveal>
@@ -322,7 +322,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                   <div style={{
                     background: "rgba(13,13,13,0.7)",
                     backdropFilter: "blur(18px)",
-                    border: "1px solid rgba(230,57,70,0.18)",
+                    border: "1px solid rgba(152,8,8,0.18)",
                     borderRadius: 20, padding: "22px 24px", marginBottom: 24,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
@@ -334,8 +334,8 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                       </div>
                       <div style={{
                         padding: "6px 14px", borderRadius: 100,
-                        background: spotsLeft <= 5 ? "rgba(230,57,70,0.18)" : "rgba(255,255,255,0.04)",
-                        color: spotsLeft <= 5 ? "#ff6b74" : "rgba(255,255,255,0.7)",
+                        background: spotsLeft <= 5 ? "rgba(152,8,8,0.18)" : "rgba(255,255,255,0.04)",
+                        color: spotsLeft <= 5 ? "#d64545" : "rgba(255,255,255,0.7)",
                         fontWeight: 800, fontSize: 13,
                       }}>
                         {pct}% full
@@ -351,7 +351,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                         style={{
                           height: "100%",
-                          background: "linear-gradient(90deg, #e63946 0%, #f87171 100%)",
+                          background: "linear-gradient(90deg, #980808 0%, #f87171 100%)",
                         }}
                       />
                     </div>
@@ -379,7 +379,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                         borderRadius: 20, padding: "24px 28px",
                       }}>
                         <h3 className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                          <Award size={14} color="#e63946" /> About this workshop
+                          <Award size={14} color="#980808" /> About this workshop
                         </h3>
                         <p style={{ fontSize: 15, color: "rgba(255,255,255,0.72)", lineHeight: 1.75 }}>
                           {workshop.description}
@@ -401,7 +401,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                                 <span style={{
                                   width: 6, height: 6, borderRadius: "50%",
-                                  background: "#e63946", flexShrink: 0, marginTop: 7,
+                                  background: "#980808", flexShrink: 0, marginTop: 7,
                                 }} />
                                 <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{h}</span>
                               </div>
@@ -420,7 +420,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                           borderRadius: 20, padding: "24px 28px",
                         }}>
                           <h3 className="eyebrow" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                            <Target size={14} color="#e63946" /> Requirements
+                            <Target size={14} color="#980808" /> Requirements
                           </h3>
                           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                             {workshop.requirements.map((item, i) => (
@@ -466,14 +466,14 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                             {workshop.sessionType === "series" && (
                               <div style={{
                                 width: 36, height: 36, borderRadius: 10,
-                                background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.25)",
+                                background: "rgba(152,8,8,0.12)", border: "1px solid rgba(152,8,8,0.25)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 14, fontWeight: 800, color: "#ff6b74", flexShrink: 0,
+                                fontSize: 14, fontWeight: 800, color: "#d64545", flexShrink: 0,
                               }}>{i + 1}</div>
                             )}
                             <div style={{ flex: 1 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: "#ff6b74" }}>{s.date}</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "#d64545" }}>{s.date}</span>
                                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{s.time}</span>
                               </div>
                               <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{s.topic}</p>
@@ -491,18 +491,18 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                   <Reveal>
                     <div style={{
                       background: "rgba(13,13,13,0.7)", backdropFilter: "blur(18px)",
-                      border: "1px solid rgba(230,57,70,0.18)", borderRadius: 20, padding: "28px",
+                      border: "1px solid rgba(152,8,8,0.18)", borderRadius: 20, padding: "28px",
                     }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                         <div style={{
                           width: 72, height: 72, borderRadius: "50%",
                           background: workshop.instructor.imageUrl
                             ? undefined
-                            : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                           overflow: "hidden",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 28, fontWeight: 800, color: "#fff", flexShrink: 0,
-                          boxShadow: "0 4px 20px rgba(230,57,70,0.35)",
+                          boxShadow: "0 4px 20px rgba(152,8,8,0.35)",
                         }}>
                           {workshop.instructor.imageUrl
                             // eslint-disable-next-line @next/next/no-img-element
@@ -514,7 +514,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                           {workshop.instructor.credentials && (
                             <span style={{
                               fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 100,
-                              background: "rgba(230,57,70,0.12)", color: "#ff6b74", marginBottom: 12, display: "inline-block",
+                              background: "rgba(152,8,8,0.12)", color: "#d64545", marginBottom: 12, display: "inline-block",
                             }}>{workshop.instructor.credentials}</span>
                           )}
                           {workshop.instructor.bio && (
@@ -553,7 +553,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <div style={{
                                 width: 42, height: 42, borderRadius: "50%",
-                                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontWeight: 700, fontSize: 16, color: "#fff",
                               }}>
@@ -565,7 +565,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                             </div>
                             <div style={{ display: "flex", gap: 2 }}>
                               {Array.from({ length: t.rating }).map((_, j) => (
-                                <Star key={j} size={13} color="#e63946" fill="#e63946" />
+                                <Star key={j} size={13} color="#980808" fill="#980808" />
                               ))}
                             </div>
                           </div>
@@ -585,7 +585,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                   position: "sticky", top: 100,
                   background: "rgba(13,13,13,0.75)",
                   backdropFilter: "blur(18px)",
-                  border: "1px solid rgba(230,57,70,0.2)",
+                  border: "1px solid rgba(152,8,8,0.2)",
                   borderRadius: 24, padding: "24px 22px",
                 }}>
                   <h3 className="eyebrow" style={{ marginBottom: 20 }}>Workshop information</h3>
@@ -598,12 +598,12 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                       }}>
                         <div style={{
                           width: 32, height: 32, borderRadius: 10,
-                          background: "rgba(230,57,70,0.1)",
-                          border: "1px solid rgba(230,57,70,0.18)",
+                          background: "rgba(152,8,8,0.1)",
+                          border: "1px solid rgba(152,8,8,0.18)",
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
                         }}>
-                          <Icon size={13} color="#ff6b74" />
+                          <Icon size={13} color="#d64545" />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{
@@ -616,7 +616,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                           {emphasis ? (
                             <p style={{
                               fontSize: 28, fontWeight: 800,
-                              color: "#ff6b74", letterSpacing: "-0.03em",
+                              color: "#d64545", letterSpacing: "-0.03em",
                             }}>
                               {value}
                             </p>
@@ -724,7 +724,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                               type="checkbox"
                               checked={agreed}
                               onChange={e => setAgreed(e.target.checked)}
-                              style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                              style={{ marginTop: 2, accentColor: "#980808", width: 16, height: 16, flexShrink: 0 }}
                             />
                             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
                               I agree that cancellations are only allowed up to 90 minutes before the start time
@@ -740,13 +740,13 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                               fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                               background: (spotsLeft <= 0 || regClosed || !agreed)
                                 ? "rgba(255,255,255,0.04)"
-                                : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                                : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                               color: (spotsLeft <= 0 || regClosed || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
                               border: (spotsLeft <= 0 || regClosed || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
                               cursor: (!agreed || spotsLeft <= 0 || regClosed || paying) ? "not-allowed" : "pointer",
                               opacity: (!agreed && spotsLeft > 0 && !regClosed) ? 0.5 : 1,
                               display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                              boxShadow: (agreed && spotsLeft > 0 && !regClosed) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                              boxShadow: (agreed && spotsLeft > 0 && !regClosed) ? "0 0 28px rgba(152,8,8,0.35)" : "none",
                             }}
                           >
                             {paying
@@ -787,7 +787,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                     <a
                       href={`tel:${workshop.organizerContact}`}
                       style={{
-                        fontSize: 14, color: "#ff6b74", fontWeight: 700,
+                        fontSize: 14, color: "#d64545", fontWeight: 700,
                         textDecoration: "none",
                         display: "inline-flex", alignItems: "center", gap: 6,
                       }}
@@ -871,9 +871,9 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                           style={{
                             flex: 1, padding: "10px 14px", borderRadius: 12,
                             fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
-                            background: regType === opt.v ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-                            color: regType === opt.v ? "#ff6b74" : "rgba(255,255,255,0.6)",
-                            border: `1px solid ${regType === opt.v ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.08)"}`,
+                            background: regType === opt.v ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+                            color: regType === opt.v ? "#d64545" : "rgba(255,255,255,0.6)",
+                            border: `1px solid ${regType === opt.v ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.08)"}`,
                           }}
                         >{opt.l}</button>
                       ))}
@@ -902,7 +902,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                       outline: "none",
                       opacity: (regType === "adult" && workshop.audienceType !== "all") ? 0.6 : 1,
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
                   />
                 </div>
@@ -924,7 +924,7 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                         color: "#fff", fontSize: 14, fontFamily: "inherit",
                         outline: "none",
                       }}
-                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                       onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
                     />
                   </div>
@@ -932,11 +932,11 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
 
                 <div style={{
                   padding: "14px 16px", borderRadius: 14,
-                  background: "rgba(230,57,70,0.06)",
-                  border: "1px solid rgba(230,57,70,0.2)",
+                  background: "rgba(152,8,8,0.06)",
+                  border: "1px solid rgba(152,8,8,0.2)",
                 }}>
                   <p style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 4 }}>
-                    Fee: <span style={{ color: "#ff6b74" }}>{workshop.priceDisplay}</span>
+                    Fee: <span style={{ color: "#d64545" }}>{workshop.priceDisplay}</span>
                   </p>
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
                     Secure payment via Razorpay. Slot reserved after payment.
@@ -964,11 +964,11 @@ export default function WorkshopDetail({ params }: { params: Promise<{ id: strin
                     style={{
                       flex: 1, height: 48, borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: paying ? "not-allowed" : "pointer",
                       opacity: paying ? 0.7 : 1,
-                      boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
+                      boxShadow: "0 2px 18px rgba(152,8,8,0.3)",
                     }}
                   >
                     {paying ? "Processing\u2026" : `Pay ${workshop.priceDisplay}`}

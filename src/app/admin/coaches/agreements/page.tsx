@@ -79,7 +79,7 @@ export default function AdminAgreementsPage() {
                     <td style={td}><AgreementStatusBadge status={r.status} /></td>
                     <td style={td}>
                       <div style={{ display: "flex", gap: 10 }}>
-                        <Link href={`/admin/coaches/agreements/${r.id}`} style={{ color: "#e63946", textDecoration: "none", fontWeight: 600 }}>View</Link>
+                        <Link href={`/admin/coaches/agreements/${r.id}`} style={{ color: "#980808", textDecoration: "none", fontWeight: 600 }}>View</Link>
                         <a href={`/api/coach/agreements/${r.id}/pdf`} style={{ color: "#9ca3af", textDecoration: "none", fontWeight: 600 }}>PDF</a>
                       </div>
                     </td>

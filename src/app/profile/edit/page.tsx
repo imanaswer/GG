@@ -57,7 +57,7 @@ export default function EditProfile() {
       <div style={{ minHeight: "100vh", background: "#050505" }}>
         <PremiumNav />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 160 }}>
-          <Loader2 size={26} color="#e63946" style={{ animation: "spin 1s linear infinite" }} />
+          <Loader2 size={26} color="#980808" style={{ animation: "spin 1s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function EditProfile() {
               textDecoration: "none", color: "rgba(255,255,255,0.65)",
               transition: "all 160ms ease",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(230,57,70,0.08)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(152,8,8,0.08)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)"; }}
             >
               <ArrowLeft size={17} />
@@ -138,7 +138,7 @@ export default function EditProfile() {
             <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
               <div style={{
                 width: 72, height: 72, borderRadius: "50%",
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "#fff", fontSize: 26, fontWeight: 800,
                 overflow: "hidden",
@@ -174,7 +174,7 @@ export default function EditProfile() {
                 style={{
                   padding: "8px 14px", borderRadius: 100,
                   fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                   color: "#fff",
                   border: "none",
                   cursor: uploading ? "not-allowed" : "pointer",
@@ -223,7 +223,7 @@ export default function EditProfile() {
                       aspectRatio: "1",
                       borderRadius: "50%",
                       padding: 3,
-                      background: selected ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                      background: selected ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
                       border: selected ? "none" : "1px solid rgba(255,255,255,0.08)",
                       cursor: "pointer",
                       transition: "transform 160ms",
@@ -242,7 +242,7 @@ export default function EditProfile() {
                       <span style={{
                         position: "absolute", bottom: -2, right: -2,
                         width: 22, height: 22, borderRadius: "50%",
-                        background: "#e63946",
+                        background: "#980808",
                         border: "2px solid #0b0b0b",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         color: "#fff",
@@ -321,10 +321,10 @@ export default function EditProfile() {
                       cursor: "pointer",
                       border: "1px solid",
                       fontFamily: "inherit",
-                      background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
+                      background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
                       color: active ? "#fff" : "rgba(255,255,255,0.6)",
                       borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-                      boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
+                      boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
                       transition: "all 160ms ease",
                     }}
                   >
@@ -340,8 +340,8 @@ export default function EditProfile() {
             display: "flex",
             gap: 12,
             padding: "18px 22px",
-            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 100%)",
-            border: "1px solid rgba(230,57,70,0.15)",
+            background: "linear-gradient(135deg, rgba(152,8,8,0.08) 0%, rgba(11,11,11,0.9) 100%)",
+            border: "1px solid rgba(152,8,8,0.15)",
             borderRadius: 18,
             marginBottom: 24,
             alignItems: "center",
@@ -367,13 +367,13 @@ export default function EditProfile() {
               style={{
                 height: 44, padding: "0 22px", borderRadius: 12,
                 fontSize: 13.5, fontWeight: 700,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", border: "none",
                 cursor: saving ? "not-allowed" : "pointer",
                 opacity: saving ? 0.6 : 1,
                 fontFamily: "inherit",
                 display: "inline-flex", alignItems: "center", gap: 7,
-                boxShadow: "0 6px 24px rgba(230,57,70,0.35)",
+                boxShadow: "0 6px 24px rgba(152,8,8,0.35)",
               }}
             >
               <Save size={14} /> {saving ? "Saving…" : "Save changes"}
@@ -479,11 +479,11 @@ function SectionCard({
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hint ? 6 : 20 }}>
         <div style={{
           width: 34, height: 34, borderRadius: 10,
-          background: "rgba(230,57,70,0.1)",
-          border: "1px solid rgba(230,57,70,0.2)",
+          background: "rgba(152,8,8,0.1)",
+          border: "1px solid rgba(152,8,8,0.2)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Icon size={15} color="#e63946" />
+          <Icon size={15} color="#980808" />
         </div>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h2>
       </div>

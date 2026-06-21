@@ -27,9 +27,9 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
         padding: "10px 18px", borderRadius: 100,
         fontSize: 13, fontWeight: 600,
         border: "1px solid",
-        background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-        color: active ? "#ff6b74" : "rgba(255,255,255,0.55)",
-        borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.06)",
+        background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+        color: active ? "#d64545" : "rgba(255,255,255,0.55)",
+        borderColor: active ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.06)",
         cursor: "pointer", fontFamily: "inherit",
         transition: "all 180ms",
       }}
@@ -175,7 +175,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
             <Link href="/learn" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 22px", borderRadius: 100,
-              background: "#e63946", color: "#fff",
+              background: "#980808", color: "#fff",
               textDecoration: "none", fontWeight: 700, fontSize: 14,
             }}>
               <ArrowLeft size={14} /> Back to coaches
@@ -269,7 +269,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 13 }}>({coach.reviewCount} reviews)</span>
                     </div>
                     <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
-                    <span style={{ color: "#ff6b74", fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em" }}>
+                    <span style={{ color: "#d64545", fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em" }}>
                       {coach.price}
                     </span>
                   </div>
@@ -350,7 +350,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                           }}>
                             {features.map((f, i) => (
                               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                                <CheckCircle size={15} color="#e63946" style={{ flexShrink: 0, marginTop: 2 }} />
+                                <CheckCircle size={15} color="#980808" style={{ flexShrink: 0, marginTop: 2 }} />
                                 <span style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)" }}>{f}</span>
                               </div>
                             ))}
@@ -372,11 +372,11 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             { Icon: MapPin, v: coach.address, href: coach.address ? mapsHref(coach) : undefined },
                           ].filter(row => row.v).map(({ Icon, v, href }) => (
                             <div key={v} style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-                              <Icon size={14} color="#e63946" style={{ flexShrink: 0 }} />
+                              <Icon size={14} color="#980808" style={{ flexShrink: 0 }} />
                               {href ? (
                                 <a href={href} target="_blank" rel="noopener noreferrer"
                                    style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none" }}
-                                   onMouseEnter={e => { e.currentTarget.style.color = "#ff6b74"; }}
+                                   onMouseEnter={e => { e.currentTarget.style.color = "#d64545"; }}
                                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}>
                                   {v}
                                 </a>
@@ -414,10 +414,10 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               background: "rgba(13,13,13,0.7)",
                               backdropFilter: "blur(18px)",
                               borderRadius: 20, padding: "18px 22px",
-                              border: `1px solid ${isSelected ? "rgba(230,57,70,0.5)" : "rgba(255,255,255,0.06)"}`,
+                              border: `1px solid ${isSelected ? "rgba(152,8,8,0.5)" : "rgba(255,255,255,0.06)"}`,
                               cursor: isFull ? "default" : "pointer",
                               opacity: isFull ? 0.55 : 1,
-                              boxShadow: isSelected ? "0 0 0 1px rgba(230,57,70,0.3), 0 24px 60px rgba(230,57,70,0.15)" : "none",
+                              boxShadow: isSelected ? "0 0 0 1px rgba(152,8,8,0.3), 0 24px 60px rgba(152,8,8,0.15)" : "none",
                               transition: "all 220ms",
                               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
                               flexWrap: "wrap",
@@ -426,10 +426,10 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 240px" }}>
                               <SkillBadge level={batch.level} />
                               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, color: "rgba(255,255,255,0.7)" }}>
-                                <Calendar size={13} color="#e63946" /> {batch.day}
+                                <Calendar size={13} color="#980808" /> {batch.day}
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, color: "rgba(255,255,255,0.7)" }}>
-                                <Clock size={13} color="#e63946" /> {batch.time}
+                                <Clock size={13} color="#980808" /> {batch.time}
                               </div>
                             </div>
 
@@ -444,7 +444,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                                 <span style={{
                                   fontSize: 11, fontWeight: 700,
                                   padding: "3px 10px", borderRadius: 100,
-                                  background: "rgba(230,57,70,0.15)", color: "#ff6b74",
+                                  background: "rgba(152,8,8,0.15)", color: "#d64545",
                                 }}>
                                   Selected
                                 </span>
@@ -456,12 +456,12 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                                   style={{
                                     padding: "8px 18px", borderRadius: 100,
                                     fontSize: 12, fontWeight: 700,
-                                    background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                                    background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                                     color: "#fff", border: "none",
                                     cursor: book.isPending ? "not-allowed" : "pointer",
                                     opacity: book.isPending ? 0.6 : 1,
                                     fontFamily: "inherit",
-                                    boxShadow: "0 2px 14px rgba(230,57,70,0.3)",
+                                    boxShadow: "0 2px 14px rgba(152,8,8,0.3)",
                                   }}
                                 >
                                   {book.isPending ? "…" : "Book"}
@@ -522,7 +522,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                       </div>
                     )}
                     <style>{`
-                      .coach-photo-tile:hover { transform: translateY(-2px); border-color: rgba(230,57,70,0.35) !important; }
+                      .coach-photo-tile:hover { transform: translateY(-2px); border-color: rgba(152,8,8,0.35) !important; }
                     `}</style>
                   </div>
                 )}
@@ -534,7 +534,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                         <div style={{
                           background: "rgba(13,13,13,0.7)",
                           backdropFilter: "blur(18px)",
-                          border: "1px solid rgba(230,57,70,0.18)",
+                          border: "1px solid rgba(152,8,8,0.18)",
                           borderRadius: 20, padding: "24px 28px",
                         }}>
                           <h3 className="eyebrow" style={{ marginBottom: 16 }}>Write a review</h3>
@@ -570,7 +570,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               fontFamily: "inherit", outline: "none", resize: "none",
                               boxSizing: "border-box",
                             }}
-                            onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                            onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                             onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
                           />
                           <div style={{
@@ -586,12 +586,12 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                               style={{
                                 padding: "9px 20px", borderRadius: 100,
                                 fontSize: 13, fontWeight: 700,
-                                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                                 color: "#fff", border: "none",
                                 cursor: submittingReview ? "not-allowed" : "pointer",
                                 opacity: submittingReview ? 0.7 : 1,
                                 fontFamily: "inherit",
-                                boxShadow: "0 2px 14px rgba(230,57,70,0.3)",
+                                boxShadow: "0 2px 14px rgba(152,8,8,0.3)",
                               }}
                             >
                               {submittingReview ? "Submitting…" : "Submit review"}
@@ -656,12 +656,12 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                         <div key={l} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                           <div style={{
                             width: 30, height: 30, borderRadius: 10,
-                            background: "rgba(230,57,70,0.1)",
-                            border: "1px solid rgba(230,57,70,0.18)",
+                            background: "rgba(152,8,8,0.1)",
+                            border: "1px solid rgba(152,8,8,0.18)",
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
                             flexShrink: 0,
                           }}>
-                            <Icon size={13} color="#ff6b74" />
+                            <Icon size={13} color="#d64545" />
                           </div>
                           <div style={{ minWidth: 0 }}>
                             <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
@@ -669,7 +669,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             </p>
                             {href ? (
                               <a href={href} target="_blank" rel="noopener noreferrer"
-                                 style={{ fontSize: 13, fontWeight: 600, color: "#ff6b74", textDecoration: "none" }}>
+                                 style={{ fontSize: 13, fontWeight: 600, color: "#d64545", textDecoration: "none" }}>
                                 {v} ↗
                               </a>
                             ) : (
@@ -703,7 +703,7 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                     }}>
                       <div style={{
                         height: "100%", width: `${occupancy}%`,
-                        background: coach.seatsLeft === 0 ? "#ef4444" : occupancy > 70 ? "#eab308" : "#e63946",
+                        background: coach.seatsLeft === 0 ? "#ef4444" : occupancy > 70 ? "#eab308" : "#980808",
                         transition: "width 800ms cubic-bezier(0.16,1,0.3,1)",
                       }} />
                     </div>
@@ -839,9 +839,9 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                           style={{
                             width: "100%", height: 52, borderRadius: 100, marginBottom: 10,
                             fontSize: 14, fontWeight: 700, fontFamily: "inherit", border: "none",
-                            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                             color: "#fff", cursor: paying ? "not-allowed" : "pointer",
-                            opacity: paying ? 0.7 : 1, boxShadow: "0 0 28px rgba(230,57,70,0.35)",
+                            opacity: paying ? 0.7 : 1, boxShadow: "0 0 28px rgba(152,8,8,0.35)",
                           }}
                         >
                           {paying ? "Processing…" : `Pay & book instantly · ₹${coach.priceMin}`}
@@ -857,11 +857,11 @@ export default function CoachDetail({ params }: { params: Promise<{ id: string }
                             border: coach.seatsLeft === 0 ? "1px solid rgba(255,255,255,0.1)" : "none",
                             background: coach.seatsLeft === 0
                               ? "transparent"
-                              : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                              : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                             color: coach.seatsLeft === 0 ? "rgba(255,255,255,0.55)" : "#fff",
                             cursor: (book.isPending || paying || coach.seatsLeft === 0) ? "not-allowed" : "pointer",
                             opacity: (book.isPending || paying) ? 0.7 : 1,
-                            boxShadow: coach.seatsLeft === 0 ? "none" : "0 0 28px rgba(230,57,70,0.35)",
+                            boxShadow: coach.seatsLeft === 0 ? "none" : "0 0 28px rgba(152,8,8,0.35)",
                           }}
                         >
                           {book.isPending

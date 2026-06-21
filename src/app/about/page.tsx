@@ -85,7 +85,7 @@ export default function About() {
           }} />
           <div style={{
             position: "absolute", inset: 0,
-            background: "radial-gradient(ellipse 70% 50% at 20% 30%, rgba(230,57,70,0.18) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse 70% 50% at 20% 30%, rgba(152,8,8,0.18) 0%, transparent 60%)",
           }} />
         </div>
 
@@ -93,9 +93,9 @@ export default function About() {
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "8px 14px", borderRadius: 100,
-            background: "rgba(230,57,70,0.12)",
-            border: "1px solid rgba(230,57,70,0.3)",
-            fontSize: 12, fontWeight: 600, color: "#ff6b7a",
+            background: "rgba(152,8,8,0.12)",
+            border: "1px solid rgba(152,8,8,0.3)",
+            fontSize: 12, fontWeight: 600, color: "#d64545",
             letterSpacing: "0.08em", textTransform: "uppercase",
             marginBottom: 28,
           }}>
@@ -112,7 +112,7 @@ export default function About() {
             maxWidth: 880,
             marginBottom: 28,
           }}>
-            Making sports as accessible as <em style={{ fontStyle: "italic", color: "#ff6b7a" }}>ordering a ride</em>.
+            Making sports as accessible as <em style={{ fontStyle: "italic", color: "#d64545" }}>ordering a ride</em>.
           </h1>
 
           <p style={{
@@ -173,7 +173,7 @@ export default function About() {
               alignItems: "center",
             }} className="chapter-grid">
               <div style={{ order: reverse ? 2 : 1 }} className="chapter-text">
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#980808", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 18 }}>
                   {kicker}
                 </div>
                 <h2 style={{
@@ -222,7 +222,7 @@ export default function About() {
       <section style={{ padding: "0 24px 96px" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#980808", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
               What we hold on to
             </div>
             <h2 style={{
@@ -250,12 +250,12 @@ export default function About() {
               }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12,
-                  background: "rgba(230,57,70,0.1)",
-                  border: "1px solid rgba(230,57,70,0.25)",
+                  background: "rgba(152,8,8,0.1)",
+                  border: "1px solid rgba(152,8,8,0.25)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 20,
                 }}>
-                  <Icon size={19} color="#e63946" />
+                  <Icon size={19} color="#980808" />
                 </div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em", marginBottom: 10 }}>
                   {title}
@@ -274,8 +274,8 @@ export default function About() {
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <div style={{
             padding: "56px 56px",
-            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 55%, #0b0b0b 100%)",
-            border: "1px solid rgba(230,57,70,0.18)",
+            background: "linear-gradient(135deg, rgba(152,8,8,0.08) 0%, rgba(11,11,11,0.9) 55%, #0b0b0b 100%)",
+            border: "1px solid rgba(152,8,8,0.18)",
             borderRadius: 24,
             position: "relative",
             overflow: "hidden",
@@ -284,7 +284,7 @@ export default function About() {
               position: "absolute", top: 20, left: 44,
               fontFamily: "var(--font-serif)",
               fontSize: 140, lineHeight: 1,
-              color: "rgba(230,57,70,0.18)",
+              color: "rgba(152,8,8,0.18)",
               fontWeight: 400,
               pointerEvents: "none",
             }}>
@@ -306,10 +306,10 @@ export default function About() {
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontWeight: 800, color: "#fff", fontSize: 15,
-                boxShadow: "0 4px 14px rgba(230,57,70,0.35)",
+                boxShadow: "0 4px 14px rgba(152,8,8,0.35)",
               }}>
                 GG
               </div>
@@ -336,7 +336,7 @@ export default function About() {
             alignItems: "center",
           }} className="cta-card">
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#980808", textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 14 }}>
                 Say hello
               </div>
               <h2 style={{
@@ -358,10 +358,10 @@ export default function About() {
               <a href="mailto:hello@gameground.net" style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "space-between",
                 gap: 10, padding: "18px 22px", borderRadius: 14,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", textDecoration: "none",
                 fontSize: 14, fontWeight: 700,
-                boxShadow: "0 10px 32px rgba(230,57,70,0.3), inset 0 1px 0 rgba(255,255,255,0.16)",
+                boxShadow: "0 10px 32px rgba(152,8,8,0.3), inset 0 1px 0 rgba(255,255,255,0.16)",
               }}>
                 <span>hello@gameground.net</span>
                 <ArrowRight size={16} />

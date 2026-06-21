@@ -45,9 +45,9 @@ export default function PlayerBookings() {
           {GROUPS.map(g => (
             <button key={g.key} onClick={() => setTab(g.key)}
               style={{ padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                background: tab === g.key ? "#e63946" : "transparent",
+                background: tab === g.key ? "#980808" : "transparent",
                 color: tab === g.key ? "#fff" : "#9ca3af",
-                border: `1px solid ${tab === g.key ? "#e63946" : "rgba(255,255,255,0.12)"}` }}>
+                border: `1px solid ${tab === g.key ? "#980808" : "rgba(255,255,255,0.12)"}` }}>
               {g.label}
             </button>
           ))}
@@ -58,7 +58,7 @@ export default function PlayerBookings() {
         ) : !list.length ? (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <p style={{ color: "#9ca3af", fontSize: 16 }}>No {group.label.toLowerCase()} sessions.</p>
-            <Link href="/coach" style={{ color: "#e63946", fontSize: 14, textDecoration: "none" }}>Find a coach →</Link>
+            <Link href="/coach" style={{ color: "#980808", fontSize: 14, textDecoration: "none" }}>Find a coach →</Link>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

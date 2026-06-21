@@ -53,7 +53,7 @@ export function BookingsToolbar({
       {weekdayMode && <span style={{ fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>weekly schedule</span>}
       <button
         onClick={() => set({ group: state.group === "day" ? "off" : "day" })}
-        style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", color: state.group === "day" ? "#e63946" : "#9ca3af" }}
+        style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", color: state.group === "day" ? "#980808" : "#9ca3af" }}
       >
         {state.group === "day" ? "▼ Grouped" : "Group by date"}
       </button>

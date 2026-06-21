@@ -249,9 +249,9 @@ export function FormMultiSelect({
                 borderRadius: 8,
                 cursor: "pointer",
                 fontFamily: "inherit",
-                background: active ? "rgba(230,57,70,0.15)" : "#0d0d0d",
-                color: active ? "#e63946" : "#9ca3af",
-                border: `1px solid ${active ? "rgba(230,57,70,0.5)" : "rgba(255,255,255,0.1)"}`,
+                background: active ? "rgba(152,8,8,0.15)" : "#0d0d0d",
+                color: active ? "#980808" : "#9ca3af",
+                border: `1px solid ${active ? "rgba(152,8,8,0.5)" : "rgba(255,255,255,0.1)"}`,
                 transition: "all 0.12s",
               }}
             >
@@ -342,7 +342,7 @@ export function FormActions({
         disabled={loading}
         style={{
           ...btnBase,
-          background: "#e63946",
+          background: "#980808",
           color: "#fff",
           opacity: loading ? 0.6 : 1,
         }}

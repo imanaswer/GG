@@ -21,14 +21,14 @@ export default function AdminLogin() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(230,57,70,0.1) 0%, transparent 65%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(152,8,8,0.1) 0%, transparent 65%)", pointerEvents: "none" }} />
       <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <img src="/logo2.png" alt="Game Ground" style={{ height: 64, width: "auto", margin: "0 auto 16px", display: "block" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
-            <Shield size={16} color="#e63946" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Access</span>
+            <Shield size={16} color="#980808" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#980808", textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Access</span>
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Dashboard Login</h1>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>Restricted to authorised team members only</p>
@@ -53,7 +53,7 @@ export default function AdminLogin() {
               </div>
               {error && <p style={{ fontSize: 12, color: "#ef4444" }}>{error}</p>}
             </div>
-            <button type="submit" disabled={loading} style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "inherit", marginTop: 8 }}>
+            <button type="submit" disabled={loading} style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#980808", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "inherit", marginTop: 8 }}>
               {loading ? "Verifying…" : "Access Dashboard"}
             </button>
           </form>

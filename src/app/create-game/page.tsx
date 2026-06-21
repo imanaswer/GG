@@ -93,14 +93,14 @@ export default function CreateGamePage() {
       <section style={{ position: "relative", paddingTop: 110, paddingBottom: 8 }}>
         <div style={{
           position: "absolute", inset: 0, zIndex: 0,
-          background: "radial-gradient(ellipse 60% 60% at 50% 0%, rgba(230,57,70,0.14) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse 60% 60% at 50% 0%, rgba(152,8,8,0.14) 0%, transparent 60%)",
         }} />
         <div className="container-lg" style={{ position: "relative", zIndex: 1, maxWidth: 820, margin: "0 auto", padding: "0 24px" }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "7px 14px", borderRadius: 100,
-            background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)",
-            fontSize: 11.5, fontWeight: 600, color: "#ff6b7a",
+            background: "rgba(152,8,8,0.12)", border: "1px solid rgba(152,8,8,0.3)",
+            fontSize: 11.5, fontWeight: 600, color: "#d64545",
             letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
           }}>
             <Sparkles size={12} /> Host a game
@@ -109,7 +109,7 @@ export default function CreateGamePage() {
             fontFamily: "var(--font-serif)", fontSize: "clamp(30px, 4vw, 46px)",
             lineHeight: 1.05, fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8,
           }}>
-            Set the game. <em style={{ fontStyle: "italic", color: "#ff6b7a" }}>Find the people.</em>
+            Set the game. <em style={{ fontStyle: "italic", color: "#d64545" }}>Find the people.</em>
           </h1>
         </div>
       </section>
@@ -145,13 +145,13 @@ export default function CreateGamePage() {
                       return (
                         <button key={v.id} type="button" onClick={() => selectVenue(v.id)} style={{
                           textAlign: "left", padding: "13px 15px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
-                          background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-                          border: active ? "1px solid #e63946" : "1px solid rgba(255,255,255,0.08)",
+                          background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+                          border: active ? "1px solid #980808" : "1px solid rgba(255,255,255,0.08)",
                           opacity: open === 0 ? 0.6 : 1,
                         }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                             <span style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{v.name}</span>
-                            {active && <Check size={15} color="#e63946" />}
+                            {active && <Check size={15} color="#980808" />}
                           </div>
                           <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.4 }}>{v.address}</div>
                           <div style={{ fontSize: 11, fontWeight: 700, marginTop: 8, color: open > 0 ? "#4ade80" : "rgba(255,255,255,0.4)" }}>
@@ -241,8 +241,8 @@ export default function CreateGamePage() {
           <div style={{
             display: "flex", alignItems: "center", gap: 14,
             padding: "18px 22px",
-            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 100%)",
-            border: "1px solid rgba(230,57,70,0.2)", borderRadius: 18, marginTop: 8,
+            background: "linear-gradient(135deg, rgba(152,8,8,0.08) 0%, rgba(11,11,11,0.9) 100%)",
+            border: "1px solid rgba(152,8,8,0.2)", borderRadius: 18, marginTop: 8,
           }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>
@@ -281,12 +281,12 @@ export default function CreateGamePage() {
                 style={{
                   height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: (step === 1 ? step1Valid : step2Valid) ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                  background: (step === 1 ? step1Valid : step2Valid) ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
                   color: (step === 1 ? step1Valid : step2Valid) ? "#fff" : "rgba(255,255,255,0.4)",
                   border: (step === 1 ? step1Valid : step2Valid) ? "none" : "1px solid rgba(255,255,255,0.06)",
                   cursor: (step === 1 ? step1Valid : step2Valid) ? "pointer" : "not-allowed",
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  boxShadow: (step === 1 ? step1Valid : step2Valid) ? "0 6px 24px rgba(230,57,70,0.35)" : "none",
+                  boxShadow: (step === 1 ? step1Valid : step2Valid) ? "0 6px 24px rgba(152,8,8,0.35)" : "none",
                 }}
               >
                 Next <ArrowRight size={14} />
@@ -298,13 +298,13 @@ export default function CreateGamePage() {
                 style={{
                   height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: canSubmit ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                  background: canSubmit ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
                   color: canSubmit ? "#fff" : "rgba(255,255,255,0.4)",
                   border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.06)",
                   cursor: (createGame.isPending || !canSubmit) ? "not-allowed" : "pointer",
                   opacity: createGame.isPending ? 0.6 : 1,
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  boxShadow: canSubmit ? "0 6px 24px rgba(230,57,70,0.35)" : "none",
+                  boxShadow: canSubmit ? "0 6px 24px rgba(152,8,8,0.35)" : "none",
                 }}
               >
                 {createGame.isPending ? "Publishing…" : (<>Publish game <ArrowRight size={14} /></>)}
@@ -335,14 +335,14 @@ function ProgressSteps({ step }: { step: 1 | 2 | 3 }) {
           <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{
               height: 4, borderRadius: 100,
-              background: on ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.08)",
+              background: on ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.08)",
             }} />
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{
                 width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 fontSize: 10, fontWeight: 800,
-                background: on ? "#e63946" : "rgba(255,255,255,0.06)",
+                background: on ? "#980808" : "rgba(255,255,255,0.06)",
                 color: on ? "#fff" : "rgba(255,255,255,0.4)",
               }}>
                 {done ? <Check size={11} strokeWidth={3} /> : n}
@@ -361,10 +361,10 @@ function CostToggle({ active, label, onClick }: { active: boolean; label: string
     <button type="button" onClick={onClick} style={{
       padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
       border: "1px solid",
-      background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
+      background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
       color: active ? "#fff" : "rgba(255,255,255,0.6)",
       borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-      boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
+      boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
     }}>
       {label}
     </button>
@@ -394,10 +394,10 @@ function AuthGate() {
         }}>
           <div style={{
             width: 64, height: 64, borderRadius: 18, margin: "0 auto 24px",
-            background: "rgba(230,57,70,0.1)", border: "1px solid rgba(230,57,70,0.25)",
+            background: "rgba(152,8,8,0.1)", border: "1px solid rgba(152,8,8,0.25)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <Lock size={26} color="#e63946" />
+            <Lock size={26} color="#980808" />
           </div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 30, fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", marginBottom: 10 }}>
             Sign in to host a game.
@@ -408,9 +408,9 @@ function AuthGate() {
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/login" style={{
               height: 44, padding: "0 22px", borderRadius: 12,
-              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)", color: "#fff", textDecoration: "none",
+              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)", color: "#fff", textDecoration: "none",
               fontSize: 13.5, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 7,
-              boxShadow: "0 6px 24px rgba(230,57,70,0.3)",
+              boxShadow: "0 6px 24px rgba(152,8,8,0.3)",
             }}>
               Sign in <ArrowRight size={14} />
             </Link>
@@ -435,10 +435,10 @@ function SectionCard({ Icon, title, hint, children }: { Icon: typeof Trophy; tit
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hint ? 6 : 20 }}>
         <div style={{
           width: 34, height: 34, borderRadius: 10,
-          background: "rgba(230,57,70,0.1)", border: "1px solid rgba(230,57,70,0.2)",
+          background: "rgba(152,8,8,0.1)", border: "1px solid rgba(152,8,8,0.2)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Icon size={15} color="#e63946" />
+          <Icon size={15} color="#980808" />
         </div>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h2>
       </div>
@@ -453,7 +453,7 @@ function FieldRow({ label, children, hint, required }: { label: string; children
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       <Label>
         {label}
-        {required && <span style={{ color: "#e63946", marginLeft: 4 }}>*</span>}
+        {required && <span style={{ color: "#980808", marginLeft: 4 }}>*</span>}
       </Label>
       {children}
       {hint && <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{hint}</p>}
@@ -470,10 +470,10 @@ function PillSelect({ options, value, onChange }: { options: { l: string; v: str
           <button key={String(o.v)} type="button" onClick={() => onChange(String(o.v))} style={{
             padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: "pointer",
             border: "1px solid", fontFamily: "inherit",
-            background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
+            background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.02)",
             color: active ? "#fff" : "rgba(255,255,255,0.6)",
             borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-            boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
+            boxShadow: active ? "0 4px 14px rgba(152,8,8,0.3)" : "none",
             transition: "all 160ms ease",
           }}>
             {o.l}
@@ -526,7 +526,7 @@ function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; 
                   style={{
                     padding: "8px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
                     cursor: disabled ? "not-allowed" : "pointer",
-                    background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                    background: active ? "linear-gradient(135deg, #980808 0%, #6b0505 100%)" : "rgba(255,255,255,0.04)",
                     color: active ? "#fff" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.8)",
                     border: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
                     textDecoration: disabled ? "line-through" : "none",

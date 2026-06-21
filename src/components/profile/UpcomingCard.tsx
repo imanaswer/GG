@@ -4,7 +4,7 @@ import { Calendar, MapPin, ArrowRight, Compass } from "lucide-react";
 import type { ProfileUpcoming } from "@/hooks/useData";
 
 const BADGE: Record<string, { label: string; color: string }> = {
-  coach:    { label: "COACH",    color: "#e63946" },
+  coach:    { label: "COACH",    color: "#980808" },
   game:     { label: "GAME",     color: "#60a5fa" },
   workshop: { label: "WORKSHOP", color: "#a78bfa" },
   camp:     { label: "CAMP",     color: "#4ade80" },
@@ -18,7 +18,7 @@ export function UpcomingCard({ upcoming }: { upcoming?: ProfileUpcoming }) {
         <Compass size={28} color="rgba(255,255,255,0.4)" style={{ marginBottom: 10 }} />
         <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Nothing coming up</div>
         <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>Find a game and get back on the court.</div>
-        <Link href="/play" style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 40, padding: "0 18px", borderRadius: 100, background: "linear-gradient(135deg,#e63946,#b91c2d)", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Find Games</Link>
+        <Link href="/play" style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 40, padding: "0 18px", borderRadius: 100, background: "linear-gradient(135deg,#980808,#6b0505)", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Find Games</Link>
       </div>
     );
   }

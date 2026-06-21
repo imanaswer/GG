@@ -24,7 +24,7 @@ export default function EventTicket({ params }: { params: Promise<{ id: string }
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 18 }}>
             A ticket is issued only once your registration is approved.
           </p>
-          <Link href={`/events/${id}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 100, background: "#e63946", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13 }}>
+          <Link href={`/events/${id}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 100, background: "#980808", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13 }}>
             <ArrowLeft size={14} /> Back to event
           </Link>
         </div>
@@ -36,8 +36,8 @@ export default function EventTicket({ params }: { params: Promise<{ id: string }
 
   return (
     <main style={{ background: "#050505", minHeight: "100vh", padding: "40px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-      <div className="ticket-card" style={{ width: "100%", maxWidth: 460, background: "#0d0d0d", border: "1px solid rgba(230,57,70,0.25)", borderRadius: 20, overflow: "hidden" }}>
-        <div style={{ background: "linear-gradient(135deg,#e63946,#b91c2d)", padding: "18px 22px", display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="ticket-card" style={{ width: "100%", maxWidth: 460, background: "#0d0d0d", border: "1px solid rgba(152,8,8,0.25)", borderRadius: 20, overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg,#980808,#6b0505)", padding: "18px 22px", display: "flex", alignItems: "center", gap: 10 }}>
           <TicketIcon size={20} color="#fff" />
           <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.04em", textTransform: "uppercase" }}>Event ticket</span>
         </div>
@@ -58,13 +58,13 @@ export default function EventTicket({ params }: { params: Promise<{ id: string }
           ))}
           <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
             <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Booking reference</p>
-            <p style={{ fontSize: 14, fontWeight: 800, color: "#ff6b74", fontFamily: "monospace", letterSpacing: "0.05em", wordBreak: "break-all" }}>{reg!.id}</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: "#d64545", fontFamily: "monospace", letterSpacing: "0.05em", wordBreak: "break-all" }}>{reg!.id}</p>
           </div>
         </div>
       </div>
 
       <div className="ticket-actions" style={{ display: "flex", gap: 10 }}>
-        <button onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 44, padding: "0 20px", borderRadius: 100, background: "#e63946", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+        <button onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 44, padding: "0 20px", borderRadius: 100, background: "#980808", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
           <Printer size={15} /> Print / Save as PDF
         </button>
         <Link href={`/events/${id}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 44, padding: "0 20px", borderRadius: 100, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>

@@ -15,7 +15,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
   if (!ready) return (
     <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #e63946", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #980808", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );

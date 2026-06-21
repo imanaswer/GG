@@ -33,7 +33,7 @@ export function PlayerHeroCard(p: PlayerHeroCardProps) {
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 100, background: `${meta.color}22`, color: meta.color, fontSize: 12, fontWeight: 800 }}>
               {meta.icon} {meta.label}
             </span>
-            {p.membership && <span style={{ padding: "4px 10px", borderRadius: 100, background: "rgba(230,57,70,0.18)", color: "#e63946", fontSize: 11, fontWeight: 800 }}>{p.membership}</span>}
+            {p.membership && <span style={{ padding: "4px 10px", borderRadius: 100, background: "rgba(152,8,8,0.18)", color: "#980808", fontSize: 11, fontWeight: 800 }}>{p.membership}</span>}
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>@{p.username}</div>
           <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>

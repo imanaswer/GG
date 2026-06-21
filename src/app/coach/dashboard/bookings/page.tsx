@@ -56,9 +56,9 @@ export default function CoachBookings() {
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                background: tab === t.key ? "#e63946" : "transparent",
+                background: tab === t.key ? "#980808" : "transparent",
                 color: tab === t.key ? "#fff" : "#9ca3af",
-                border: `1px solid ${tab === t.key ? "#e63946" : "rgba(255,255,255,0.12)"}` }}>
+                border: `1px solid ${tab === t.key ? "#980808" : "rgba(255,255,255,0.12)"}` }}>
               {t.label}
             </button>
           ))}
@@ -80,7 +80,7 @@ export default function CoachBookings() {
               <div key={b.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "16px 18px" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#e63946", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#980808", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 18, flexShrink: 0 }}>
                       {b.playerName?.[0] ?? "P"}
                     </div>
                     <div>

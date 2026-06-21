@@ -23,7 +23,7 @@ export function pickIdentityTag(profile: UserProfile): IdentityTag {
   if (ageMonths < 2 && profile.gamesPlayed >= 3) return TAGS.rising;
 
   if (profile.sportActivity?.[0]) {
-    return { label: `${profile.sportActivity[0].sport} Player`, color: "#e63946" };
+    return { label: `${profile.sportActivity[0].sport} Player`, color: "#980808" };
   }
   return TAGS.player;
 }

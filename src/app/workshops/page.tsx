@@ -82,7 +82,7 @@ function Hero({ count }: { count: number | null }) {
       }} />
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(230,57,70,0.14), transparent 70%)",
+        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(152,8,8,0.14), transparent 70%)",
       }} />
 
       <div className="container-lg" style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
@@ -91,14 +91,14 @@ function Hero({ count }: { count: number | null }) {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "8px 16px", borderRadius: 100,
-              background: "rgba(230,57,70,0.08)",
-              border: "1px solid rgba(230,57,70,0.25)",
+              background: "rgba(152,8,8,0.08)",
+              border: "1px solid rgba(152,8,8,0.25)",
               marginBottom: 28,
             }}>
-              <Sparkles size={13} color="#e63946" />
+              <Sparkles size={13} color="#980808" />
               <span style={{
                 fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-                textTransform: "uppercase", color: "#ff6b74",
+                textTransform: "uppercase", color: "#d64545",
               }}>
                 {count !== null ? `${count} focused workshop${count === 1 ? "" : "s"} open` : "Workshops · Kozhikode"}
               </span>
@@ -111,7 +111,7 @@ function Hero({ count }: { count: number | null }) {
               color: "#fff", maxWidth: 1100,
             }}>
               Master skills in{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>focused</span>{" "}
+              <span className="display-serif" style={{ color: "#d64545" }}>focused</span>{" "}
               sessions.
             </h1>
           </Reveal>
@@ -132,8 +132,8 @@ function Hero({ count }: { count: number | null }) {
             <Link href="#workshops" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-              boxShadow: "0 0 32px rgba(230,57,70,0.4)",
+              background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+              boxShadow: "0 0 32px rgba(152,8,8,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
               textDecoration: "none",
             }}>
@@ -172,9 +172,9 @@ function PillGroup({ label, options, value, onChange }: PillGroupProps) {
               padding: "6px 14px", borderRadius: 100,
               fontSize: 12, fontWeight: 500, cursor: "pointer",
               border: "1px solid", fontFamily: "inherit",
-              background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-              color: active ? "#ff6b74" : "rgba(255,255,255,0.6)",
-              borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
+              background: active ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+              color: active ? "#d64545" : "rgba(255,255,255,0.6)",
+              borderColor: active ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.07)",
               transition: "all 180ms",
             }}
           >
@@ -202,7 +202,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
       style={{
         textDecoration: "none", display: "flex", flexDirection: "column",
         background: "#0a0a0a",
-        border: "1px solid rgba(230,57,70,0.3)",
+        border: "1px solid rgba(152,8,8,0.3)",
         borderRadius: 24, overflow: "hidden",
         transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
         height: "100%",
@@ -252,7 +252,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-              background: "rgba(230,57,70,0.95)", color: "#fff",
+              background: "rgba(152,8,8,0.95)", color: "#fff",
             }}>{workshop.sport}</span>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
@@ -281,7 +281,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
       <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Star size={14} color="#e63946" fill="#e63946" />
+            <Star size={14} color="#980808" fill="#980808" />
             <span style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>{workshop.rating}</span>
             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>({workshop.reviewCount})</span>
           </div>
@@ -302,7 +302,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
               display: "flex", alignItems: "center", gap: 8,
               fontSize: 13, color: "rgba(255,255,255,0.6)",
             }}>
-              <Icon size={13} color="#e63946" style={{ flexShrink: 0 }} />
+              <Icon size={13} color="#980808" style={{ flexShrink: 0 }} />
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
             </div>
           ))}
@@ -317,7 +317,7 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
               }}>
                 <span style={{
                   width: 5, height: 5, borderRadius: "50%",
-                  background: "#e63946", flexShrink: 0,
+                  background: "#980808", flexShrink: 0,
                 }} />
                 {h}
               </div>
@@ -333,16 +333,16 @@ function FeaturedCard({ workshop }: { workshop: Workshop }) {
             <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 3 }}>
               Total
             </p>
-            <p style={{ fontSize: 26, fontWeight: 800, color: "#ff6b74", letterSpacing: "-0.03em", margin: 0 }}>
+            <p style={{ fontSize: 26, fontWeight: 800, color: "#d64545", letterSpacing: "-0.03em", margin: 0 }}>
               {workshop.priceDisplay}
             </p>
           </div>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             padding: "11px 20px", borderRadius: 100,
-            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+            background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
             color: "#fff", fontSize: 13, fontWeight: 700,
-            boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
+            boxShadow: "0 2px 18px rgba(152,8,8,0.3)",
           }}>
             Register
             <ChevronRight size={14} />
@@ -416,11 +416,11 @@ function CompactCard({ workshop }: { workshop: Workshop }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{
             fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-            background: "rgba(230,57,70,0.14)", color: "#ff6b74",
+            background: "rgba(152,8,8,0.14)", color: "#d64545",
             letterSpacing: "0.04em",
           }}>{workshop.sport}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Star size={11} color="#e63946" fill="#e63946" />
+            <Star size={11} color="#980808" fill="#980808" />
             <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{workshop.rating}</span>
           </div>
         </div>
@@ -434,11 +434,11 @@ function CompactCard({ workshop }: { workshop: Workshop }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Calendar size={12} color="#e63946" style={{ flexShrink: 0 }} />
+            <Calendar size={12} color="#980808" style={{ flexShrink: 0 }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatDates(workshop.startDate, workshop.endDate)}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Users size={12} color="#e63946" style={{ flexShrink: 0 }} />
+            <Users size={12} color="#980808" style={{ flexShrink: 0 }} />
             <span>{audienceLabel}</span>
           </div>
         </div>
@@ -451,7 +451,7 @@ function CompactCard({ workshop }: { workshop: Workshop }) {
             <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
               Price
             </p>
-            <p style={{ fontSize: 18, fontWeight: 800, color: "#ff6b74", letterSpacing: "-0.02em", margin: 0 }}>
+            <p style={{ fontSize: 18, fontWeight: 800, color: "#d64545", letterSpacing: "-0.02em", margin: 0 }}>
               {workshop.priceDisplay}
             </p>
           </div>
@@ -542,7 +542,7 @@ function WorkshopsContent() {
                       borderRadius: 12, color: "#fff", outline: "none",
                       fontFamily: "inherit",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                   />
                 </div>
@@ -639,12 +639,12 @@ function WorkshopsContent() {
               <div style={{ textAlign: "center", padding: "100px 0" }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 20,
-                  background: "rgba(230,57,70,0.08)",
-                  border: "1px solid rgba(230,57,70,0.18)",
+                  background: "rgba(152,8,8,0.08)",
+                  border: "1px solid rgba(152,8,8,0.18)",
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 20,
                 }}>
-                  <Target size={24} color="#ff6b74" />
+                  <Target size={24} color="#d64545" />
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.02em" }}>
                   No workshops match those filters.
@@ -660,7 +660,7 @@ function WorkshopsContent() {
                   <div style={{ marginBottom: 72 }}>
                     <Reveal>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                        <Award size={20} color="#e63946" />
+                        <Award size={20} color="#980808" />
                         <h2 className="display" style={{
                           fontSize: "clamp(24px, 3vw, 32px)",
                           color: "#fff", margin: 0,
@@ -715,13 +715,13 @@ function WorkshopsContent() {
 
       <style>{`
         .workshop-card:hover {
-          border-color: rgba(230,57,70,0.3);
-          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(230,57,70,0.12);
+          border-color: rgba(152,8,8,0.3);
+          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(152,8,8,0.12);
           transform: translateY(-4px);
         }
         .workshop-card-featured:hover {
-          border-color: rgba(230,57,70,0.5);
-          box-shadow: 0 30px 80px rgba(230,57,70,0.18), 0 0 0 1px rgba(230,57,70,0.2);
+          border-color: rgba(152,8,8,0.5);
+          box-shadow: 0 30px 80px rgba(152,8,8,0.18), 0 0 0 1px rgba(152,8,8,0.2);
         }
         .workshop-card-img img { transition: transform 700ms cubic-bezier(0.16,1,0.3,1), filter 500ms; }
         .workshop-card:hover .workshop-card-img img { transform: scale(1.05); filter: saturate(1); }

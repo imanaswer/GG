@@ -8,7 +8,7 @@ export function ProfileTabs({ tabs, active, onChange }: { tabs: string[]; active
           <button key={t} onClick={() => onChange(t)} style={{
             background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
             padding: "10px 14px", fontSize: 13.5, fontWeight: on ? 800 : 600,
-            color: on ? "#fff" : "rgba(255,255,255,0.5)", borderBottom: on ? "2px solid #e63946" : "2px solid transparent",
+            color: on ? "#fff" : "rgba(255,255,255,0.5)", borderBottom: on ? "2px solid #980808" : "2px solid transparent",
             whiteSpace: "nowrap",
           }}>{t}</button>
         );

@@ -116,7 +116,7 @@ export default function AdminCoaches() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
             <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Coaches Manager</h1>
-            <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#e63946", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+            <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#980808", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
               <Plus size={15} />Add Coach
             </button>
           </div>
@@ -164,7 +164,7 @@ export default function AdminCoaches() {
                       <tr key={c.id}>
                         <td style={td}>
                           <div style={{ fontWeight: 700, color: "#fff" }}>{c.name}</div>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{c.sport}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{c.sport}</span>
                         </td>
                         <td style={{ ...td, color: "#9ca3af" }}>{c.type}</td>
                         <td style={{ ...td, color: "#9ca3af", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.location}</td>
@@ -172,7 +172,7 @@ export default function AdminCoaches() {
                         <td style={td}>
                           <div style={{ fontSize: 12, marginBottom: 3 }}>{c.seatsLeft}/{c.totalSeats}</div>
                           <div style={{ height: 3, background: "#1c1c1c", borderRadius: 99, width: 60, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
+                            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#980808", borderRadius: 99 }} />
                           </div>
                           {!!c.batches?.length && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4 }}>{c.batches.length} batch{c.batches.length === 1 ? "" : "es"}</div>}
                         </td>

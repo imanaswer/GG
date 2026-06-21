@@ -12,8 +12,8 @@ interface StatCardProps {
   href?: string;
 }
 
-export function StatCard({ value, label, sub, icon: Icon, color = "#e63946", accent, href }: StatCardProps) {
-  const rgb = color === "#e63946" ? "230,57,70" : "34,197,94";
+export function StatCard({ value, label, sub, icon: Icon, color = "#980808", accent, href }: StatCardProps) {
+  const rgb = color === "#980808" ? "230,57,70" : "34,197,94";
   const baseBorder = accent ? `rgba(${rgb},0.25)` : "rgba(255,255,255,0.07)";
   const cardStyle: React.CSSProperties = {
     background: accent ? `rgba(${rgb},0.08)` : "#141414",

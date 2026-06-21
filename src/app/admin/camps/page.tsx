@@ -117,7 +117,7 @@ export default function AdminCamps() {
               <button onClick={() => exportCSV(regs, campFilter)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 <Download size={14} />Export CSV
               </button>
-              <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#e63946", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#980808", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 <Plus size={15} />Add Camp
               </button>
             </div>
@@ -128,7 +128,7 @@ export default function AdminCamps() {
             {camps.map(c => {
               const pct = c.maxParticipants ? Math.round((c.participants / c.maxParticipants) * 100) : 0;
               return (
-                <div key={c.id} style={{ background: "#141414", border: `1px solid ${campFilter === c.title ? "rgba(230,57,70,0.4)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
+                <div key={c.id} style={{ background: "#141414", border: `1px solid ${campFilter === c.title ? "rgba(152,8,8,0.4)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
                   <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 4 }}>
                     <button onClick={e => { e.stopPropagation(); openEdit(c); }} style={iconBtn} title="Edit"><Pencil size={13} color="#60a5fa" /></button>
                     <button onClick={e => { e.stopPropagation(); openDelete(c); }} style={iconBtn} title="Delete"><Trash2 size={13} color="#f87171" /></button>
@@ -136,10 +136,10 @@ export default function AdminCamps() {
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, paddingRight: 50 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{c.title}</span>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{c.sport}</span>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: "#e63946", marginTop: 8 }}>{c.participants}/{c.maxParticipants}</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{c.sport}</span>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#980808", marginTop: 8 }}>{c.participants}/{c.maxParticipants}</div>
                   <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, overflow: "hidden", marginTop: 8 }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
+                    <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#980808", borderRadius: 99 }} />
                   </div>
                   <p style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>Deadline: {new Date(c.registrationDeadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
                 </div>
@@ -149,7 +149,7 @@ export default function AdminCamps() {
 
           <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 13, color: "#6b7280" }}>{regs.length} registration{regs.length !== 1 ? "s" : ""}</span>
-            {campFilter !== "all" && <button onClick={() => setCampFilter("all")} style={{ fontSize: 12, color: "#e63946", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>✕ Clear filter</button>}
+            {campFilter !== "all" && <button onClick={() => setCampFilter("all")} style={{ fontSize: 12, color: "#980808", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>✕ Clear filter</button>}
           </div>
 
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
@@ -216,7 +216,7 @@ export default function AdminCamps() {
             <FormTextarea label="What to Bring (one per line)" value={(form.whatToBring ?? []).join("\n")} onChange={v => update("whatToBring", v.split("\n").filter(Boolean) as never)} rows={2} placeholder="Water bottle&#10;Sports shoes" />
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d1d5db", cursor: "pointer" }}>
-                <input type="checkbox" checked={form.featured ?? false} onChange={e => update("featured", e.target.checked as never)} style={{ accentColor: "#e63946" }} />
+                <input type="checkbox" checked={form.featured ?? false} onChange={e => update("featured", e.target.checked as never)} style={{ accentColor: "#980808" }} />
                 Featured camp (shown on homepage)
               </label>
             </div>

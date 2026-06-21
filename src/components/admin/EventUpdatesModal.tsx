@@ -60,11 +60,11 @@ export function EventUpdatesModal({ eventId, eventTitle, open, onClose }: {
         <FormInput label="Title (optional)" value={title} onChange={setTitle} placeholder="e.g. Venue changed" />
         <FormTextarea label="Update" value={body} onChange={setBody} rows={3} placeholder="What do participants need to know?" />
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d1d5db", cursor: "pointer", marginBottom: 14 }}>
-          <input type="checkbox" checked={pinned} onChange={e => setPinned(e.target.checked)} style={{ accentColor: "#e63946" }} />
+          <input type="checkbox" checked={pinned} onChange={e => setPinned(e.target.checked)} style={{ accentColor: "#980808" }} />
           Pin this update to the top
         </label>
         {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}
-        <button type="submit" disabled={post.isPending} style={{ height: 40, borderRadius: 9, background: "#e63946", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, padding: "0 18px", cursor: "pointer", fontFamily: "inherit", opacity: post.isPending ? 0.6 : 1 }}>
+        <button type="submit" disabled={post.isPending} style={{ height: 40, borderRadius: 9, background: "#980808", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, padding: "0 18px", cursor: "pointer", fontFamily: "inherit", opacity: post.isPending ? 0.6 : 1 }}>
           {post.isPending ? "Posting…" : "Post update"}
         </button>
       </form>

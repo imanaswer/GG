@@ -84,7 +84,7 @@ export default function AdminUsers() {
                     <tr key={u.id}>
                       <td style={td}>
                         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#e63946", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{u.name[0]}</div>
+                          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#980808", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{u.name[0]}</div>
                           <span style={{ fontWeight: 600, color: "#fff" }}>{u.name}</span>
                         </div>
                       </td>

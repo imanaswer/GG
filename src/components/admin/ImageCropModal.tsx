@@ -119,7 +119,7 @@ export function ImageCropModal({
           <input
             type="range" min={1} max={3} step={0.01} value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            style={{ flex: 1, accentColor: "#e63946" }}
+            style={{ flex: 1, accentColor: "#980808" }}
           />
         </div>
 
@@ -134,7 +134,7 @@ export function ImageCropModal({
           </button>
           <button
             type="button" onClick={confirm} disabled={busy || !areaPixels}
-            style={{ height: 38, padding: "0 18px", borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: busy ? "wait" : "pointer", background: "#e63946", color: "#fff", border: "none", opacity: busy || !areaPixels ? 0.6 : 1 }}
+            style={{ height: 38, padding: "0 18px", borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: busy ? "wait" : "pointer", background: "#980808", color: "#fff", border: "none", opacity: busy || !areaPixels ? 0.6 : 1 }}
           >
             {busy ? "Cropping…" : "Crop & upload"}
           </button>

@@ -108,7 +108,7 @@ export default function RegisterCoach() {
                   background: "linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.4) 50%, rgba(5,5,5,0.95) 100%)",
                 }} />
                 <div style={{ position: "absolute", inset: 0, padding: 28, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#980808", textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 14 }}>
                     Coach application
                   </div>
                   <h1 style={{
@@ -134,7 +134,7 @@ export default function RegisterCoach() {
                 </div>
                 <Link href="/login" style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  fontSize: 13, color: "#e63946", fontWeight: 600, textDecoration: "none",
+                  fontSize: 13, color: "#980808", fontWeight: 600, textDecoration: "none",
                 }}>
                   Sign in instead <ArrowRight size={13} />
                 </Link>
@@ -169,10 +169,10 @@ export default function RegisterCoach() {
                   <div style={{
                     height: "100%",
                     width: `${pct}%`,
-                    background: "linear-gradient(90deg, #e63946, #ff4d5a)",
+                    background: "linear-gradient(90deg, #980808, #bb1a1a)",
                     borderRadius: 100,
                     transition: "width 400ms cubic-bezier(0.16,1,0.3,1)",
-                    boxShadow: "0 0 10px rgba(230,57,70,0.5)",
+                    boxShadow: "0 0 10px rgba(152,8,8,0.5)",
                   }} />
                 </div>
 
@@ -191,10 +191,10 @@ export default function RegisterCoach() {
                           display: "inline-flex", alignItems: "center", gap: 8,
                           padding: "7px 13px", borderRadius: 100,
                           fontSize: 12, fontWeight: 600,
-                          background: active ? "rgba(230,57,70,0.12)" : done ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)",
+                          background: active ? "rgba(152,8,8,0.12)" : done ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)",
                           color: active ? "#fff" : done ? "#4ade80" : "rgba(255,255,255,0.4)",
                           border: "1px solid",
-                          borderColor: active ? "rgba(230,57,70,0.35)" : done ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.07)",
+                          borderColor: active ? "rgba(152,8,8,0.35)" : done ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.07)",
                           cursor: i <= step ? "pointer" : "not-allowed",
                           fontFamily: "inherit",
                           transition: "all 160ms ease",
@@ -250,8 +250,8 @@ export default function RegisterCoach() {
                               style={{
                                 textAlign: "left",
                                 padding: "14px 16px", borderRadius: 12, border: "1px solid",
-                                borderColor: active ? "rgba(230,57,70,0.4)" : "rgba(255,255,255,0.08)",
-                                background: active ? "rgba(230,57,70,0.08)" : "rgba(255,255,255,0.02)",
+                                borderColor: active ? "rgba(152,8,8,0.4)" : "rgba(255,255,255,0.08)",
+                                background: active ? "rgba(152,8,8,0.08)" : "rgba(255,255,255,0.02)",
                                 cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 160ms ease",
                               }}
@@ -316,9 +316,9 @@ export default function RegisterCoach() {
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                               <div style={{
                                 width: 24, height: 24, borderRadius: 7,
-                                background: "rgba(230,57,70,0.12)",
+                                background: "rgba(152,8,8,0.12)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 11, fontWeight: 800, color: "#e63946",
+                                fontSize: 11, fontWeight: 800, color: "#980808",
                               }}>{i + 1}</div>
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Batch</span>
                             </div>
@@ -367,9 +367,9 @@ export default function RegisterCoach() {
                       }}
                         onMouseEnter={e => {
                           const el = e.currentTarget as HTMLElement;
-                          el.style.borderColor = "rgba(230,57,70,0.4)";
+                          el.style.borderColor = "rgba(152,8,8,0.4)";
                           el.style.color = "#fff";
-                          el.style.background = "rgba(230,57,70,0.05)";
+                          el.style.background = "rgba(152,8,8,0.05)";
                         }}
                         onMouseLeave={e => {
                           const el = e.currentTarget as HTMLElement;
@@ -417,11 +417,11 @@ export default function RegisterCoach() {
 
                     <div style={{
                       padding: "16px 18px",
-                      background: "rgba(230,57,70,0.06)",
-                      border: "1px solid rgba(230,57,70,0.22)",
+                      background: "rgba(152,8,8,0.06)",
+                      border: "1px solid rgba(152,8,8,0.22)",
                       borderRadius: 12,
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#980808", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>
                         What happens next
                       </div>
                       <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.8)", lineHeight: 1.65 }}>
@@ -455,11 +455,11 @@ export default function RegisterCoach() {
                     <button onClick={() => setStep(s => s + 1)} style={{
                       height: 48, padding: "0 28px", borderRadius: 12,
                       fontSize: 13.5, fontWeight: 700,
-                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: "pointer", fontFamily: "inherit",
                       display: "inline-flex", alignItems: "center", gap: 8,
-                      boxShadow: "0 8px 32px rgba(230,57,70,0.32), inset 0 1px 0 rgba(255,255,255,0.16)",
+                      boxShadow: "0 8px 32px rgba(152,8,8,0.32), inset 0 1px 0 rgba(255,255,255,0.16)",
                       transition: "transform 150ms ease",
                     }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
@@ -471,13 +471,13 @@ export default function RegisterCoach() {
                     <button onClick={submit} disabled={submitting} style={{
                       height: 48, padding: "0 30px", borderRadius: 12,
                       fontSize: 13.5, fontWeight: 700,
-                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: submitting ? "not-allowed" : "pointer",
                       opacity: submitting ? 0.6 : 1,
                       fontFamily: "inherit",
                       display: "inline-flex", alignItems: "center", gap: 8,
-                      boxShadow: "0 8px 32px rgba(230,57,70,0.32), inset 0 1px 0 rgba(255,255,255,0.16)",
+                      boxShadow: "0 8px 32px rgba(152,8,8,0.32), inset 0 1px 0 rgba(255,255,255,0.16)",
                       transition: "transform 150ms ease",
                     }}>
                       {submitting ? "Submitting…" : (<>Submit application <ArrowRight size={15} /></>)}

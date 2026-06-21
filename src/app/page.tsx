@@ -30,7 +30,7 @@ function ScrollProgress() {
     <motion.div
       style={{
         position: "fixed", top: 0, left: 0, right: 0,
-        height: 2, background: "linear-gradient(90deg, #e63946, #ff6b74)",
+        height: 2, background: "linear-gradient(90deg, #980808, #d64545)",
         transformOrigin: "0%", scaleX, zIndex: 200,
       }}
     />
@@ -116,19 +116,19 @@ function Hero() {
             style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "8px 16px", borderRadius: 100,
-              background: "rgba(230,57,70,0.08)",
-              border: "1px solid rgba(230,57,70,0.25)",
+              background: "rgba(152,8,8,0.08)",
+              border: "1px solid rgba(152,8,8,0.25)",
               marginBottom: 32,
             }}
           >
             <span style={{
               width: 6, height: 6, borderRadius: "50%",
-              background: "#e63946", boxShadow: "0 0 12px #e63946",
+              background: "#980808", boxShadow: "0 0 12px #980808",
               animation: "pulse 2s ease-in-out infinite",
             }} />
             <span style={{
               fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-              textTransform: "uppercase", color: "#ff6b74",
+              textTransform: "uppercase", color: "#d64545",
             }}>
               Kozhikode&apos;s Sports Playbook
             </span>
@@ -187,9 +187,9 @@ function Hero() {
               <Link href="/learn" style={{
                 display: "inline-flex", alignItems: "center", gap: 10,
                 padding: "16px 28px", borderRadius: 100,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                 color: "#fff", fontSize: 15, fontWeight: 600,
-                boxShadow: "0 0 40px rgba(230,57,70,0.45)",
+                boxShadow: "0 0 40px rgba(152,8,8,0.45)",
                 textDecoration: "none",
               }}>
                 Find a coach
@@ -301,7 +301,7 @@ function Marquee() {
             }}>
               {t}
             </span>
-            <span style={{ color: "#e63946", fontSize: 20 }}>✦</span>
+            <span style={{ color: "var(--gold)", fontSize: 20 }}>✦</span>
           </div>
         ))}
       </motion.div>
@@ -333,7 +333,7 @@ const HUB_CARDS: HubCard[] = [
     icon: GraduationCap,
     image: STORY.learn.src,
     imageAlt: STORY.learn.alt,
-    accent: "#ff6b74",
+    accent: "#d64545",
   },
   {
     href: "/play",
@@ -366,7 +366,7 @@ const HUB_CARDS: HubCard[] = [
     icon: Target,
     image: CAMP_IMAGE.src,
     imageAlt: CAMP_IMAGE.alt,
-    accent: "#e63946",
+    accent: "#980808",
   },
   {
     href: "/workshops",
@@ -532,7 +532,7 @@ function QuickHub() {
         }}>
           <Reveal>
             <div style={{ maxWidth: 640 }}>
-              <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
+              <span className="eyebrow" style={{ color: "#980808", display: "block", marginBottom: 16 }}>
                 Five ways in
               </span>
               <h2 className="display" style={{ fontSize: "clamp(36px, 4.5vw, 64px)", color: "#fff" }}>
@@ -605,8 +605,8 @@ function QuickHub() {
           transition: background 240ms ease, border-color 240ms ease, color 240ms ease, transform 240ms ease;
         }
         .sport-pill:hover {
-          background: rgba(230,57,70,0.12);
-          border-color: rgba(230,57,70,0.5);
+          background: rgba(152,8,8,0.12);
+          border-color: rgba(152,8,8,0.5);
           color: #fff; transform: translateY(-2px);
         }
         @media (max-width: 1200px) {
@@ -709,7 +709,7 @@ function ConversionClose() {
       <div style={{ position: "relative", padding: "140px 0" }} className="close-pad">
         <div className="container-lg" style={{ textAlign: "center" }}>
           <Reveal>
-            <span className="eyebrow" style={{ color: "#ff6b74", display: "block", marginBottom: 28 }}>
+            <span className="eyebrow" style={{ color: "#d64545", display: "block", marginBottom: 28 }}>
               Camps · Tournaments · Community
             </span>
           </Reveal>
@@ -720,7 +720,7 @@ function ConversionClose() {
               maxWidth: 1000, margin: "0 auto 36px",
             }}>
               Your next match{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>starts here.</span>
+              <span className="display-serif" style={{ color: "#d64545" }}>starts here.</span>
             </h2>
           </Reveal>
           <Reveal delay={0.16}>
@@ -755,8 +755,8 @@ function ConversionClose() {
                 <Link href="/register" style={{
                   display: "inline-flex", alignItems: "center", gap: 10,
                   padding: "18px 32px", borderRadius: 100,
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  boxShadow: "0 0 50px rgba(230,57,70,0.45)",
+                  background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
+                  boxShadow: "0 0 50px rgba(152,8,8,0.45)",
                   color: "#fff", fontSize: 15, fontWeight: 700,
                   textDecoration: "none",
                 }}>
@@ -789,7 +789,10 @@ function ConversionClose() {
         .close-stat-num {
           font-family: var(--font-sans); font-weight: 900;
           font-size: clamp(34px, 4.5vw, 52px);
-          color: #fff; letter-spacing: -0.04em; line-height: 1;
+          letter-spacing: -0.04em; line-height: 1;
+          background: linear-gradient(135deg, #fff 0%, var(--gold-light) 120%);
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
         }
         .close-stat-label {
           font-size: 12.5px; color: rgba(255,255,255,0.55);

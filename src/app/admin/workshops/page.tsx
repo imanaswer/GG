@@ -154,7 +154,7 @@ export default function AdminWorkshops() {
               <button onClick={() => exportCSV(regs, workshopFilter)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 <Download size={14} />Export CSV
               </button>
-              <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#e63946", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#980808", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 <Plus size={15} />Add Workshop
               </button>
             </div>
@@ -165,7 +165,7 @@ export default function AdminWorkshops() {
             {workshops.map(w => {
               const pct = w.maxParticipants ? Math.round((w.participants / w.maxParticipants) * 100) : 0;
               return (
-                <div key={w.id} style={{ background: "#141414", border: `1px solid ${workshopFilter === w.title ? "rgba(230,57,70,0.4)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
+                <div key={w.id} style={{ background: "#141414", border: `1px solid ${workshopFilter === w.title ? "rgba(152,8,8,0.4)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "16px 18px", cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
                   <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 4 }}>
                     <button onClick={e => { e.stopPropagation(); openEdit(w); }} style={iconBtn} title="Edit"><Pencil size={13} color="#60a5fa" /></button>
                     <button onClick={e => { e.stopPropagation(); openDelete(w); }} style={iconBtn} title="Delete"><Trash2 size={13} color="#f87171" /></button>
@@ -174,12 +174,12 @@ export default function AdminWorkshops() {
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{w.title}</span>
                   </div>
                   <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{w.sport}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(152,8,8,0.15)", color: "#980808" }}>{w.sport}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa" }}>{w.sessionType === "single" ? "Single" : "Series"}</span>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: "#e63946", marginTop: 4 }}>{w.participants}/{w.maxParticipants}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#980808", marginTop: 4 }}>{w.participants}/{w.maxParticipants}</div>
                   <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, overflow: "hidden", marginTop: 8 }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
+                    <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#980808", borderRadius: 99 }} />
                   </div>
                   <p style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>Deadline: {new Date(w.registrationDeadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
                 </div>
@@ -189,7 +189,7 @@ export default function AdminWorkshops() {
 
           <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 13, color: "#6b7280" }}>{regs.length} registration{regs.length !== 1 ? "s" : ""}</span>
-            {workshopFilter !== "all" && <button onClick={() => setWorkshopFilter("all")} style={{ fontSize: 12, color: "#e63946", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>{"\u2715"} Clear filter</button>}
+            {workshopFilter !== "all" && <button onClick={() => setWorkshopFilter("all")} style={{ fontSize: 12, color: "#980808", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>{"\u2715"} Clear filter</button>}
           </div>
 
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
@@ -262,7 +262,7 @@ export default function AdminWorkshops() {
             <FormInput label="Instructor Credentials" value={form.instructorCredentials ?? ""} onChange={v => update("instructorCredentials", v)} />
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d1d5db", cursor: "pointer" }}>
-                <input type="checkbox" checked={form.featured ?? false} onChange={e => update("featured", e.target.checked as never)} style={{ accentColor: "#e63946" }} />
+                <input type="checkbox" checked={form.featured ?? false} onChange={e => update("featured", e.target.checked as never)} style={{ accentColor: "#980808" }} />
                 Featured workshop (shown on homepage)
               </label>
             </div>

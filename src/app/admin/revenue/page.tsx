@@ -58,7 +58,7 @@ export default function AdminRevenue() {
                   <tr key={b.category}>
                     <td style={{ ...td, fontWeight: 600, color: "#fff" }}>{b.category}</td>
                     <td style={{ ...td, color: "#9ca3af" }}>{b.transactions}</td>
-                    <td style={{ ...td, fontWeight: 700, color: "#e63946", fontSize: 15 }}>₹{b.total.toLocaleString("en-IN")}</td>
+                    <td style={{ ...td, fontWeight: 700, color: "#980808", fontSize: 15 }}>₹{b.total.toLocaleString("en-IN")}</td>
                     <td style={{ ...td, color: "#9ca3af" }}>₹{b.avg.toLocaleString("en-IN")}</td>
                   </tr>
                 ))}
@@ -71,7 +71,7 @@ export default function AdminRevenue() {
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Transaction Log</h2>
             <div style={{ display: "flex", gap: 6 }}>
               {["all","Camp","Event","Game"].map(f => (
-                <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", borderRadius: 100, fontSize: 12, fontWeight: filter === f ? 700 : 500, border: "1px solid", cursor: "pointer", fontFamily: "inherit", background: filter === f ? "#e63946" : "transparent", color: filter === f ? "#fff" : "#9ca3af", borderColor: filter === f ? "#e63946" : "rgba(255,255,255,0.1)" }}>
+                <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", borderRadius: 100, fontSize: 12, fontWeight: filter === f ? 700 : 500, border: "1px solid", cursor: "pointer", fontFamily: "inherit", background: filter === f ? "#980808" : "transparent", color: filter === f ? "#fff" : "#9ca3af", borderColor: filter === f ? "#980808" : "rgba(255,255,255,0.1)" }}>
                   {f === "all" ? "All" : f}
                 </button>
               ))}
@@ -92,7 +92,7 @@ export default function AdminRevenue() {
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa" }}>{t.type}</span></td>
                       <td style={{ ...td, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.description}</td>
                       <td style={{ ...td, color: "#9ca3af" }}>{t.player ?? "—"}</td>
-                      <td style={{ ...td, fontWeight: 700, color: "#e63946" }}>₹{t.amount.toLocaleString("en-IN")}</td>
+                      <td style={{ ...td, fontWeight: 700, color: "#980808" }}>₹{t.amount.toLocaleString("en-IN")}</td>
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "rgba(34,197,94,0.12)", color: "#4ade80" }}>{t.status}</span></td>
                       <td style={{ ...td, color: "#6b7280", whiteSpace: "nowrap" }}>{new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
                     </tr>

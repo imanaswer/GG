@@ -52,7 +52,7 @@ export default function CoachProfileEdit() {
             <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 43210" />
           </div>
         </div>
-        <button onClick={save} disabled={saving} style={{ width: "100%", height: 48, borderRadius: 11, fontSize: 15, fontWeight: 800, background: "#e63946", color: "#fff", border: "none", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "inherit", marginTop: 16 }}>
+        <button onClick={save} disabled={saving} style={{ width: "100%", height: 48, borderRadius: 11, fontSize: 15, fontWeight: 800, background: "#980808", color: "#fff", border: "none", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "inherit", marginTop: 16 }}>
           {saving ? "Saving…" : "Save Changes"}
         </button>
       </main>

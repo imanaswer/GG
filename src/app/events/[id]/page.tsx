@@ -28,9 +28,9 @@ function TabButton({ id, active, onClick, label, count }: { id: Tab; active: Tab
         padding: "10px 18px", borderRadius: 100,
         fontSize: 13, fontWeight: 600,
         border: "1px solid",
-        background: isActive ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-        color: isActive ? "#ff6b74" : "rgba(255,255,255,0.55)",
-        borderColor: isActive ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.06)",
+        background: isActive ? "rgba(152,8,8,0.12)" : "rgba(255,255,255,0.02)",
+        color: isActive ? "#d64545" : "rgba(255,255,255,0.55)",
+        borderColor: isActive ? "rgba(152,8,8,0.35)" : "rgba(255,255,255,0.06)",
         cursor: "pointer", fontFamily: "inherit",
         transition: "all 180ms",
       }}
@@ -116,7 +116,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
             <Link href="/events" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 22px", borderRadius: 100,
-              background: "#e63946", color: "#fff",
+              background: "#980808", color: "#fff",
               textDecoration: "none", fontWeight: 700, fontSize: 14,
             }}>
               <ArrowLeft size={14} /> Back to events
@@ -289,7 +289,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
-                  background: "rgba(230,57,70,0.95)", color: "#fff",
+                  background: "rgba(152,8,8,0.95)", color: "#fff",
                 }}>{event.sport}</span>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 100,
@@ -318,11 +318,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
             <Reveal delay={0.18}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 20, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <Calendar size={14} color="#e63946" /> {event.date}
+                  <Calendar size={14} color="#980808" /> {event.date}
                 </div>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <MapPin size={14} color="#e63946" /> {event.location}
+                  <MapPin size={14} color="#980808" /> {event.location}
                 </div>
                 {hasPrize && (
                   <>
@@ -348,7 +348,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   <div style={{
                     background: "rgba(13,13,13,0.7)",
                     backdropFilter: "blur(18px)",
-                    border: "1px solid rgba(230,57,70,0.18)",
+                    border: "1px solid rgba(152,8,8,0.18)",
                     borderRadius: 20, padding: "22px 24px", marginBottom: 24,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
@@ -360,8 +360,8 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                       </div>
                       <div style={{
                         padding: "6px 14px", borderRadius: 100,
-                        background: pct >= 80 ? "rgba(230,57,70,0.18)" : "rgba(255,255,255,0.04)",
-                        color: pct >= 80 ? "#ff6b74" : "rgba(255,255,255,0.7)",
+                        background: pct >= 80 ? "rgba(152,8,8,0.18)" : "rgba(255,255,255,0.04)",
+                        color: pct >= 80 ? "#d64545" : "rgba(255,255,255,0.7)",
                         fontWeight: 800, fontSize: 13,
                       }}>
                         {pct}% full
@@ -377,7 +377,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                         style={{
                           height: "100%",
-                          background: "linear-gradient(90deg, #e63946 0%, #f87171 100%)",
+                          background: "linear-gradient(90deg, #980808 0%, #f87171 100%)",
                         }}
                       />
                     </div>
@@ -401,7 +401,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                     <Reveal>
                       <div style={cardStyle}>
                         <h3 className="eyebrow" style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                          <Award size={14} color="#e63946" /> About this event
+                          <Award size={14} color="#980808" /> About this event
                         </h3>
                         <p style={{ fontSize: 15, color: "rgba(255,255,255,0.72)", lineHeight: 1.75 }}>
                           {event.description}
@@ -424,7 +424,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                             {event.whatYouGet.map((x, i) => (
                               <div key={i} style={{ display: "flex", gap: 10 }}>
-                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#e63946", flexShrink: 0, marginTop: 7 }} />
+                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#980808", flexShrink: 0, marginTop: 7 }} />
                                 <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{x}</span>
                               </div>
                             ))}
@@ -446,14 +446,14 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         borderRadius: 20, padding: "24px 28px",
                       }}>
                         <h3 className="eyebrow" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                          <Target size={14} color="#e63946" /> Requirements
+                          <Target size={14} color="#980808" /> Requirements
                         </h3>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                           {event.requirements.map((r, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                               <span style={{
                                 width: 6, height: 6, borderRadius: "50%",
-                                background: "#e63946", flexShrink: 0, marginTop: 7,
+                                background: "#980808", flexShrink: 0, marginTop: 7,
                               }} />
                               <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{r}</span>
                             </div>
@@ -484,7 +484,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         <h3 className="eyebrow" style={{ marginBottom: 12 }}>Rules</h3>
                         {event.rules.map((r, i) => (
                           <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
-                            <span style={{ color: "#ff6b74", fontWeight: 800, fontSize: 13 }}>{i + 1}.</span>
+                            <span style={{ color: "#d64545", fontWeight: 800, fontSize: 13 }}>{i + 1}.</span>
                             <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>{r}</span>
                           </div>
                         ))}
@@ -500,18 +500,18 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                         <div style={{
                           background: "rgba(13,13,13,0.7)",
                           backdropFilter: "blur(18px)",
-                          border: "1px solid rgba(230,57,70,0.18)",
+                          border: "1px solid rgba(152,8,8,0.18)",
                           borderRadius: 18, padding: "18px 20px",
                           display: "flex", alignItems: "flex-start", gap: 14,
                         }}>
                           <div style={{
                             width: 34, height: 34, borderRadius: "50%",
-                            background: "rgba(230,57,70,0.15)",
-                            border: "1px solid rgba(230,57,70,0.3)",
+                            background: "rgba(152,8,8,0.15)",
+                            border: "1px solid rgba(152,8,8,0.3)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             flexShrink: 0,
                           }}>
-                            <span style={{ fontWeight: 800, color: "#ff6b74", fontSize: 13 }}>{i + 1}</span>
+                            <span style={{ fontWeight: 800, color: "#d64545", fontSize: 13 }}>{i + 1}</span>
                           </div>
                           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.78)", paddingTop: 6 }}>{item}</p>
                         </div>
@@ -582,11 +582,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                           {!!item.date && (
                             <div style={{
                               padding: "6px 14px", borderRadius: 100,
-                              background: "rgba(230,57,70,0.12)",
-                              border: "1px solid rgba(230,57,70,0.25)",
+                              background: "rgba(152,8,8,0.12)",
+                              border: "1px solid rgba(152,8,8,0.25)",
                               flexShrink: 0,
                             }}>
-                              <p style={{ fontWeight: 800, color: "#ff6b74", fontSize: 12, letterSpacing: "0.04em" }}>
+                              <p style={{ fontWeight: 800, color: "#d64545", fontSize: 12, letterSpacing: "0.04em" }}>
                                 {item.date}
                               </p>
                             </div>
@@ -595,13 +595,13 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                             <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 5 }}>{item.title}</p>
                             {!!item.time && (
                               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: item.location ? 5 : 0 }}>
-                                <Calendar size={13} color="#e63946" />
+                                <Calendar size={13} color="#980808" />
                                 <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>{item.time}</span>
                               </div>
                             )}
                             {!!item.location && (
                               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                <MapPin size={13} color="#e63946" />
+                                <MapPin size={13} color="#980808" />
                                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{item.location}</span>
                               </div>
                             )}
@@ -643,7 +643,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   position: "sticky", top: 100,
                   background: "rgba(13,13,13,0.75)",
                   backdropFilter: "blur(18px)",
-                  border: "1px solid rgba(230,57,70,0.2)",
+                  border: "1px solid rgba(152,8,8,0.2)",
                   borderRadius: 24, padding: "24px 22px",
                 }}>
                   <h3 className="eyebrow" style={{ marginBottom: 20 }}>Event information</h3>
@@ -656,12 +656,12 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                       }}>
                         <div style={{
                           width: 32, height: 32, borderRadius: 10,
-                          background: emphasis === "gold" ? "rgba(234,179,8,0.1)" : "rgba(230,57,70,0.1)",
-                          border: emphasis === "gold" ? "1px solid rgba(234,179,8,0.22)" : "1px solid rgba(230,57,70,0.18)",
+                          background: emphasis === "gold" ? "rgba(234,179,8,0.1)" : "rgba(152,8,8,0.1)",
+                          border: emphasis === "gold" ? "1px solid rgba(234,179,8,0.22)" : "1px solid rgba(152,8,8,0.18)",
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
                         }}>
-                          <Icon size={13} color={emphasis === "gold" ? "#fbbf24" : "#ff6b74"} />
+                          <Icon size={13} color={emphasis === "gold" ? "#fbbf24" : "#d64545"} />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{
@@ -674,7 +674,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                           {emphasis ? (
                             <p style={{
                               fontSize: 24, fontWeight: 800,
-                              color: emphasis === "gold" ? "#fbbf24" : "#ff6b74",
+                              color: emphasis === "gold" ? "#fbbf24" : "#d64545",
                               letterSpacing: "-0.03em",
                             }}>
                               {value}
@@ -822,7 +822,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                               type="checkbox"
                               checked={agreed}
                               onChange={e => setAgreed(e.target.checked)}
-                              style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
+                              style={{ marginTop: 2, accentColor: "#980808", width: 16, height: 16, flexShrink: 0 }}
                             />
                             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
                               I agree that cancellations are only allowed up to 90 minutes before the start time
@@ -838,13 +838,13 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                               fontSize: 14, fontWeight: 700, fontFamily: "inherit",
                               background: (regClosed || spotsLeft <= 0 || !agreed)
                                 ? "rgba(255,255,255,0.04)"
-                                : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                                : "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                               color: (regClosed || spotsLeft <= 0 || !agreed) ? "rgba(255,255,255,0.45)" : "#fff",
                               border: (regClosed || spotsLeft <= 0 || !agreed) ? "1px solid rgba(255,255,255,0.08)" : "none",
                               cursor: (!agreed || regClosed || spotsLeft <= 0 || reg.isPending || paying) ? "not-allowed" : "pointer",
                               opacity: (!agreed && !regClosed && spotsLeft > 0) ? 0.5 : 1,
                               display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                              boxShadow: (agreed && !regClosed && spotsLeft > 0) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
+                              boxShadow: (agreed && !regClosed && spotsLeft > 0) ? "0 0 28px rgba(152,8,8,0.35)" : "none",
                             }}
                           >
                             {(reg.isPending || paying)
@@ -944,19 +944,19 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                       color: "#fff", fontSize: 14, fontFamily: "inherit",
                       outline: "none",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(152,8,8,0.35)"; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
                   />
                 </div>
                 {event.entryFeeAmount > 0 && (
-                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)" }}>
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(152,8,8,0.06)", border: "1px solid rgba(152,8,8,0.2)" }}>
                     {feeLines.map(l => (
                       <div key={l.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255,255,255,0.72)", marginBottom: 5 }}>
                         <span>{l.label}</span><span>₹{l.amount.toLocaleString("en-IN")}</span>
                       </div>
                     ))}
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 800, color: "#fff", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 7, marginTop: 3 }}>
-                      <span>Total</span><span style={{ color: "#ff6b74" }}>₹{charge.total.toLocaleString("en-IN")}</span>
+                      <span>Total</span><span style={{ color: "#d64545" }}>₹{charge.total.toLocaleString("en-IN")}</span>
                     </div>
                     <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
                       Secure payment via Razorpay. Slot reserved after payment.
@@ -985,11 +985,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                     style={{
                       flex: 1, height: 48, borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                      background: "linear-gradient(135deg, #980808 0%, #6b0505 100%)",
                       color: "#fff", border: "none",
                       cursor: (reg.isPending || paying) ? "not-allowed" : "pointer",
                       opacity: (reg.isPending || paying) ? 0.7 : 1,
-                      boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
+                      boxShadow: "0 2px 18px rgba(152,8,8,0.3)",
                     }}
                   >
                     {(reg.isPending || paying)

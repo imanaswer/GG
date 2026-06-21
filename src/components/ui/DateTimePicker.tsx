@@ -10,7 +10,7 @@ type Props = {
   onTimeChange: (t: string) => void;
 };
 
-const RED = "#e63946";
+const RED = "#980808";
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
@@ -90,7 +90,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange }: Props
                   aspectRatio: "1", borderRadius: 9, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
                   cursor: isPast ? "not-allowed" : "pointer",
                   border: isToday && !isSelected ? `1px solid ${RED}` : "1px solid transparent",
-                  background: isSelected ? `linear-gradient(135deg, ${RED} 0%, #b91c2d 100%)` : "transparent",
+                  background: isSelected ? `linear-gradient(135deg, ${RED} 0%, #6b0505 100%)` : "transparent",
                   color: isPast ? "rgba(255,255,255,0.18)" : isSelected ? "#fff" : "rgba(255,255,255,0.8)",
                 }}
               >
@@ -119,7 +119,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange }: Props
                 width: "100%", textAlign: "left", padding: "8px 12px", borderRadius: 8, marginBottom: 2,
                 fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", border: "none",
                 cursor: disabled ? "not-allowed" : "pointer",
-                background: active ? `linear-gradient(135deg, ${RED} 0%, #b91c2d 100%)` : "transparent",
+                background: active ? `linear-gradient(135deg, ${RED} 0%, #6b0505 100%)` : "transparent",
                 color: disabled ? "rgba(255,255,255,0.18)" : active ? "#fff" : "rgba(255,255,255,0.75)",
               }}
             >

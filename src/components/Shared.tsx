@@ -58,7 +58,7 @@ export function SlotBar({ filled, total }: { filled: number; total: number }) {
   const color =
     pct >= 100 ? "#ef4444" :
     pct >= 80  ? "#eab308" :
-    pct >= 50  ? "#f97316" : "#e63946";
+    pct >= 50  ? "#f97316" : "#980808";
   return (
     <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 99, overflow: "hidden", width: "100%" }}>
       <motion.div
@@ -98,8 +98,8 @@ export function SportBadge({ sport }: { sport: string }) {
     <span style={{
       display: "inline-flex", padding: "3px 10px", borderRadius: 100,
       fontSize: 11, fontWeight: 700,
-      background: "rgba(230,57,70,0.1)", color: "#e63946",
-      border: "1px solid rgba(230,57,70,0.2)",
+      background: "rgba(152,8,8,0.1)", color: "#980808",
+      border: "1px solid rgba(152,8,8,0.2)",
     }}>
       {sport}
     </span>
@@ -156,7 +156,7 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-            <Sparkles size={14} color="#e63946" />
+            <Sparkles size={14} color="#980808" />
           </motion.div>
           <span style={{ fontSize: 13, color: "#52525b" }}>Finding the best matches for you…</span>
         </div>
@@ -179,12 +179,12 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
       style={{ marginBottom: 32 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Sparkles size={14} color="#e63946" />
+        <Sparkles size={14} color="#980808" />
         <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Recommended for you</span>
         <span style={{
           fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 100,
-          background: "rgba(230,57,70,0.08)", color: "#e63946",
-          border: "1px solid rgba(230,57,70,0.18)", letterSpacing: "0.05em",
+          background: "rgba(152,8,8,0.08)", color: "#980808",
+          border: "1px solid rgba(152,8,8,0.18)", letterSpacing: "0.05em",
         }}>
           {data.poweredBy === "claude" ? "✦ Claude AI" : "Smart picks"}
         </span>
@@ -209,12 +209,12 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
               >
                 <Link href={href} style={{ textDecoration: "none" }}>
                   <motion.div
-                    whileHover={{ borderColor: "rgba(230,57,70,0.35)", y: -2 }}
+                    whileHover={{ borderColor: "rgba(152,8,8,0.35)", y: -2 }}
                     style={{
                       display: "flex", alignItems: "center", gap: 12,
                       padding: "12px 14px", borderRadius: 13,
                       background: "rgba(255,255,255,0.02)",
-                      border: "1px solid rgba(230,57,70,0.12)",
+                      border: "1px solid rgba(152,8,8,0.12)",
                       cursor: "pointer",
                       transition: "border-color 0.2s",
                     }}
@@ -223,7 +223,7 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
                       <Img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", marginBottom: 2, letterSpacing: "0.04em" }}>{sport}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#980808", marginBottom: 2, letterSpacing: "0.04em" }}>{sport}</div>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</p>
                       <p style={{ fontSize: 11, color: "#52525b", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{reason}</p>
                     </div>
@@ -254,8 +254,8 @@ export function SectionHeader({
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "5px 13px", borderRadius: 100,
-          background: "rgba(230,57,70,0.07)", border: "1px solid rgba(230,57,70,0.18)",
-          fontSize: 11, fontWeight: 700, color: "#e63946",
+          background: "rgba(152,8,8,0.07)", border: "1px solid rgba(152,8,8,0.18)",
+          fontSize: 11, fontWeight: 700, color: "#980808",
           marginBottom: 16, letterSpacing: "0.06em",
           textTransform: "uppercase",
         }}>

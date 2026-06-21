@@ -102,8 +102,8 @@ export function ImageUpload({
               border: "none",
               cursor: "pointer",
               fontFamily: "inherit",
-              background: mode === "upload" ? "rgba(230,57,70,0.15)" : "transparent",
-              color: mode === "upload" ? "#e63946" : "#6b7280",
+              background: mode === "upload" ? "rgba(152,8,8,0.15)" : "transparent",
+              color: mode === "upload" ? "#980808" : "#6b7280",
             }}
           >
             <Upload size={11} style={{ marginRight: 4, verticalAlign: "-1px" }} />
@@ -120,8 +120,8 @@ export function ImageUpload({
               border: "none",
               cursor: "pointer",
               fontFamily: "inherit",
-              background: mode === "url" ? "rgba(230,57,70,0.15)" : "transparent",
-              color: mode === "url" ? "#e63946" : "#6b7280",
+              background: mode === "url" ? "rgba(152,8,8,0.15)" : "transparent",
+              color: mode === "url" ? "#980808" : "#6b7280",
             }}
           >
             <LinkIcon size={11} style={{ marginRight: 4, verticalAlign: "-1px" }} />
@@ -194,12 +194,12 @@ export function ImageUpload({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             style={{
-              border: `2px dashed ${dragOver ? "#e63946" : "rgba(255,255,255,0.1)"}`,
+              border: `2px dashed ${dragOver ? "#980808" : "rgba(255,255,255,0.1)"}`,
               borderRadius: 10,
               padding: "24px 16px",
               textAlign: "center",
               cursor: uploading ? "wait" : "pointer",
-              background: dragOver ? "rgba(230,57,70,0.05)" : "#0d0d0d",
+              background: dragOver ? "rgba(152,8,8,0.05)" : "#0d0d0d",
               transition: "all 0.15s",
             }}
           >
@@ -209,8 +209,8 @@ export function ImageUpload({
                   style={{
                     width: 28,
                     height: 28,
-                    border: "3px solid rgba(230,57,70,0.2)",
-                    borderTopColor: "#e63946",
+                    border: "3px solid rgba(152,8,8,0.2)",
+                    borderTopColor: "#980808",
                     borderRadius: "50%",
                     animation: "spin 0.8s linear infinite",
                   }}
@@ -225,16 +225,16 @@ export function ImageUpload({
                     width: 40,
                     height: 40,
                     borderRadius: 10,
-                    background: "rgba(230,57,70,0.1)",
+                    background: "rgba(152,8,8,0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <ImageIcon size={20} color="#e63946" />
+                  <ImageIcon size={20} color="#980808" />
                 </div>
                 <p style={{ fontSize: 13, color: "#d1d5db", margin: 0 }}>
-                  <span style={{ color: "#e63946", fontWeight: 700 }}>Click to upload</span> or drag
+                  <span style={{ color: "#980808", fontWeight: 700 }}>Click to upload</span> or drag
                   and drop
                 </p>
                 <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>
