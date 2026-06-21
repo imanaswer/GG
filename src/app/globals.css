@@ -329,7 +329,7 @@ img {
    wrapped in inline-block (.char-mask > [data-char]); apply the
    gradient to each animated char so the text actually renders. */
 .gradient-red [data-char] {
-  background-image: linear-gradient(135deg, #980808 0%, #bb1a1a 100%);
+  background-image: linear-gradient(135deg, #980808 0%, #d64545 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
