@@ -18,9 +18,11 @@ export type PremiumImage = {
 const u = (id: string, w = 2000) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&q=80&w=${w}`;
 
-// Hero — loose, atmospheric, low-contrast so 3D + type sit on top
+// Hero — loose, atmospheric, low-contrast so 3D + type sit on top.
+// Leads with real Indian street ("gully") cricket so the hero reads local,
+// not like generic global stock. Interim until the Calicut shoot lands.
 export const HERO_BACKDROPS: PremiumImage[] = [
-  { src: u("photo-1579952363873-27f3bade9f55"), alt: "Player sprinting on track", credit: "Unsplash / Braden Collum" },
+  { src: u("photo-1753443279872-6f9db1dfb020"), alt: "Bowler mid-run in a street cricket game, India", credit: "Unsplash / Zoshua Colah" },
   { src: u("photo-1461896836934-ffe607ba8211"), alt: "Basketball court at night", credit: "Unsplash / TJ Dragotta" },
 ];
 
@@ -38,7 +40,7 @@ export const SPORT_TILES: Record<string, PremiumImage> = {
 // Story sections — immersive full-bleed
 export const STORY: Record<"learn" | "play" | "connect", PremiumImage> = {
   learn:   { src: u("photo-1526232761682-d26e03ac148e"), alt: "Coach mentoring young athlete", credit: "Unsplash / Clique Images" },
-  play:    { src: u("photo-1517649763962-0c623066013b"), alt: "Pickup game in action", credit: "Unsplash / Jeffrey F Lin" },
+  play:    { src: u("photo-1753443279716-b2aaadb7e08f"), alt: "Street cricket pickup game on a city road, India", credit: "Unsplash / Zoshua Colah" },
   connect: { src: u("photo-1552879890-3a06dd3a06c2"), alt: "Team celebrating together", credit: "Unsplash / Nathan Shively" },
 };
 
