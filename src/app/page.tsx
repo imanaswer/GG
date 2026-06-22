@@ -833,7 +833,7 @@ function Footer() {
           {[
             { title: "Discover", links: [["Coaches", "/learn"], ["Games", "/play"], ["Camps", "/camps"], ["Events", "/events"]] },
             { title: "Company", links: [["About", "/about"], ["Search", "/search"]] },
-            { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
+            { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Coach Conditions", "/coach-conditions"]] },
           ].map(col => (
             <div key={col.title}>
               <div className="eyebrow" style={{ marginBottom: 16, color: "rgba(255,255,255,0.4)" }}>
