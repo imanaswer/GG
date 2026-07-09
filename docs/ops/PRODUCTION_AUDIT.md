@@ -33,7 +33,9 @@
 
 ## HIGH PRIORITY (code-level, fix before or immediately after launch)
 
-### H1 — No Content-Security-Policy header
+### H1 — No Content-Security-Policy header — ✅ FIXED (2026-07-09)
+**Resolution:** Added an enforcing `Content-Security-Policy` to `next.config.ts` (`csp` const) allow-listing Razorpay (script/frame/connect), Google Maps, PostHog, Cloudinary, and the image hosts, plus `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, `form-action 'self'`. Verified the header emits on `GET /` from a production build (`curl -I`). **Caveat — NOT browser-verified here:** curl can't execute JS, so confirm in a browser on staging (Gate 3) that checkout opens, maps render, PostHog events send, and images load; `'unsafe-inline'/'unsafe-eval'` are intentional (Next has no nonce pipeline) — nonce-based strict CSP is the upgrade path.
+
 - **File:** `next.config.ts` (`securityHeaders` array, ~line 3–10).
 - **Evidence:** `grep -rn "Content-Security-Policy" src/ next.config.*` → **0 matches.** Other headers are present (X-Content-Type-Options, X-Frame-Options=SAMEORIGIN, HSTS, Referrer-Policy, Permissions-Policy) but CSP is absent.
 - **Risk:** For a payment app, CSP is the key defense-in-depth against XSS/script-injection and third-party script tampering (Razorpay checkout, PostHog, Maps). Without it, any future XSS is unconstrained.
@@ -46,7 +48,9 @@
 ```
 (Tune to actual asset origins; verify in Gate 3.)
 
-### H2 — Webhook can capture a payment with no booking and no reconciliation
+### H2 — Webhook can capture a payment with no booking and no reconciliation — ✅ FIXED (2026-07-09)
+**Resolution:** The webhook now durably stamps `PaymentOrder.capturedAt` + `razorpayPaymentId` on `payment.captured` (idempotent, `capturedAt: null` guard) and logs a warning when no `Payment` row exists yet. It deliberately does **not** create a `Payment` row (that would trip verify's replay guard and still strand the seat). Orphaned captures are now durably queryable — reconciliation query added to `RUNBOOK.md` (captured but **no `Payment` row at all** after a 15-min grace → refund via `razorpayPaymentId` or complete manually; the query deliberately doesn't filter `status='paid'`, which would false-flag refunds). New migration `20260709040000_payment_order_capture_recon` (UNAPPLIED — deploy with `npm run db:deploy`). Covered by `webhook/route.test.ts` (3 tests: bad signature → 401; orphan capture records ledger + warns, no Payment row; normal capture marks paid). Full suite 296 pass. Remaining follow-up: wire the reconciliation query as a cron with a non-zero alert.
+
 - **File:** `src/app/api/payments/webhook/route.ts:55–73`.
 - **Evidence:** `payment.captured` only updates an **existing** `Payment` row (`findFirst({ where: { razorpayOrderId } })`, L59). If the client-side `/verify` never runs (user closes the tab after paying), no `Payment` row exists, the webhook no-ops (L70–72 comment), and the seat/registration is never created — yet Razorpay captured the money.
 - **Risk:** Money taken, user gets no access, **no automated recovery**. Ops must manually reconcile against Razorpay. Under real traffic this will happen.

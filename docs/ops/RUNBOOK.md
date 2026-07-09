@@ -38,6 +38,19 @@ Point uptime monitors at both. Alert on `/api/health` ≠ 200 (process down) and
 psql "$DATABASE_URL" -c "SELECT razorpay_payment_id,count(*) FROM \"Payment\" GROUP BY 1 HAVING count(*)>1;"  -- expect 0
 ```
 
+**Orphaned-capture reconciliation (run daily).** The webhook stamps `PaymentOrder.capturedAt` when Razorpay captures money. If the client `/verify` never runs (tab closed), the capture is recorded but no paid `Payment`/booking exists — money taken, no seat. This finds those, after a 15-min grace for verify to land:
+```bash
+psql "$DATABASE_URL" -c "
+  SELECT po.\"razorpayOrderId\", po.\"razorpayPaymentId\", po.\"userId\",
+         po.\"entityType\", po.\"entityId\", po.amount, po.\"capturedAt\"
+  FROM \"PaymentOrder\" po
+  LEFT JOIN \"Payment\" p
+    ON p.\"razorpayOrderId\" = po.\"razorpayOrderId\"
+  WHERE po.\"capturedAt\" IS NOT NULL AND p.id IS NULL
+    AND po.\"capturedAt\" < now() - interval '15 minutes';"  -- expect 0 rows
+```
+The join intentionally does **not** filter on `p.status` — a true orphan is a captured order with **no Payment row at all**. Filtering `status = 'paid'` in the join would false-flag every verified-then-**refunded** payment (its Payment row is `refunded`, not `paid`) as an orphan. Each row returned = an orphaned charge: **refund** via Razorpay (use `razorpayPaymentId`) or manually complete the registration. Consider wiring this as a cron with an alert on non-zero.
+
 ## Cron jobs (Vercel Crons, UTC)
 | Job | Time | Purpose |
 |---|---|---|

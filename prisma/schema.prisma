@@ -462,15 +462,23 @@ model WorkshopRegistration {
 // closing cross-entity replay — a signed order/payment for a cheap game can't be
 // resubmitted as an expensive coach because entityType/entityId won't match.
 model PaymentOrder {
-  razorpayOrderId String   @id
-  userId          String
-  entityType      String
-  entityId        String   // the PURCHASED entity id (coachId, campId, gameId, …)
-  amount          Int      // paise — server-authoritative, matches the gateway order
-  currency        String   @default("INR")
-  createdAt       DateTime @default(now())
+  razorpayOrderId   String   @id
+  userId            String
+  entityType        String
+  entityId          String   // the PURCHASED entity id (coachId, campId, gameId, …)
+  amount            Int      // paise — server-authoritative, matches the gateway order
+  currency          String   @default("INR")
+  createdAt         DateTime @default(now())
+  // Set by the webhook when Razorpay reports the money captured. Recorded here (NOT
+  // as a Payment row — that would trip verify's replay guard and still leave no seat)
+  // so a capture that never reaches the client /verify path is durably visible.
+  // Reconciliation: a PaymentOrder with capturedAt set but no paid Payment row for
+  // razorpayOrderId is an orphaned charge to refund or complete manually.
+  capturedAt        DateTime?
+  razorpayPaymentId String?
 
   @@index([userId, createdAt(sort: Desc)])
+  @@index([capturedAt]) // reconciliation scan for orphaned captures
 }
 
 model Payment {

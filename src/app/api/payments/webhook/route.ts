@@ -53,9 +53,18 @@ export async function POST(req: NextRequest) {
   try {
     switch (body.event) {
       case "payment.captured": {
-        // Mark existing Payment row as paid, or create a stub if the client never
-        // reached /verify (user closed tab). Registration rows still require the
-        // client-verify path because they carry user-submitted fields (childName, etc.).
+        // Durably record the capture on the order ledger first (idempotent — first
+        // capture wins via capturedAt:null). This makes a payment that is captured but
+        // never reaches the client /verify path (user closed the tab) recoverable
+        // instead of silently lost — see the reconciliation query in RUNBOOK.md.
+        // We record on PaymentOrder, NOT as a Payment row: creating a Payment here would
+        // trip verify's razorpayPaymentId replay guard and permanently block the client
+        // from creating the registration (which carries user-submitted fields).
+        await prisma.paymentOrder.updateMany({
+          where: { razorpayOrderId, capturedAt: null },
+          data: { capturedAt: new Date(), razorpayPaymentId },
+        });
+
         const existing = await prisma.payment.findFirst({ where: { razorpayOrderId } });
         if (existing) {
           if (existing.status !== "paid") {
@@ -66,10 +75,12 @@ export async function POST(req: NextRequest) {
             // refund events are handled by admin "Mark refunded" action, not the webhook
             await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "paid" satisfies PaymentStatus);
           }
+        } else {
+          // No Payment row yet: the client /verify hasn't run or was abandoned. The
+          // capturedAt marker above lets reconciliation catch it if verify never
+          // completes; log for visibility (surfaces in error monitoring once wired).
+          logger.warn("razorpay capture with no Payment row — client verify pending or abandoned", { razorpayOrderId, razorpayPaymentId });
         }
-        // If the Payment row doesn't exist yet, the client verify endpoint will create it
-        // with status: "paid" directly. We don't create an orphan stub because we lack
-        // userId/entityType/entityId from the webhook alone.
         return NextResponse.json({ ok: true, event: body.event });
       }
 
