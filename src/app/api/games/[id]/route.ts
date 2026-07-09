@@ -64,9 +64,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
     const game = await prisma.game.findUnique({
       where: { id },
-      select: { organizerId: true, status: true, scheduledAt: true, duration: true, slotsLeft: true },
+      select: { organizerId: true, status: true, scheduledAt: true, duration: true, slotsLeft: true, costAmount: true },
     });
     if (!game) return fail("Game not found", 404);
+
+    // Paid games must go through the payment/verify flow, which creates the
+    // GamePlayer only after a verified payment. This free-join endpoint would
+    // otherwise let a user skip payment entirely for a paid game.
+    if (game.costAmount > 0) return fail("This game requires payment to join", 402);
 
     // Host / status / start-and-end-time checks (shared rules).
     const reason = joinability(game, new Date(), session.id);

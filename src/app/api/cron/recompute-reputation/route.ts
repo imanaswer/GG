@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { ok } from "@/lib/api";
 import { recomputeAll } from "@/lib/reputationService";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 300;
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
       elapsedMs,
     });
   } catch (err) {
-    console.error("[cron/recompute-reputation] failed", err);
+    logger.error("cron/recompute-reputation failed", { err });
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
       status: 500,
       headers: { "content-type": "application/json" },

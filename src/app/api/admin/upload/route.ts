@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
+import { sniffImage } from "@/lib/imageSniff";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
 
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
+const ALLOWED = new Set(["jpeg", "png", "webp", "avif", "gif"]);
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
 // Build a Cloudinary signature for a fresh upload target. Signs exactly the params
@@ -64,15 +65,19 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file");
     if (!(file instanceof File)) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (file.size === 0) return NextResponse.json({ error: "Empty file" }, { status: 400 });
-    if (!ALLOWED.has(file.type))
-      return NextResponse.json({ error: "Only JPEG, PNG, WebP, AVIF and GIF images are allowed" }, { status: 400 });
     if (file.size > MAX_SIZE)
       return NextResponse.json({ error: "File size must be under 5 MB" }, { status: 400 });
+
+    // Validate by magic bytes, not the client-declared MIME type.
+    const buf = Buffer.from(await file.arrayBuffer());
+    const kind = sniffImage(buf);
+    if (!kind || !ALLOWED.has(kind))
+      return NextResponse.json({ error: "File is not a valid image" }, { status: 415 });
 
     const { folder, timestamp, publicId, signature } = signUpload(secret);
 
     const upstream = new FormData();
-    upstream.set("file", file, file.name || "upload");
+    upstream.set("file", new Blob([buf]), file.name || "upload");
     upstream.set("api_key", apiKey);
     upstream.set("timestamp", String(timestamp));
     upstream.set("signature", signature);

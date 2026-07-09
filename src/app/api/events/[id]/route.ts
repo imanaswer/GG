@@ -54,6 +54,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
     const event = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, registrationDeadline: true, entryFeeAmount: true, status: true, published: true, approvalMode: true } });
     if (!event) return fail("Event not found", 404);
+    // Paid events must go through the payment/verify flow (which creates the paid
+    // registration). This free-register endpoint would otherwise let a user occupy
+    // a paid slot without paying.
+    if (event.entryFeeAmount > 0) return fail("This event requires payment to register", 402);
     if (["Cancelled", "Completed", "Archived", "Full"].includes(event.status)) return fail("Registrations are closed for this event", 409);
     if (!event.published) return fail("Registrations are closed for this event", 409);
     if (event.participants >= event.maxParticipants) return fail("Event is full", 400);

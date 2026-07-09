@@ -3,6 +3,7 @@
  * Set RESEND_API_KEY and FROM_EMAIL in .env to enable real email sending.
  * Without these, emails are logged to console (dev mode).
  */
+import { logger } from "@/lib/logger";
 
 interface EmailPayload {
   to: string;
@@ -29,7 +30,8 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     });
     return res.ok;
   } catch (err) {
-    console.error("[EMAIL ERROR]", err);
+    // Redacting logger: a Resend/network error must not leak RESEND_API_KEY.
+    logger.error("email send failed", { to: payload.to, err });
     return false;
   }
 }

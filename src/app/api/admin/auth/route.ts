@@ -35,6 +35,6 @@ export async function GET(req: NextRequest) {
   try {
     const { verifyAdminToken } = await import("@/lib/adminAuth");
     const valid = await verifyAdminToken(token);
-    return NextResponse.json({ admin: valid });
+    return NextResponse.json({ admin: !!valid });
   } catch { return NextResponse.json({ admin: false }); }
 }

@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
 
 export async function GET(req: NextRequest) {
@@ -62,23 +63,35 @@ export async function POST(req: NextRequest) {
       return fail("Please enter a valid mobile number", 400);
     }
 
-    const booking = await prisma.$transaction(async tx => {
-      if (cleanedPhone) {
-        await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
-      }
-      if (batchId) {
-        const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
-        if (batch && batch.coachId === coachId && batch.seats > 0) {
-          await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
-          await tx.coach.update({ where: { id: coachId }, data: { seatsLeft: { decrement: 1 } } });
+    // Conditional seat claim (updateMany with a seatsLeft>0 guard): 0 rows means
+    // someone else took the last seat, so seatsLeft can never go negative under
+    // concurrency. Booking's @@unique([userId,coachId]) blocks duplicate bookings.
+    let booking;
+    try {
+      booking = await prisma.$transaction(async tx => {
+        if (cleanedPhone) {
+          await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
         }
-      } else {
-        await tx.coach.update({ where: { id: coachId }, data: { seatsLeft: { decrement: 1 } } });
-      }
-      return tx.booking.create({
-        data: { userId: session.id, coachId, batchId: batchId ?? null, status: "pending", note },
+        if (batchId) {
+          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+          if (batch && batch.coachId === coachId && batch.seats > 0) {
+            await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+            const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
+            if (claim.count === 0) throw new ApiError("No seats available", 409);
+          }
+        } else {
+          const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
+          if (claim.count === 0) throw new ApiError("No seats available", 409);
+        }
+        return tx.booking.create({
+          data: { userId: session.id, coachId, batchId: batchId ?? null, status: "pending", note },
+        });
       });
-    });
+    } catch (e) {
+      if (e instanceof ApiError) return fail(e.message, e.status);
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return fail("You already have a booking with this coach", 409);
+      throw e;
+    }
 
     return ok(booking);
   } catch (e) { return handleErr(e); }

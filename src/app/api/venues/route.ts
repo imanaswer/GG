@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ok, handleErr } from "@/lib/api";
+import { okCached, handleErr } from "@/lib/api";
 import { slotAvailability } from "@/lib/venues";
 
 // Public venue list for the create-game flow. Only ACTIVE venues are ever
@@ -45,6 +45,8 @@ export async function GET(req: NextRequest) {
       ),
     }));
 
-    return ok(withCounts);
+    // SEMI_STATIC: venue list. Stale slot counts are safe — booking fails closed
+    // at the atomic seat guard, and /venues/[id]/slots serves fresher data (15s).
+    return okCached(withCounts, 60);
   } catch (e) { return handleErr(e); }
 }

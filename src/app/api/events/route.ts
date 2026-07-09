@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ok, handleErr } from "@/lib/api";
+import { okCached, handleErr } from "@/lib/api";
 import { deriveEventStatus } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
@@ -40,6 +40,6 @@ export async function GET(req: NextRequest) {
       return a.startDate.getTime() - b.startDate.getTime();
     });
 
-    return ok(events);
+    return okCached(events, 60); // SEMI_STATIC: curated content
   } catch (e) { return handleErr(e); }
 }

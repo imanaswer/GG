@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, okCached, fail, handleErr } from "@/lib/api";
 import { slotAvailability } from "@/lib/venues";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -52,6 +52,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       s.available || (includeBlocked && s.reason === "blocked"),
     );
 
-    return ok(visible);
+    // REAL_TIME-ish: slots book up. Short 15s TTL for UX freshness; correctness
+    // is guaranteed independently by the atomic seat guard (stale = safe).
+    return okCached(visible, 15);
   } catch (e) { return handleErr(e); }
 }

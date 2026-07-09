@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, handleErr } from "@/lib/api";
+import { okCached, fail, handleErr } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -17,6 +17,6 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
       },
     });
     if (!venue || venue.status !== "ACTIVE") return fail("Venue not found", 404);
-    return ok(venue);
+    return okCached(venue, 60); // SEMI_STATIC: single venue detail
   } catch (e) { return handleErr(e); }
 }

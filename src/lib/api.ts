@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 export const ok = <T>(data: T, status = 200) =>
   NextResponse.json({ ok: true, data }, { status });
+
+/**
+ * Public, CDN-cacheable read. NEVER use on authenticated or user-specific data —
+ * the response is cached at the shared edge and served to everyone.
+ * `s-maxage` = fresh window; `stale-while-revalidate` = serve-stale-while-refetch.
+ * On a CDN hit the origin (and its DB queries) is skipped entirely.
+ */
+export const okCached = <T>(data: T, sMaxAge: number, swr = sMaxAge * 5) =>
+  NextResponse.json(
+    { ok: true, data },
+    { headers: { "Cache-Control": `public, s-maxage=${sMaxAge}, stale-while-revalidate=${swr}` } },
+  );
 
 export const fail = (message: string, status = 400, details?: unknown) =>
   NextResponse.json({ ok: false, error: message, details }, { status });
@@ -30,12 +43,12 @@ export function handleErr(e: unknown) {
   if (e instanceof ApiError) return fail(e.message, e.status);
   if (e instanceof ZodError) return fail("Validation error", 422, e.flatten().fieldErrors);
   if (e instanceof Prisma.PrismaClientKnownRequestError) {
-    console.error("[prisma]", e.code, e.message);
+    logger.error("prisma known request error", { code: e.code, err: e });
     return fail(PRISMA_MESSAGES[e.code] ?? "Something went wrong. Please try again.", 400);
   }
   // Anything else — including PrismaClientValidationError and unknown failures —
-  // is logged server-side and returned as a generic message. Never echo e.message.
-  console.error("[unhandled]", e);
+  // is logged server-side (redacted) and returned as a generic message. Never echo e.message.
+  logger.error("unhandled api error", { err: e });
   return fail("Something went wrong. Please try again.", 500);
 }
 

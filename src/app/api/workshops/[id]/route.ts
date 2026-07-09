@@ -51,6 +51,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       select: { participants: true, maxParticipants: true, registrationDeadline: true, price: true, status: true },
     });
     if (!workshop) return fail("Workshop not found", 404);
+    // Paid workshops must go through the payment/verify flow (which creates the paid
+    // registration). This free-register endpoint would otherwise let a user occupy
+    // a paid slot without paying.
+    if (workshop.price > 0) return fail("This workshop requires payment to register", 402);
     if (["closed", "completed", "archived"].includes(workshop.status)) return fail("Registrations are closed for this workshop", 409);
     if (workshop.participants >= workshop.maxParticipants) return fail("Workshop is full", 400);
     if (workshop.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);

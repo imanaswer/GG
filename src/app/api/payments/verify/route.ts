@@ -1,10 +1,13 @@
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
-import { computeEventCharge } from "@/lib/eventPricing";
-import { coachInstantChargeRupees } from "@/lib/coachPayment";
+import {
+  campChargePaise, workshopChargePaise, gameChargePaise,
+  eventChargePaise, coachChargePaise, assertOrderBinding, NotPayableError,
+} from "@/lib/checkout";
 import crypto from "crypto";
 
 type Body = {
@@ -13,10 +16,20 @@ type Body = {
   razorpay_signature: string;
   entityType: "camp" | "event" | "game" | "workshop" | "coach";
   entityId: string;
-  amount: number;
   registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string; batchId?: string; phone?: string; note?: string };
   devMode?: boolean;
 };
+
+// Maps transaction failures to clean HTTP responses. ApiError → its status;
+// a unique-constraint violation (duplicate registration / replayed payment id)
+// → 409; anything else rethrows to the outer handleErr.
+function txError(e: unknown) {
+  if (e instanceof ApiError) return fail(e.message, e.status);
+  if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+    return fail("You have already registered — no duplicate charge was created", 409);
+  }
+  throw e;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,16 +37,37 @@ export async function POST(req: NextRequest) {
     if (!session) return fail("Authentication required", 401);
 
     const body = (await req.json()) as Body;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, entityType, entityId, amount, registration } = body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, entityType, entityId, registration } = body;
     if (!entityType || !entityId) return fail("entityType and entityId required", 400);
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     const liveVerification = !!keySecret;
+
+    // Fail closed: in production a missing gateway secret must NOT accept payments unsigned.
+    if (!liveVerification && process.env.NODE_ENV === "production") {
+      return fail("Payment verification unavailable", 503);
+    }
     if (liveVerification) {
       const expected = crypto.createHmac("sha256", keySecret!)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
       if (expected !== razorpay_signature) return fail("Invalid payment signature", 400);
+
+      // Reject replays of an already-recorded gateway payment (DB @unique is the
+      // authoritative guard; this returns a clean 409 for the common case).
+      if (razorpay_payment_id) {
+        const seen = await prisma.payment.findFirst({ where: { razorpayPaymentId: razorpay_payment_id }, select: { id: true } });
+        if (seen) return fail("This payment has already been processed", 409);
+      }
+    }
+
+    // Bind the order to (user, entity): a signed order/payment for one entity can't
+    // be redeemed against another. Fail closed under live verification — a real order
+    // was persisted at create-order time, so a missing ledger row is rejected.
+    const orderRec = await prisma.paymentOrder.findUnique({ where: { razorpayOrderId: razorpay_order_id } });
+    if (liveVerification || orderRec) {
+      const bind = assertOrderBinding(orderRec, { userId: session.id, entityType, entityId });
+      if (!bind.ok) return fail(bind.message, bind.status);
     }
 
     if (entityType === "coach") {
@@ -45,86 +79,84 @@ export async function POST(req: NextRequest) {
       if (!coach) return fail("Coach not found", 404);
       if (coach.seatsLeft <= 0) return fail("No seats available", 400);
 
-      // Re-derive the charge server-side (never trust the client amount). Throws if
-      // the coach is no longer fixed-price, e.g. price edited between order and verify.
-      let chargeRupees: number;
-      try {
-        chargeRupees = coachInstantChargeRupees(coach);
-      } catch {
-        return fail("This coach is not available for instant pay", 400);
-      }
-      const chargePaise = chargeRupees * 100;
+      let chargePaise: number;
+      try { chargePaise = coachChargePaise(coach); }
+      catch { return fail("This coach is not available for instant pay", 400); }
+      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
 
       const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
       if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
         return fail("Please enter a valid mobile number", 400);
       }
 
-      const booking = await prisma.$transaction(async (tx) => {
-        if (cleanedPhone) {
-          await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
-        }
-        if (batchId) {
-          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
-          if (batch && batch.coachId === entityId && batch.seats > 0) {
-            await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+      try {
+        const booking = await prisma.$transaction(async (tx) => {
+          if (cleanedPhone) {
+            await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
           }
-        }
-        await tx.coach.update({ where: { id: entityId }, data: { seatsLeft: { decrement: 1 } } });
-
-        const created = await tx.booking.create({
-          data: {
-            userId: session.id,
-            coachId: entityId,
-            batchId: batchId ?? null,
-            status: "approved",
-            approvedAt: new Date(),
-            note: note ?? null,
-            paymentStatus: "paid",
-            amountPaid: chargePaise,
-          },
+          // Conditional seat claim — 0 rows means someone else took the last seat.
+          const claim = await tx.coach.updateMany({ where: { id: entityId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
+          if (claim.count === 0) throw new ApiError("No seats available", 409);
+          if (batchId) {
+            const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+            if (batch && batch.coachId === entityId && batch.seats > 0) {
+              await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+            }
+          }
+          const created = await tx.booking.create({
+            data: {
+              userId: session.id, coachId: entityId, batchId: batchId ?? null,
+              status: "approved", approvedAt: new Date(), note: note ?? null,
+              paymentStatus: "paid", amountPaid: chargePaise,
+            },
+          });
+          await tx.payment.create({
+            data: {
+              userId: session.id, entityType, entityId: created.id,
+              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+              amount: chargePaise, currency: "INR",
+              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+            },
+          });
+          return created;
         });
-
-        await tx.payment.create({
-          data: {
-            userId: session.id, entityType, entityId: created.id,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: chargePaise, currency: "INR",
-            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-          },
-        });
-        return created;
-      });
-
-      return ok({ verified: true, bookingId: booking.id });
+        return ok({ verified: true, bookingId: booking.id });
+      } catch (e) { return txError(e); }
     }
 
     if (entityType === "camp") {
       const { childName, childAge } = registration ?? {};
       if (!childName || !childAge) return fail("childName and childAge are required", 400);
 
-      const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true } });
+      const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, price: true } });
       if (!camp) return fail("Camp not found", 404);
       if (camp.participants >= camp.maxParticipants) return fail("Camp is full", 400);
 
-      const existing = await prisma.campRegistration.findFirst({ where: { campId: entityId, userId: session.id }, select: { id: true } });
-      if (existing) return fail("Already registered", 409);
+      let chargePaise: number;
+      try { chargePaise = campChargePaise(camp); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid camp", 400); }
+      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
 
-      const statusUpdate = camp.participants + 1 >= camp.maxParticipants ? "full" : undefined;
-      await prisma.$transaction([
-        prisma.payment.create({
-          data: {
-            userId: session.id, entityType, entityId,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: amount ?? 0, currency: "INR",
-            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-          },
-        }),
-        prisma.campRegistration.create({
-          data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
-        }),
-        prisma.camp.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
-      ]);
+      try {
+        await prisma.$transaction(async (tx) => {
+          const claim = await tx.camp.updateMany({
+            where: { id: entityId, participants: { lt: camp.maxParticipants } },
+            data: { participants: { increment: 1 } },
+          });
+          if (claim.count === 0) throw new ApiError("Camp is full", 409);
+          await tx.camp.updateMany({ where: { id: entityId, participants: { gte: camp.maxParticipants } }, data: { status: "full" } });
+          await tx.payment.create({
+            data: {
+              userId: session.id, entityType, entityId,
+              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+              amount: chargePaise, currency: "INR",
+              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+            },
+          });
+          await tx.campRegistration.create({
+            data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
+          });
+        });
+      } catch (e) { return txError(e); }
       return ok({ verified: true });
     }
 
@@ -135,54 +167,67 @@ export async function POST(req: NextRequest) {
       if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
       if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
 
-      const existing = await prisma.eventRegistration.findFirst({ where: { eventId: entityId, userId: session.id }, select: { id: true } });
-      if (existing) return fail("Already registered", 409);
+      let chargePaise: number;
+      try { chargePaise = eventChargePaise(event); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid event", 400); }
+      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
+      const regStatus = event.approvalMode === "manual" ? "pending" : "approved";
 
-      const chargePaise = computeEventCharge(event).total * 100;
-
-      const statusUpdate = event.participants + 1 >= event.maxParticipants ? "Full" : undefined;
-      await prisma.$transaction([
-        prisma.payment.create({
-          data: {
-            userId: session.id, entityType, entityId,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: chargePaise, currency: event.currency || "INR",
-            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-          },
-        }),
-        prisma.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus, status: event.approvalMode === "manual" ? "pending" : "approved" } }),
-        prisma.sportEvent.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
-      ]);
+      try {
+        await prisma.$transaction(async (tx) => {
+          const claim = await tx.sportEvent.updateMany({
+            where: { id: entityId, participants: { lt: event.maxParticipants } },
+            data: { participants: { increment: 1 } },
+          });
+          if (claim.count === 0) throw new ApiError("Event is full", 409);
+          await tx.sportEvent.updateMany({ where: { id: entityId, participants: { gte: event.maxParticipants } }, data: { status: "Full" } });
+          await tx.payment.create({
+            data: {
+              userId: session.id, entityType, entityId,
+              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+              amount: chargePaise, currency: event.currency || "INR",
+              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+            },
+          });
+          await tx.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus, status: regStatus } });
+        });
+      } catch (e) { return txError(e); }
       return ok({ verified: true });
     }
 
     if (entityType === "game") {
-      const game = await prisma.game.findUnique({ where: { id: entityId }, select: { organizerId: true, slotsLeft: true, status: true } });
+      const game = await prisma.game.findUnique({ where: { id: entityId }, select: { organizerId: true, slotsLeft: true, status: true, costAmount: true } });
       if (!game) return fail("Game not found", 404);
       if (game.organizerId === session.id) return fail("You cannot join your own game", 400);
       if (["cancelled", "completed", "archived"].includes(game.status)) return fail("This game is no longer open to join", 400);
       if (game.slotsLeft <= 0 || game.status === "full") return fail("Game is full", 400);
 
-      const already = await prisma.gamePlayer.findUnique({ where: { gameId_userId: { gameId: entityId, userId: session.id } }, select: { id: true } });
-      if (already) return fail("Already joined this game", 409);
+      let chargePaise: number;
+      try { chargePaise = gameChargePaise(game); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid game", 400); }
+      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
 
-      const newSlotsLeft = game.slotsLeft - 1;
-      // Joining only records participation (payment + GamePlayer + slot count).
-      // No permanent counters are touched — rewards are granted exclusively at
-      // admin finalization (see /api/admin/games/[id] finalize).
-      await prisma.$transaction([
-        prisma.payment.create({
-          data: {
-            userId: session.id, entityType, entityId,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: amount ?? 0, currency: "INR",
-            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-          },
-        }),
-        prisma.gamePlayer.create({ data: { gameId: entityId, userId: session.id } }),
-        prisma.game.update({ where: { id: entityId }, data: { slotsLeft: { decrement: 1 }, status: newSlotsLeft === 0 ? "full" : undefined } }),
-      ]);
-      return ok({ verified: true, slotsLeft: newSlotsLeft });
+      try {
+        const slotsLeft = await prisma.$transaction(async (tx) => {
+          // Conditional slot claim guards against overselling and re-joins on a closed game.
+          const claim = await tx.game.updateMany({
+            where: { id: entityId, slotsLeft: { gt: 0 }, status: { notIn: ["cancelled", "completed", "archived", "full"] } },
+            data: { slotsLeft: { decrement: 1 } },
+          });
+          if (claim.count === 0) throw new ApiError("Game is full", 409);
+          await tx.game.updateMany({ where: { id: entityId, slotsLeft: { lte: 0 } }, data: { status: "full" } });
+          await tx.payment.create({
+            data: {
+              userId: session.id, entityType, entityId,
+              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+              amount: chargePaise, currency: "INR",
+              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+            },
+          });
+          await tx.gamePlayer.create({ data: { gameId: entityId, userId: session.id } });
+          const g = await tx.game.findUnique({ where: { id: entityId }, select: { slotsLeft: true } });
+          return g?.slotsLeft ?? 0;
+        });
+        return ok({ verified: true, slotsLeft });
+      } catch (e) { return txError(e); }
     }
 
     if (entityType === "workshop") {
@@ -190,35 +235,41 @@ export async function POST(req: NextRequest) {
       if (!participantName) return fail("participantName is required", 400);
       if (!registrationType) return fail("registrationType is required", 400);
 
-      const workshop = await prisma.workshop.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, status: true } });
+      const workshop = await prisma.workshop.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, status: true, price: true } });
       if (!workshop) return fail("Workshop not found", 404);
       if (["closed", "completed", "archived"].includes(workshop.status)) return fail("Registrations are closed for this workshop", 409);
       if (workshop.participants >= workshop.maxParticipants) return fail("Workshop is full", 400);
       if (workshop.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
 
-      const existing = await prisma.workshopRegistration.findFirst({ where: { workshopId: entityId, userId: session.id }, select: { id: true } });
-      if (existing) return fail("Already registered", 409);
+      let chargePaise: number;
+      try { chargePaise = workshopChargePaise(workshop); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid workshop", 400); }
+      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
 
-      const newCount = workshop.participants + 1;
-      const statusUpdate = newCount >= workshop.maxParticipants ? "full" : undefined;
-      await prisma.$transaction([
-        prisma.payment.create({
-          data: {
-            userId: session.id, entityType, entityId,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-            amount: amount ?? 0, currency: "INR",
-            status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-          },
-        }),
-        prisma.workshopRegistration.create({
-          data: {
-            workshopId: entityId, userId: session.id,
-            participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
-            registrationType, paymentStatus: "paid" satisfies PaymentStatus,
-          },
-        }),
-        prisma.workshop.update({ where: { id: entityId }, data: { participants: { increment: 1 }, status: statusUpdate } }),
-      ]);
+      try {
+        await prisma.$transaction(async (tx) => {
+          const claim = await tx.workshop.updateMany({
+            where: { id: entityId, participants: { lt: workshop.maxParticipants }, status: { notIn: ["closed", "completed", "archived"] } },
+            data: { participants: { increment: 1 } },
+          });
+          if (claim.count === 0) throw new ApiError("Workshop is full", 409);
+          await tx.workshop.updateMany({ where: { id: entityId, participants: { gte: workshop.maxParticipants } }, data: { status: "full" } });
+          await tx.payment.create({
+            data: {
+              userId: session.id, entityType, entityId,
+              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+              amount: chargePaise, currency: "INR",
+              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
+            },
+          });
+          await tx.workshopRegistration.create({
+            data: {
+              workshopId: entityId, userId: session.id,
+              participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
+              registrationType, paymentStatus: "paid" satisfies PaymentStatus,
+            },
+          });
+        });
+      } catch (e) { return txError(e); }
       return ok({ verified: true });
     }
 

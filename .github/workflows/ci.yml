@@ -1,0 +1,92 @@
+name: CI
+
+# Quality gate for every PR into main and every push to main.
+# Branch protection must mark the `required` job as a required status check so
+# a red gate blocks merge (configure in repo Settings → Branches).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── BLOCKING: every step here must pass to merge ──────────────────────────
+  required:
+    name: required-gates
+    runs-on: ubuntu-latest
+    env:
+      # Prisma needs a URL to validate/generate; a dummy is fine — no DB is touched.
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+      DIRECT_URL: postgresql://user:pass@localhost:5432/db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: Prisma schema valid
+        run: npx prisma validate
+
+      - name: Prisma client generate
+        run: npx prisma generate
+
+      - name: TypeScript (no emit)
+        run: npx tsc --noEmit
+
+      - name: ESLint (errors block; warnings reported separately)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: npm audit (fail on High/Critical)
+        run: npm audit --audit-level=high
+
+  # ── REPORT-ONLY: informational, never blocks (needs tokens/config or would
+  #    fail every PR against the current baseline). Promote to `required` once
+  #    the baseline is clean. ──────────────────────────────────────────────
+  report:
+    name: report-only
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks needs full history
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      # Coverage: measured and surfaced, NOT gated — a 90%-client-component app
+      # will not hit 95% line coverage without new UI tests (out of scope here).
+      - name: Test coverage
+        run: npx vitest run --coverage || true
+
+      - name: ESLint zero-warnings check (report)
+        run: npm run lint -- --max-warnings 0 || true
+
+      - name: Gitleaks (secret scan)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Org repos need GITLEAKS_LICENSE; leave unset for a public repo.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Semgrep (SAST)
+        continue-on-error: true
+        run: |
+          pip install semgrep
+          semgrep --config auto --error || true

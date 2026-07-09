@@ -1,0 +1,55 @@
+# GameGround load test — Artillery. Complements k6-load.js with a
+# duplicate-request (idempotency) probe against the booking/join path.
+# Results UNVERIFIED until run against seeded staging.
+#
+#   Run:  BASE_URL=https://staging.example.com \
+#         artillery run loadtest/artillery.yml
+#
+# The "simultaneous booking" phase fires the same join twice per VU to prove the
+# @@unique + conditional-atomic-update guards hold under contention (expect one
+# 200 and one 409/402 — never two seats consumed).
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  phases:
+    - name: warm
+      duration: 60
+      arrivalRate: 10
+    - name: ramp-500
+      duration: 120
+      arrivalRate: 50
+      rampTo: 200
+    - name: peak-1000
+      duration: 120
+      arrivalRate: 200
+  ensure:
+    - http.response_time.p95: 800
+    - http.response_time.p99: 1500
+    - http.codes.500: 0
+
+scenarios:
+  - name: browse-listings
+    weight: 8
+    flow:
+      - get: { url: "/api/games" }
+      - get: { url: "/api/coaches" }
+      - get: { url: "/api/events" }
+      - get: { url: "/api/camps" }
+      - get: { url: "/api/workshops" }
+
+  - name: duplicate-join
+    weight: 2
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json: { email: "{{ $processEnvironment.TEST_EMAIL }}", password: "{{ $processEnvironment.TEST_PASSWORD }}" }
+      # Fire the same join twice back-to-back — dedupe/seat guards must hold.
+      - post:
+          url: "/api/games/{{ $processEnvironment.GAME_ID }}"
+          json: { action: "join" }
+          expect:
+            - statusCode: [200, 402, 409]
+      - post:
+          url: "/api/games/{{ $processEnvironment.GAME_ID }}"
+          json: { action: "join" }
+          expect:
+            - statusCode: [200, 402, 409]

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, okCached, fail, handleErr } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -65,6 +65,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
         lastPlayedAt: t.lastPlayedAt.toISOString(),
       }));
 
-    return ok({ teammates });
+    // SEMI_STATIC: same for every viewer of this profile, expensive to compute
+    // (2 queries + grouping). Cache per profile id.
+    return okCached({ teammates }, 60);
   } catch (e) { return handleErr(e); }
 }

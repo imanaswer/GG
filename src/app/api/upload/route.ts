@@ -2,10 +2,12 @@ import { NextRequest } from "next/server";
 import crypto from "crypto";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { sniffImage } from "@/lib/imageSniff";
+import { uploadLimit, tooManyRequests } from "@/lib/ratelimit";
 
 // 5 MB ceiling. Rejects anything larger before we buffer it for Cloudinary.
 const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED = new Set(["jpeg", "png", "webp", "gif"]);
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
+
+    const rl = await uploadLimit(session.id);
+    if (!rl.success) return tooManyRequests(rl);
 
     const cloud   = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const apiKey  = process.env.CLOUDINARY_API_KEY;
@@ -24,7 +29,11 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) return fail("No file provided", 400);
     if (file.size === 0) return fail("Empty file", 400);
     if (file.size > MAX_BYTES) return fail(`File exceeds ${MAX_BYTES / 1024 / 1024}MB limit`, 413);
-    if (!ALLOWED.has(file.type)) return fail(`Unsupported type: ${file.type || "unknown"}`, 415);
+
+    // Validate by magic bytes, not the client-declared MIME type.
+    const buf = Buffer.from(await file.arrayBuffer());
+    const kind = sniffImage(buf);
+    if (!kind || !ALLOWED.has(kind)) return fail("File is not a valid image", 415);
 
     const folderRaw = form.get("folder");
     const folder = typeof folderRaw === "string" && /^[a-z0-9_\-/]{1,48}$/i.test(folderRaw)
@@ -48,7 +57,7 @@ export async function POST(req: NextRequest) {
       .digest("hex");
 
     const upstream = new FormData();
-    upstream.set("file", file, file.name || "upload");
+    upstream.set("file", new Blob([buf]), file.name || "upload");
     upstream.set("api_key", apiKey);
     upstream.set("timestamp", String(timestamp));
     upstream.set("signature", signature);

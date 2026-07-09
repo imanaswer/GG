@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ok, handleErr } from "@/lib/api";
+import { ok, okCached, handleErr } from "@/lib/api";
 
 const VALID_TYPES = new Set(["players", "organizers"]);
 const VALID_PERIODS = new Set(["all", "month"]);
@@ -57,11 +57,12 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return ok({
+    // SEMI_STATIC: global ranking, recomputed by cron. Cache per (type, period).
+    return okCached({
       type,
       period,
       generatedAt: new Date().toISOString(),
       rows: rows.map((r, i) => ({ ...r, rank: i + 1 })),
-    });
+    }, 60);
   } catch (e) { return handleErr(e); }
 }

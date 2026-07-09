@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ok, handleErr } from "@/lib/api";
+import { okCached, handleErr } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,6 +27,6 @@ export async function GET(req: NextRequest) {
       w.title.toLowerCase().includes(q) || w.sport.toLowerCase().includes(q)
     );
 
-    return ok(workshops);
+    return okCached(workshops, 60); // SEMI_STATIC: curated content
   } catch (e) { return handleErr(e); }
 }

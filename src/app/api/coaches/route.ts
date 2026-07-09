@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ok, handleErr } from "@/lib/api";
+import { okCached, handleErr } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,15 +18,21 @@ export async function GET(req: NextRequest) {
     // substring — a coach tagged with several types still matches a single-type
     // filter. Safe because no COACH_TYPE is a substring of another.
     if (type  && type  !== "all") where.type  = { contains: type, mode: "insensitive" };
-    if (level && level !== "all") where.OR = [{ skillLevel: level }, { skillLevel: "All Levels" }];
     if (available) where.seatsLeft = { gt: 0 };
 
-    let coaches = await prisma.coach.findMany({ where });
-    if (q) coaches = coaches.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.sport.toLowerCase().includes(q) ||
-      c.location.toLowerCase().includes(q)
-    );
-    return ok(coaches);
+    // Combine independent OR-groups (level, text search) under AND so neither
+    // clobbers the other. Text search runs in the DB — no more fetch-all + filter.
+    const and: Prisma.CoachWhereInput[] = [];
+    if (level && level !== "all") and.push({ OR: [{ skillLevel: level }, { skillLevel: "All Levels" }] });
+    if (q) and.push({ OR: [
+      { name:     { contains: q, mode: "insensitive" } },
+      { sport:    { contains: q, mode: "insensitive" } },
+      { location: { contains: q, mode: "insensitive" } },
+    ] });
+    if (and.length) where.AND = and;
+
+    const coaches = await prisma.coach.findMany({ where });
+    // SEMI_STATIC: curated content, changes on admin edit. 60s fresh + 5m stale.
+    return okCached(coaches, 60);
   } catch (e) { return handleErr(e); }
 }

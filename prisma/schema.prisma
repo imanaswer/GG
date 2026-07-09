@@ -188,6 +188,7 @@ model Game {
 
   @@index([organizerId, createdAt(sort: Desc)])
   @@index([scheduledAt, status])
+  @@index([venueId]) // venue archival guard: count LIVE games at a venue
 }
 
 model GamePlayer {
@@ -213,6 +214,7 @@ model WaitlistEntry {
   position  Int
   createdAt DateTime @default(now())
   game Game @relation(fields: [gameId], references: [id])
+  @@index([gameId]) // waitlist lookup/count/delete per game
 }
 
 model Booking {
@@ -235,6 +237,8 @@ model Booking {
   user  User   @relation(fields: [userId], references: [id])
   coach Coach  @relation(fields: [coachId], references: [id])
   batch Batch? @relation(fields: [batchId], references: [id])
+  @@index([userId])  // "my bookings" list
+  @@index([coachId]) // coach's bookings (admin + review-eligibility check)
 }
 
 model Review {
@@ -248,6 +252,7 @@ model Review {
   user  User  @relation(fields: [userId], references: [id])
   coach Coach @relation(fields: [coachId], references: [id])
   @@unique([userId, coachId])
+  @@index([coachId, createdAt(sort: Desc)]) // coach detail review list + aggregate (unique index leads with userId, can't serve this)
 }
 
 model Camp {
@@ -300,7 +305,9 @@ model CampRegistration {
   updatedAt     DateTime @updatedAt
   camp Camp @relation(fields: [campId], references: [id])
   user User @relation(fields: [userId], references: [id])
+  @@unique([campId, userId]) // one registration per user per camp (concurrency-safe dedupe)
   @@index([campId, status, registeredAt(sort: Desc)])
+  @@index([userId, registeredAt(sort: Desc)]) // "my camps" list + reputation counts (unique index leads with campId)
 }
 
 model SportEvent {
@@ -387,7 +394,9 @@ model EventRegistration {
   updatedAt     DateTime @updatedAt
   event SportEvent @relation(fields: [eventId], references: [id])
   user  User       @relation(fields: [userId], references: [id])
+  @@unique([eventId, userId]) // one registration per user per event (concurrency-safe dedupe)
   @@index([eventId, status, registeredAt(sort: Desc)])
+  @@index([userId, registeredAt(sort: Desc)]) // "my events" list + reputation counts (unique index leads with eventId)
 }
 
 model Workshop {
@@ -443,7 +452,25 @@ model WorkshopRegistration {
   updatedAt        DateTime @updatedAt
   workshop Workshop @relation(fields: [workshopId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
+  @@unique([workshopId, userId]) // one registration per user per workshop (concurrency-safe dedupe)
   @@index([workshopId, status, registeredAt(sort: Desc)])
+  @@index([userId, registeredAt(sort: Desc)]) // "my workshops" list + reputation counts (unique index leads with workshopId)
+}
+
+// Server-side record of what a Razorpay order is FOR, written at create-order time.
+// verify looks it up by razorpayOrderId to bind the order to (user, entity, amount),
+// closing cross-entity replay — a signed order/payment for a cheap game can't be
+// resubmitted as an expensive coach because entityType/entityId won't match.
+model PaymentOrder {
+  razorpayOrderId String   @id
+  userId          String
+  entityType      String
+  entityId        String   // the PURCHASED entity id (coachId, campId, gameId, …)
+  amount          Int      // paise — server-authoritative, matches the gateway order
+  currency        String   @default("INR")
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Payment {
@@ -452,7 +479,7 @@ model Payment {
   entityType        String
   entityId          String
   razorpayOrderId   String
-  razorpayPaymentId String?
+  razorpayPaymentId String?   @unique // DB-level replay guard: a gateway payment id can be recorded at most once (NULLs stay distinct in Postgres)
   amount            Int
   currency          String    @default("INR")
   status            String    @default("created")
@@ -461,9 +488,9 @@ model Payment {
   user User @relation(fields: [userId], references: [id])
 
   @@index([razorpayOrderId])
-  @@index([razorpayPaymentId])
   @@index([entityType, entityId])
   @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)]) // "my payment history" (userId-only filter, no existing index leads with it)
 }
 
 model CoachAgreement {

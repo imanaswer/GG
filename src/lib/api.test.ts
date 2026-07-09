@@ -1,10 +1,28 @@
 import { describe, it, expect } from "vitest";
 import { Prisma } from "@prisma/client";
-import { handleErr, ApiError } from "./api";
+import { handleErr, ApiError, okCached } from "./api";
 
 async function body(res: Response) {
   return (await res.json()) as { ok: boolean; error?: string };
 }
+
+describe("okCached", () => {
+  it("emits a public, shared-edge Cache-Control with s-maxage + swr", () => {
+    const res = okCached({ x: 1 }, 60);
+    const cc = res.headers.get("cache-control") ?? "";
+    // "public" is load-bearing: it authorizes shared-CDN caching. Must never be
+    // "private"/"no-store" here, and this helper must only wrap public data.
+    expect(cc).toContain("public");
+    expect(cc).toContain("s-maxage=60");
+    expect(cc).toContain("stale-while-revalidate=300"); // default swr = 5×
+  });
+
+  it("honors a custom swr", () => {
+    const cc = okCached({}, 15, 45).headers.get("cache-control") ?? "";
+    expect(cc).toContain("s-maxage=15");
+    expect(cc).toContain("stale-while-revalidate=45");
+  });
+});
 
 describe("handleErr", () => {
   it("passes an ApiError's userMessage and status through", async () => {

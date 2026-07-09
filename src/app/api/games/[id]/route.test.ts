@@ -99,3 +99,27 @@ it("joins when a slot is atomically claimed", async () => {
   expect(j.data?.joined).toBe(true);
   expect(prismaMock.gamePlayer.create).toHaveBeenCalledWith({ data: { gameId: "g1", userId: "u1" } });
 });
+
+it("rejects free-joining a PAID game (must go through payment) without claiming a slot", async () => {
+  prismaMock.game.findUnique.mockResolvedValue({ organizerId: "org", status: "open", scheduledAt: future, duration: 60, slotsLeft: 5, costAmount: 150 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await POST(req as any, ctx("g1"));
+  const j = await jsonOf(res);
+  expect(res.status).toBe(402);
+  expect(j.error).toBe("This game requires payment to join");
+  expect(prismaMock.game.updateMany).not.toHaveBeenCalled();
+  expect(prismaMock.gamePlayer.create).not.toHaveBeenCalled();
+});
+
+it("still allows free-joining a FREE game (costAmount 0)", async () => {
+  prismaMock.game.findUnique
+    .mockResolvedValueOnce({ organizerId: "org", status: "open", scheduledAt: future, duration: 60, slotsLeft: 5, costAmount: 0 })
+    .mockResolvedValue({ slotsLeft: 4, status: "open" });
+  prismaMock.game.updateMany.mockResolvedValue({ count: 1 });
+  prismaMock.gamePlayer.create.mockResolvedValue({ id: "gp1" });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await POST(req as any, ctx("g1"));
+  const j = await jsonOf(res);
+  expect(res.status).toBe(200);
+  expect(j.data?.joined).toBe(true);
+});

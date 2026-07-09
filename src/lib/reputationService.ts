@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import {
   computeReputation,
   getTier,
@@ -102,7 +103,7 @@ export async function recordActivityAndRecompute(userId: string): Promise<void> 
     await touchActivity(userId);
     await recomputeUser(userId);
   } catch (err) {
-    console.error(`[reputation] recordActivityAndRecompute failed for ${userId}`, err);
+    logger.error("reputation: recordActivityAndRecompute failed", { userId, err });
   }
 }
 
@@ -110,7 +111,7 @@ export async function safeRecompute(userId: string): Promise<void> {
   try {
     await recomputeUser(userId);
   } catch (err) {
-    console.error(`[reputation] safeRecompute failed for ${userId}`, err);
+    logger.error("reputation: safeRecompute failed", { userId, err });
   }
 }
 

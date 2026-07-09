@@ -1,6 +1,22 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { NextResponse, type NextRequest } from "next/server";
+import { logger } from "@/lib/logger";
+
+type LimitResult = { success: boolean; limit: number; remaining: number; reset: number };
+
+// Fail OPEN on any limiter-backend error. A Redis outage must degrade
+// rate-limiting (briefly allow un-limited traffic), NOT take down auth and every
+// write path — losing the protective layer for a minute beats a site-wide 500.
+// Exported for testing.
+export async function safeLimit(run: () => Promise<LimitResult>, fallbackLimit: number, prefix: string): Promise<LimitResult> {
+  try {
+    return await run();
+  } catch (e) {
+    logger.warn("ratelimit backend unavailable — failing open", { prefix, err: e });
+    return { success: true, limit: fallbackLimit, remaining: fallbackLimit, reset: Date.now() };
+  }
+}
 
 const url   = process.env.UPSTASH_REDIS_REST_TOKEN ? process.env.UPSTASH_REDIS_REST_URL : undefined;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -28,10 +44,12 @@ const redis = isUsableUrl(url) && token ? new Redis({ url, token }) : null;
 function make(limit: number, window: `${number} ${"s" | "m" | "h" | "d"}`, prefix: string): Limiter {
   if (redis) {
     const rl = new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(limit, window), analytics: false, prefix: `gg:${prefix}` });
-    return async (id) => {
+    // Wrap in safeLimit so an Upstash outage fails open instead of 500-ing every
+    // rate-limited route (auth, mutations) through the proxy.
+    return (id) => safeLimit(async () => {
       const r = await rl.limit(id);
       return { success: r.success, limit: r.limit, remaining: r.remaining, reset: r.reset };
-    };
+    }, limit, prefix);
   }
   return memoryLimiter(limit, parseWindow(window), prefix);
 }
@@ -63,6 +81,7 @@ function memoryLimiter(limit: number, windowMs: number, prefix: string): Limiter
 export const authLimit     = make(5,   "1 m", "auth");
 export const aiLimit       = make(10,  "1 h", "ai");
 export const mutationLimit = make(100, "1 m", "mutation");
+export const uploadLimit   = make(20,  "1 h", "upload");
 
 export function clientIp(req: NextRequest | Request): string {
   const h = (req as NextRequest).headers ?? (req as Request).headers;

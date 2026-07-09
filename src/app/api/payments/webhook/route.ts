@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/lib/paymentStatus";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, ignored: body.event });
     }
   } catch (e) {
-    console.error("[razorpay webhook]", e);
+    logger.error("razorpay webhook processing failed", { event: body?.event, err: e });
     // Razorpay retries non-2xx, so return 500 on transient DB failure to get a retry.
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }

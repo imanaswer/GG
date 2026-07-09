@@ -36,8 +36,12 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const { childName, childAge } = await req.json();
     if (!childName || !childAge) return fail("childName and childAge are required", 400);
 
-    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, status: true } });
+    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, status: true, price: true } });
     if (!camp) return fail("Camp not found", 404);
+    // Paid camps must go through the payment/verify flow (which creates the paid
+    // registration). This free-register endpoint would otherwise let a user occupy
+    // a paid slot without paying.
+    if (camp.price > 0) return fail("This camp requires payment to register", 402);
     if (["closed", "completed", "archived"].includes(camp.status)) return fail("Registrations are closed for this camp", 409);
     if (camp.participants >= camp.maxParticipants) return fail("Camp is full", 400);
 
