@@ -45,3 +45,6 @@ next-env.d.ts
 vercel.env
 .env.local
 graphify-out/
+
+# Point-in-time validation/scan artifacts (regenerable)
+release-evidence/
