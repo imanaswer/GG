@@ -1,7 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const SECRET = new TextEncoder().encode(
+// Resolved lazily (per call), NOT at module import. `next build` evaluates every
+// route module with NODE_ENV=production and no AUTH_SECRET in the CI env — an eager
+// top-level const here threw at build time ("AUTH_SECRET env var is required in
+// production"). Fail-closed still holds at runtime: signToken/verifyToken throw in
+// production if AUTH_SECRET is unset. Mirrors adminAuth.ts's lazy secret().
+const secret = () => new TextEncoder().encode(
   process.env.AUTH_SECRET ?? (() => {
     if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET env var is required in production");
     return "gridgame-dev-secret-key-minimum-32-chars!!";
@@ -19,12 +24,12 @@ export async function signToken(payload: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(SECRET);
+    .sign(secret());
 }
 
 export async function verifyToken(token: string): Promise<SessionUser | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, secret());
     return payload as unknown as SessionUser;
   } catch { return null; }
 }
