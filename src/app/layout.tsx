@@ -54,6 +54,8 @@ export const metadata: Metadata = {
     description: "Kozhikode's hyperlocal sports platform.",
     images: ["/og-image.png"],
   },
+  // Paste the token from Search Console's HTML-tag method into this env var.
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
   manifest: "/manifest.json",
   icons: {
     icon: [
