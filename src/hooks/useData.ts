@@ -4,6 +4,17 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import type { EventUpdateItem } from "@/lib/eventUpdates";
 
+// Seed a query with server-rendered data (see src/lib/ssrData.ts) so the first
+// paint — and the SSR HTML Google crawls — has content. initialDataUpdatedAt: 0
+// marks the seed as stale, so the client still refetches session-specific bits
+// (userBooking, live counts) on mount. Listings only seed the unfiltered query.
+function seed<T>(initial: T | undefined, unfiltered = true) {
+  return initial !== undefined && unfiltered
+    ? { initialData: initial, initialDataUpdatedAt: 0 }
+    : {};
+}
+const noFilters = (filters: object) => !Object.values(filters).some(Boolean);
+
 // ─── shared fetcher ───────────────────────────────────────────────────────────
 async function f<T>(url: string, opts?: RequestInit): Promise<T> {
   const r = await fetch(url, { credentials: "include", ...opts });
@@ -85,20 +96,20 @@ export type AIResult = { items: Record<string, unknown>[]; poweredBy: string };
 // ─── Coaches ──────────────────────────────────────────────────────────────────
 export type CoachFilters = { q?: string; sport?: string; skillLevel?: string; type?: string; available?: string };
 
-export function useCoaches(filters: CoachFilters = {}) {
+export function useCoaches(filters: CoachFilters = {}, initial?: Coach[]) {
   const params = new URLSearchParams(Object.entries(filters).filter(([, v]) => v) as [string, string][]);
-  return useQuery<Coach[]>({ queryKey: ["coaches", filters], queryFn: () => f(`/api/coaches?${params}`) });
+  return useQuery<Coach[]>({ queryKey: ["coaches", filters], queryFn: () => f(`/api/coaches?${params}`), ...seed(initial, noFilters(filters)) });
 }
-export function useCoach(id: string) {
-  return useQuery<Coach>({ queryKey: ["coach", id], queryFn: () => f(`/api/coaches/${id}`), enabled: !!id });
+export function useCoach(id: string, initial?: Coach) {
+  return useQuery<Coach>({ queryKey: ["coach", id], queryFn: () => f(`/api/coaches/${id}`), enabled: !!id, ...seed(initial) });
 }
 
 // ─── Games ────────────────────────────────────────────────────────────────────
 export type GameFilters = { q?: string; sport?: string; skillLevel?: string; cost?: string };
 
-export function useGames(filters: GameFilters = {}) {
+export function useGames(filters: GameFilters = {}, initial?: Game[]) {
   const params = new URLSearchParams(Object.entries(filters).filter(([, v]) => v) as [string, string][]);
-  return useQuery<Game[]>({ queryKey: ["games", filters], queryFn: () => f(`/api/games?${params}`) });
+  return useQuery<Game[]>({ queryKey: ["games", filters], queryFn: () => f(`/api/games?${params}`), ...seed(initial, noFilters(filters)) });
 }
 export function useGame(id: string) {
   return useQuery<Game>({ queryKey: ["game", id], queryFn: () => f(`/api/games/${id}`), enabled: !!id });
@@ -333,12 +344,12 @@ export type Camp = {
 
 export type CampFilters = { q?: string; sport?: string; skillLevel?: string; duration?: string; ageGroup?: string };
 
-export function useCamps(filters: CampFilters = {}) {
+export function useCamps(filters: CampFilters = {}, initial?: Camp[]) {
   const p = new URLSearchParams(Object.entries(filters).filter(([,v]) => v) as [string,string][]);
-  return useQuery<Camp[]>({ queryKey: ["camps", filters], queryFn: () => f(`/api/camps?${p}`) });
+  return useQuery<Camp[]>({ queryKey: ["camps", filters], queryFn: () => f(`/api/camps?${p}`), ...seed(initial, noFilters(filters)) });
 }
-export function useCamp(id: string) {
-  return useQuery<Camp>({ queryKey: ["camp", id], queryFn: () => f(`/api/camps/${id}`), enabled: !!id });
+export function useCamp(id: string, initial?: Camp) {
+  return useQuery<Camp>({ queryKey: ["camp", id], queryFn: () => f(`/api/camps/${id}`), enabled: !!id, ...seed(initial) });
 }
 export function useRegisterCamp() {
   const qc = useQueryClient();
@@ -391,12 +402,12 @@ export type SportEvent = {
 
 export type EventFilters = { q?: string; sport?: string; type?: string; difficulty?: string; when?: string };
 
-export function useEvents(filters: EventFilters = {}) {
+export function useEvents(filters: EventFilters = {}, initial?: SportEvent[]) {
   const p = new URLSearchParams(Object.entries(filters).filter(([,v]) => v) as [string,string][]);
-  return useQuery<SportEvent[]>({ queryKey: ["events", filters], queryFn: () => f(`/api/events?${p}`), refetchInterval: 30_000 });
+  return useQuery<SportEvent[]>({ queryKey: ["events", filters], queryFn: () => f(`/api/events?${p}`), refetchInterval: 30_000, ...seed(initial, noFilters(filters)) });
 }
-export function useEvent(id: string) {
-  return useQuery<SportEvent>({ queryKey: ["event", id], queryFn: () => f(`/api/events/${id}`), enabled: !!id, refetchInterval: 15_000 });
+export function useEvent(id: string, initial?: SportEvent) {
+  return useQuery<SportEvent>({ queryKey: ["event", id], queryFn: () => f(`/api/events/${id}`), enabled: !!id, refetchInterval: 15_000, ...seed(initial) });
 }
 export function useRegisterEvent() {
   const qc = useQueryClient();
@@ -445,12 +456,12 @@ export type Workshop = {
 
 export type WorkshopFilters = { q?: string; sport?: string; skillLevel?: string; sessionType?: string; audienceType?: string };
 
-export function useWorkshops(filters: WorkshopFilters = {}) {
+export function useWorkshops(filters: WorkshopFilters = {}, initial?: Workshop[]) {
   const p = new URLSearchParams(Object.entries(filters).filter(([,v]) => v) as [string,string][]);
-  return useQuery<Workshop[]>({ queryKey: ["workshops", filters], queryFn: () => f(`/api/workshops?${p}`) });
+  return useQuery<Workshop[]>({ queryKey: ["workshops", filters], queryFn: () => f(`/api/workshops?${p}`), ...seed(initial, noFilters(filters)) });
 }
-export function useWorkshop(id: string) {
-  return useQuery<Workshop>({ queryKey: ["workshop", id], queryFn: () => f(`/api/workshops/${id}`), enabled: !!id });
+export function useWorkshop(id: string, initial?: Workshop) {
+  return useQuery<Workshop>({ queryKey: ["workshop", id], queryFn: () => f(`/api/workshops/${id}`), enabled: !!id, ...seed(initial) });
 }
 export function useRegisterWorkshop() {
   const qc = useQueryClient();
