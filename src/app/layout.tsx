@@ -6,6 +6,7 @@ import { Providers } from "@/context/Providers";
 import { PWARegister } from "@/components/PWARegister";
 import { PostHogPageView } from "@/components/PostHogPageView";
 import { siteUrl } from "@/lib/siteUrl";
+import { jsonLdScript } from "@/lib/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,8 +26,15 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: { default: "Game Ground — Learn. Play. Connect.", template: "%s | Game Ground" },
-  description: "Kozhikode's hyperlocal sports platform. Find quality coaches, join pickup games, sign up for summer camps and tournaments.",
-  keywords: ["sports", "Kozhikode", "Kerala", "basketball", "football", "cricket", "badminton", "coaches", "pickup games", "summer camps", "tournaments"],
+  description: "Kozhikode (Calicut)'s hyperlocal sports platform. Book certified coaches, find grounds and turfs, join pickup games, and register for camps, tournaments and workshops.",
+  keywords: [
+    "sports", "Kozhikode", "Calicut", "Kerala",
+    "sports coach Kozhikode", "coach Calicut", "coaching", "book coach",
+    "ground booking", "turf booking Kozhikode", "sports ground Calicut",
+    "play", "pickup games", "bookings", "venue booking",
+    "basketball", "football", "cricket", "badminton",
+    "summer camps", "tournaments", "sports events Kozhikode", "workshops",
+  ],
   authors: [{ name: "Game Ground" }],
   creator: "Game Ground",
   publisher: "Game Ground",
@@ -65,10 +73,37 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
+// Sitewide structured data: local sports business + site search box.
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": ["Organization", "SportsActivityLocation"],
+      name: "Game Ground",
+      url: siteUrl(),
+      logo: `${siteUrl()}/icon-512.png`,
+      description: "Hyperlocal sports platform for Kozhikode (Calicut): coaches, grounds, pickup games, camps, tournaments and workshops.",
+      areaServed: { "@type": "City", name: "Kozhikode (Calicut)", containedInPlace: { "@type": "State", name: "Kerala" } },
+      address: { "@type": "PostalAddress", addressLocality: "Kozhikode", addressRegion: "Kerala", addressCountry: "IN" },
+    },
+    {
+      "@type": "WebSite",
+      name: "Game Ground",
+      url: siteUrl(),
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${siteUrl()}/search?q={search_term_string}` },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} ${instrumentSerif.variable}`}>
       <body suppressHydrationWarning>
+        <script {...jsonLdScript(siteJsonLd)} />
         <Providers>
           <Suspense>
             <PostHogPageView />
