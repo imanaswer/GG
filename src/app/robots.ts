@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         "/profile",
         "/bookings",
         "/create-game",
+        "/game", // pickup games are ephemeral; pages have no metadata and soft-404 on bad ids
         "/onboarding-terms",
         "/coach/dashboard",
         "/coach/profile",

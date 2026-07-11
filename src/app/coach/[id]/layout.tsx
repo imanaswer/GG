@@ -20,7 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const coach = await getCoach(id);
   if (!coach) return {};
   return pageMeta(
-    `${coach.name} — ${coach.sport} Coach in ${coach.location || "Kozhikode"}`,
+    // location holds a venue name, not a city — always title with the city
+    `${coach.name} — ${coach.sport} Coach in Kozhikode (Calicut)`,
     `Book ${coach.sport} coaching with ${coach.name} in Kozhikode (Calicut). ${coach.description}`.slice(0, 160),
     `/coach/${id}`,
     coach.imageUrl || undefined,
@@ -43,7 +44,8 @@ export default async function CoachDetailLayout({
     name: coach.name,
     jobTitle: `${coach.sport} Coach`,
     image: coach.imageUrl || undefined,
-    address: { "@type": "PostalAddress", addressLocality: coach.location || "Kozhikode", addressRegion: "Kerala", addressCountry: "IN" },
+    workLocation: coach.location || undefined,
+    address: { "@type": "PostalAddress", addressLocality: "Kozhikode", addressRegion: "Kerala", addressCountry: "IN" },
   };
   return (
     <>
