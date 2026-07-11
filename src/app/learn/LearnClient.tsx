@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense, startTransition } from "react";
 import { Search, SlidersHorizontal, Star, MapPin, Clock, Users, ArrowUpRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -353,7 +353,7 @@ function LearnContent({ initialCoaches }: { initialCoaches?: Coach[] }) {
   // whole subtree to client-render during static prerender, emptying the SEO HTML.
   useEffect(() => {
     const sport = new URLSearchParams(window.location.search).get("sport");
-    if (sport) setFilters(p => ({ ...p, sport }));
+    if (sport) startTransition(() => setFilters(p => ({ ...p, sport })));
   }, []);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
