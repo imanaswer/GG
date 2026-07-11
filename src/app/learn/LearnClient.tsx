@@ -2,7 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Star, MapPin, Clock, Users, ArrowUpRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -348,12 +347,14 @@ function CoachSkeleton() {
 /* ── Page ───────────────────────────────────────────────── */
 
 function LearnContent({ initialCoaches }: { initialCoaches?: Coach[] }) {
-  const searchParams = useSearchParams();
-  const initialSport = searchParams.get("sport") || undefined;
+  const [filters, setFilters] = useState<CoachFilters>({});
 
-  const [filters, setFilters] = useState<CoachFilters>(
-    initialSport ? { sport: initialSport } : {},
-  );
+  // Read ?sport= after mount instead of useSearchParams: that hook forces this
+  // whole subtree to client-render during static prerender, emptying the SEO HTML.
+  useEffect(() => {
+    const sport = new URLSearchParams(window.location.search).get("sport");
+    if (sport) setFilters(p => ({ ...p, sport }));
+  }, []);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
 
