@@ -240,7 +240,10 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
     if (reason === null) return;
     act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isBlocked: true, blockReason: reason }) }));
   };
-  const del = (s: SlotRow) => act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "DELETE" }));
+  const del = (s: SlotRow) => {
+    if (!confirm(`Delete this slot?\n\n${fmt(s.startTime)} – ${new Date(s.endTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${s.game ? `\n\nWarning: this slot is booked (${s.game.title}).` : ""}`)) return;
+    act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "DELETE" }));
+  };
 
   const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -251,13 +254,15 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
       {/* Bulk generate */}
       <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Bulk generate slots</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 92px auto", gap: 8, alignItems: "end" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
           <Field label="From"><input type="date" style={input} value={bulk.fromDate} onChange={(e) => setBulk((p) => ({ ...p, fromDate: e.target.value }))} /></Field>
           <Field label="To"><input type="date" style={input} value={bulk.toDate} onChange={(e) => setBulk((p) => ({ ...p, toDate: e.target.value }))} /></Field>
           <Field label="Day start"><input type="time" style={input} value={bulk.dayStart} onChange={(e) => setBulk((p) => ({ ...p, dayStart: e.target.value }))} /></Field>
           <Field label="Day end"><input type="time" style={input} value={bulk.dayEnd} onChange={(e) => setBulk((p) => ({ ...p, dayEnd: e.target.value }))} /></Field>
           <Field label="Slot mins"><input type="number" style={input} value={bulk.slotMinutes} onChange={(e) => setBulk((p) => ({ ...p, slotMinutes: e.target.value }))} /></Field>
-          <button onClick={generate} style={{ ...primaryBtn, justifyContent: "center", height: 38 }}>Generate</button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
+          <button onClick={generate} style={{ ...primaryBtn, justifyContent: "center", height: 38, padding: "9px 22px" }}>Generate</button>
         </div>
       </div>
 
@@ -304,7 +309,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const input: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit" };
+const input: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark", boxSizing: "border-box" };
 const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9, border: "none", background: "#e63946", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
 const dangerBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#f87171", fontSize: 12, fontWeight: 600, cursor: "pointer" };
