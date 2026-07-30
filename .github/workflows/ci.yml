@@ -49,8 +49,12 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: npm audit (fail on High/Critical)
-        run: npm audit --audit-level=high
+      # Blocks on High/Critical advisories, minus the reviewed allowlist in
+      # .audit-ci.jsonc (advisories with no non-breaking fix yet). Any NEW
+      # high/critical still fails the gate. Revisit the allowlist by its
+      # REVIEW BY date.
+      - name: Dependency audit (fail on High/Critical, allowlist reviewed)
+        run: npx audit-ci --config .audit-ci.jsonc
 
   # ── REPORT-ONLY: informational, never blocks (needs tokens/config or would
   #    fail every PR against the current baseline). Promote to `required` once
