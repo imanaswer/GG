@@ -1,29 +1,15 @@
 // audit-ci configuration — the BLOCKING dependency-audit gate in CI (required-gates).
 //
-// Fails the build on any high or critical advisory EXCEPT the specifically
-// allowlisted IDs below. Each allowlisted advisory has no non-breaking fix
-// today: it is either bundled inside `next` (fixed only in a next canary/
-// preview, not stable) or reached solely through dev-only tooling (eslint).
+// Fails the build on any high or critical advisory. The allowlist is EMPTY and
+// should stay that way: every advisory that was previously accepted here
+// (next's bundled postcss/sharp, eslint's brace-expansion) now has a fix
+// reachable by lockfile bump alone, applied via `npm audit fix`.
 //
-// REVIEW BY 2026-10-30 — re-run `npx audit-ci --high` with an empty allowlist
-// and drop every entry that a stable release has since fixed. Do not let this
-// list grow silently: adding an ID is accepting a known risk.
+// If a new high/critical lands with no non-breaking fix, add its GHSA id below
+// WITH a comment naming the package, the reason no fix is adoptable, and a
+// review date. Adding an ID is accepting a known risk — never do it silently.
 {
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "high": true,
-  "allowlist": [
-    // ── Bundled inside next@16.2.12 (latest STABLE). The next advisory range
-    //    ends at 16.3.0-preview.7, so a patched next exists only in
-    //    canary/preview — not adoptable for a production app yet. Overriding
-    //    next's internal postcss/sharp risks breaking its CSS pipeline and
-    //    image optimization, so we accept these until next ships a stable fix.
-    "GHSA-6g55-p6wh-862q", // postcss <8.4.31 → arbitrary file read via sourceMappingURL
-    "GHSA-r28c-9q8g-f849", // postcss → path traversal in source-map auto-loading
-    "GHSA-f88m-g3jw-g9cj", // sharp <0.35.0 → libvips CVEs (image optimization only)
-
-    // ── Dev-only: reached exclusively through eslint's minimatch@3. Not shipped
-    //    to production. minimatch@3 pins brace-expansion@^1, so the fix is a
-    //    breaking major bump of eslint's transitive dep — out of our control.
-    "GHSA-mh99-v99m-4gvg" // brace-expansion → ReDoS/OOM (glob expansion, dev tooling)
-  ]
+  "allowlist": []
 }
