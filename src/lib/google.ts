@@ -1,10 +1,15 @@
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
+import { isUniqueViolation, toSessionUser, uniqueUsername, USER_SELECT } from "@/lib/socialAuth";
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
+const GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+// Google still stamps both spellings depending on the client; accept either.
+const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 
 export const STATE_COOKIE = "gg_oauth_state";
 
@@ -76,35 +81,59 @@ export async function fetchGoogleProfile(code: string, origin: string): Promise<
   };
 }
 
-// ─── Username generation ──────────────────────────────────────────────────────
-/** Slugify the email local-part to a base username matching the app's rules. */
-function baseUsername(email: string): string {
-  const local = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "");
-  const trimmed = local.slice(0, 16); // leave room for a numeric suffix (max 20)
-  return trimmed.length >= 3 ? trimmed : "player";
+// ─── Native (mobile) ID-token verification ───────────────────────────────────
+/**
+ * The native app can't use the redirect flow, so it runs the OAuth handshake itself and posts the
+ * resulting `id_token` here (GameGround Mobile Developer PRD §5.2). Trust in that token comes
+ * entirely from this verification: signature against Google's JWKS, issuer, and — the part that
+ * matters — an `aud` restricted to OUR OAuth clients. Without the audience pin, an id_token minted
+ * for any other Google app would log its bearer in as the matching GameGround user.
+ *
+ * The audience is the *platform* client id: iOS builds present GOOGLE_IOS_CLIENT_ID, Android
+ * GOOGLE_ANDROID_CLIENT_ID. The web client is included because the app also passes it as
+ * `webClientId`, and because the Expo web target authenticates against it.
+ */
+export function mobileGoogleAudiences(): string[] {
+  return [
+    process.env.GOOGLE_IOS_CLIENT_ID,
+    process.env.GOOGLE_ANDROID_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_ID,
+  ].filter((id): id is string => Boolean(id));
 }
 
-/** Find a username that is free, appending a numeric suffix on collision. */
-async function uniqueUsername(email: string): Promise<string> {
-  const base = baseUsername(email);
-  // Try the bare base first, then base1, base2, … until one is free.
-  for (let i = 0; i < 10000; i++) {
-    const candidate = i === 0 ? base : `${base.slice(0, 20 - String(i).length)}${i}`;
-    const taken = await prisma.user.findUnique({ where: { username: candidate }, select: { id: true } });
-    if (!taken) return candidate;
-  }
-  // Extremely unlikely fallback — guaranteed-unique random suffix.
-  return `${base.slice(0, 14)}${Date.now().toString(36).slice(-5)}`;
+export function googleMobileConfigured(): boolean {
+  return mobileGoogleAudiences().length > 0;
+}
+
+// Cached across requests: the key set is remote and rotates, and createRemoteJWKSet handles the
+// refresh itself. Built lazily so `next build` never reaches for the network.
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+const googleJwks = () => (jwks ??= createRemoteJWKSet(new URL(GOOGLE_JWKS_URL)));
+
+/** Verify a native-app Google id_token and project it onto the same shape the web flow produces. */
+export async function verifyGoogleIdToken(idToken: string): Promise<GoogleProfile> {
+  const { payload } = await jwtVerify(idToken, googleJwks(), {
+    issuer: GOOGLE_ISSUERS,
+    audience: mobileGoogleAudiences(),
+  });
+
+  const email = typeof payload.email === "string" ? payload.email.toLowerCase() : "";
+  if (!payload.sub) throw new Error("Google id_token has no subject");
+  if (!email) throw new Error("Google id_token has no email");
+
+  return {
+    sub: payload.sub,
+    email,
+    // Google sends this as a real boolean on id_tokens; the string form appears on some legacy
+    // clients. Anything else must read as unverified — this flag gates email auto-linking.
+    emailVerified: payload.email_verified === true || payload.email_verified === "true",
+    name: typeof payload.name === "string" && payload.name ? payload.name : email.split("@")[0],
+    picture: typeof payload.picture === "string" ? payload.picture : undefined,
+  };
 }
 
 // ─── Resolve / create the user ──────────────────────────────────────────────────
-function toSessionUser(u: {
-  id: string; email: string; name: string; username: string; role: string; avatarUrl: string | null;
-}): SessionUser {
-  return { id: u.id, email: u.email, name: u.name, username: u.username, role: u.role, avatarUrl: u.avatarUrl ?? undefined };
-}
-
-const SELECT = { id: true, email: true, name: true, username: true, role: true, avatarUrl: true } as const;
+const SELECT = USER_SELECT;
 
 /**
  * Resolve a Google profile to an app user, following the lookup order:
@@ -157,8 +186,4 @@ export async function resolveGoogleUser(profile: GoogleProfile): Promise<Session
     }
     throw e;
   }
-}
-
-function isUniqueViolation(e: unknown): boolean {
-  return Boolean(e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002");
 }
