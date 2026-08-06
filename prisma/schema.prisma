@@ -19,6 +19,9 @@ model User {
   username             String    @unique
   passwordHash         String?
   googleId             String?   @unique
+  // Apple's `sub` — stable per developer team, and the only durable key Apple gives us: the email
+  // may be a per-app private relay address and the name arrives exactly once.
+  appleId              String?   @unique
   role                 String    @default("player")
   location             String?
   bio                  String?
@@ -50,9 +53,32 @@ model User {
   workshopRegistrations WorkshopRegistration[]
   payments              Payment[]
   coachProfile       Coach?
+  mobileAuthCodes    MobileAuthCode[]
 
   @@index([reputationScore(sort: Desc)])
   @@index([tier])
+}
+
+/**
+ * One-time authorization code for the mobile Google handoff (GameGround Mobile Developer PRD §5.2,
+ * scope change: the app reuses the WEB OAuth client via the browser instead of a native client).
+ *
+ * The code travels to the app over a custom URL scheme, which any installed app can claim — so the
+ * code alone must be worthless. `challenge` is the SHA-256 of a verifier only the requesting app
+ * instance holds (PKCE): without it the exchange is refused. Raw codes are never stored.
+ */
+model MobileAuthCode {
+  id        String    @id @default(cuid())
+  codeHash  String    @unique
+  challenge String
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId])
 }
 
 model Coach {
