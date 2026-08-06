@@ -6,16 +6,7 @@ import { ok, fail, handleErr, CreateGameSchema } from "@/lib/api";
 import { validateGameSchedule } from "@/lib/gameTime";
 import { isBookableVenue, venueSupportsSport, slotAvailability, slotDurationMinutes } from "@/lib/venues";
 import { toWhatsAppNumber } from "@/lib/whatsapp";
-
-const SPORT_IMAGES: Record<string, string> = {
-  Basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
-  Football: "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=800&q=80",
-  Cricket: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80",
-  Badminton: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80",
-  Tennis: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80",
-  Volleyball: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80",
-  Fitness: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80",
-};
+import { gameImage } from "@/lib/premium-images";
 
 export async function GET(req: NextRequest) {
   try {
@@ -133,12 +124,21 @@ export async function POST(req: NextRequest) {
           lat: venue.lat, lng: venue.lng,
           venueId: venue.id, slotId: slot.id,
           scheduledAt: slot.startTime, duration,
-          slots: input.slots, slotsLeft: input.slots,
+          // The host occupies one of the slots they advertise, so the game is
+          // born with one seat taken (slots >= 2, so slotsLeft >= 1 — a game can
+          // never be created already full). No GamePlayer row is created: the
+          // organizer is shown as the host, not as a joined player, and a host
+          // row would make cancel/route.ts's participant count non-zero from
+          // birth and block hosts from cancelling their own empty games.
+          slots: input.slots, slotsLeft: input.slots - 1,
           skillLevel: input.skillLevel, organizerId: session.id,
           cost: input.cost, costAmount: input.costAmount,
           description: input.description ?? "",
           rules: input.rules ?? [],
-          imageUrl: SPORT_IMAGES[input.sport] ?? SPORT_IMAGES["Basketball"],
+          // Seeded on slotId (unique per game, and known before the insert) so
+          // each game draws a different frame from its sport's pool instead of
+          // every Badminton game wearing the same photo.
+          imageUrl: gameImage(input.sport, slot.id).src,
           status: "open",
         },
       });

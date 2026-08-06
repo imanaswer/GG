@@ -13,7 +13,7 @@ import { Tilt3D } from "@/components/premium/Tilt3D";
 import { SkillBadge, SportBadge, fmtDate } from "@/components/Shared";
 import { useGames, useJoinGame, type GameFilters, type Game } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
-import { STORY, GAME_FALLBACKS, pickFallback } from "@/lib/premium-images";
+import { STORY, gameImage } from "@/lib/premium-images";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball"] as const;
 const COSTS = [
@@ -159,7 +159,7 @@ function GameCard({ game }: { game: Game }) {
   const isFull = game.slotsLeft === 0 || game.status === "full";
   const joinable = !["cancelled", "completed", "archived"].includes(game.status);
   const isFree = game.costAmount === 0;
-  const img = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
+  const img = game.imageUrl || gameImage(game.sport, game.id).src;
 
   return (
     <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>

@@ -24,17 +24,6 @@ export const HERO_BACKDROPS: PremiumImage[] = [
   { src: u("photo-1461896836934-ffe607ba8211"), alt: "Basketball court at night", credit: "Unsplash / TJ Dragotta" },
 ];
 
-// Sport-tile grid (landing sport picker)
-export const SPORT_TILES: Record<string, PremiumImage> = {
-  Basketball: { src: u("photo-1546519638-68e109498ffc", 1200), alt: "Basketball player mid-dunk", credit: "Unsplash / TJ Dragotta" },
-  Football:   { src: u("photo-1517466787929-bc90951d0974", 1200), alt: "Footballer in motion", credit: "Unsplash / Jeffrey F Lin" },
-  Cricket:    { src: u("photo-1531415074968-036ba1b575da", 1200), alt: "Cricket batsman", credit: "Unsplash / Alessandro Bogliari" },
-  Badminton:  { src: u("photo-1626224583764-f87db24ac4ea", 1200), alt: "Badminton smash", credit: "Unsplash / Shubham Sharan" },
-  Tennis:     { src: u("photo-1622279457486-62dcc4a431d6", 1200), alt: "Tennis serve close-up", credit: "Unsplash / Lucas Davies" },
-  Volleyball: { src: u("photo-1592656094267-764a45160876", 1200), alt: "Volleyball spike", credit: "Unsplash / Vince Fleming" },
-  Fitness:    { src: u("photo-1534438327276-14e5300c3a48", 1200), alt: "Athlete training", credit: "Unsplash / Victor Freitas" },
-};
-
 // Story sections — immersive full-bleed
 export const STORY: Record<"learn" | "play" | "connect", PremiumImage> = {
   learn:   { src: u("photo-1526232761682-d26e03ac148e"), alt: "Coach mentoring young athlete", credit: "Unsplash / Clique Images" },
@@ -81,8 +70,75 @@ export const WORKSHOP_IMAGE: PremiumImage = {
   alt: "Badminton player leaping for a jump smash", credit: "Unsplash",
 };
 
+// Self-hosted pickup-game photography (public/sports/*.webp, 1200x900).
+// Five frames per sport so two games of the same sport don't look identical,
+// shot in Indian settings wherever the source library had them — street cricket,
+// local grounds, club halls, neighbourhood gyms. Basketball and tennis are the
+// thin ones: no reliably Indian frames existed, so those pools are generic
+// action with no identifiable signage or architecture.
+export const SPORT_FALLBACKS: Record<string, PremiumImage[]> = {
+  Cricket:    [
+    { src: "/sports/cricket-01.webp", alt: "Club cricketers in whites waiting to bat on a ground in India", credit: "Unsplash / Getty Images" },
+    { src: "/sports/cricket-02.webp", alt: "Street cricket match on a Mumbai road", credit: "Unsplash / Zoshua Colah" },
+    { src: "/sports/cricket-03.webp", alt: "Kids playing gully cricket in a lane", credit: "Unsplash / Simon Reza" },
+    { src: "/sports/cricket-04.webp", alt: "Batsman facing up with the keeper behind the stumps", credit: "Unsplash / Getty Images" },
+    { src: "/sports/cricket-05.webp", alt: "Net practice on a turf ground in India", credit: "Unsplash / Sandip Pandhare" },
+  ],
+  Football:   [
+    { src: "/sports/football-01.webp", alt: "Footballers challenging for the ball in a local match in India", credit: "Unsplash / jebin ephrimraj" },
+    { src: "/sports/football-02.webp", alt: "Player breaking away with the ball on a grass pitch", credit: "Unsplash / jebin ephrimraj" },
+    { src: "/sports/football-03.webp", alt: "Boots and ball in a tussle on a grass pitch", credit: "Unsplash / Mustafa Fatemi" },
+    { src: "/sports/football-04.webp", alt: "Two teams lined up before kickoff on a ground in India", credit: "Unsplash / aboodi vesakaran" },
+    { src: "/sports/football-05.webp", alt: "Players seen through the goal net on a turf ground", credit: "Unsplash / Sagar Bhat" },
+  ],
+  Badminton:  [
+    { src: "/sports/badminton-01.webp", alt: "Open-air badminton court ringed by coconut palms", credit: "Unsplash / Getty Images" },
+    { src: "/sports/badminton-02.webp", alt: "Club badminton hall with several courts in play", credit: "Unsplash / Kayvie" },
+    { src: "/sports/badminton-03.webp", alt: "Player lunging for a low return on a green court", credit: "Unsplash / Dmitriy Ignatenko" },
+    { src: "/sports/badminton-04.webp", alt: "Jump smash mid-air", credit: "Unsplash / Irish83" },
+    { src: "/sports/badminton-05.webp", alt: "Player stretching for a backhand return", credit: "Unsplash / Yoyo Hins Itta" },
+  ],
+  Basketball: [
+    { src: "/sports/basketball-01.webp", alt: "Outdoor basketball hoop beside a building in India", credit: "Unsplash / Rutil Sharma" },
+    { src: "/sports/basketball-02.webp", alt: "Empty outdoor court surrounded by tropical trees", credit: "Unsplash / Harsh Aryan" },
+    { src: "/sports/basketball-03.webp", alt: "Basketball hoop silhouetted at sunset", credit: "Unsplash / Piyanshu Sharma" },
+    { src: "/sports/basketball-04.webp", alt: "Evening pickup game on a court lined with palms", credit: "Unsplash / Ashwin Vaswani" },
+    { src: "/sports/basketball-05.webp", alt: "Floodlit night game on an outdoor court", credit: "Unsplash / Christian Lue" },
+  ],
+  Volleyball: [
+    { src: "/sports/volleyball-01.webp", alt: "Indoor volleyball match in India, spiker at the net", credit: "Unsplash / Vann" },
+    { src: "/sports/volleyball-02.webp", alt: "Players scrambling for a dig during a local match in India", credit: "Unsplash / Daniel Pell" },
+    { src: "/sports/volleyball-03.webp", alt: "Village volleyball team in orange kit before a match in India", credit: "Unsplash / Rahul Sharma" },
+    { src: "/sports/volleyball-04.webp", alt: "Volleyball nets set up on a ground beside a monument in India", credit: "Unsplash / Mayank Singh" },
+    { src: "/sports/volleyball-05.webp", alt: "Volleyball court at sunset under palm trees", credit: "Unsplash / Meet Gada" },
+  ],
+  Tennis:     [
+    { src: "/sports/tennis-01.webp", alt: "Coach with a basket of balls at an indoor tennis court in India", credit: "Unsplash / Rezli" },
+    { src: "/sports/tennis-02.webp", alt: "Player with a racket on a clay court", credit: "Unsplash / Rezli" },
+    { src: "/sports/tennis-03.webp", alt: "Serve on a hard court", credit: "Unsplash / Andrew Heald" },
+    { src: "/sports/tennis-04.webp", alt: "Player waiting to receive on a blue hard court", credit: "Unsplash / flou gaupr" },
+    { src: "/sports/tennis-05.webp", alt: "Doubles rally on an outdoor court", credit: "Unsplash / J. Schiemann" },
+  ],
+  Fitness:    [
+    { src: "/sports/fitness-01.webp", alt: "Group training session at a gym in India", credit: "Unsplash / Frederick Shaw" },
+    { src: "/sports/fitness-02.webp", alt: "Lat pulldown at a gym in India", credit: "Unsplash / Gyan Shahane" },
+    { src: "/sports/fitness-03.webp", alt: "Bench press set at a gym in India", credit: "Unsplash / Gyan Shahane" },
+    { src: "/sports/fitness-04.webp", alt: "Trainer spotting a lift at a gym in India", credit: "Unsplash / Frederick Shaw" },
+    { src: "/sports/fitness-05.webp", alt: "Group huddle at the end of a training session", credit: "Unsplash / Sum Sum" },
+  ],
+};
+
 export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return list[Math.abs(h) % list.length];
+}
+
+/**
+ * The image for a pickup game: sport-matched, and varied within the sport.
+ * `seed` must be stable per game (the game id at render time, the slot id at
+ * creation time) so a game keeps the same photo on every view.
+ */
+export function gameImage(sport: string | undefined | null, seed: string): PremiumImage {
+  return pickFallback(SPORT_FALLBACKS[sport ?? ""] ?? GAME_FALLBACKS, seed);
 }

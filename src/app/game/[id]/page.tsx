@@ -17,7 +17,7 @@ import { useGame, useJoinGame, useLeaveGame } from "@/hooks/useData";
 import { mapsHref, hasMapTarget } from "@/lib/maps";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
-import { GAME_FALLBACKS, pickFallback } from "@/lib/premium-images";
+import { gameImage } from "@/lib/premium-images";
 import { whatsAppLink } from "@/lib/whatsapp";
 
 export default function GameDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -96,7 +96,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   // enforces this; the UI mirrors it so the action isn't offered when blocked.)
   const playerCount    = game.players?.length ?? 0;
   const hostCanCancel  = playerCount === 0;
-  const img         = game.imageUrl || pickFallback(GAME_FALLBACKS, game.id).src;
+  const img         = game.imageUrl || gameImage(game.sport, game.id).src;
 
   const handleComplete = async () => {
     if (!confirm("Mark this game as complete and record attendance?")) return;

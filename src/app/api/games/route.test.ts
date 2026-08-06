@@ -104,7 +104,8 @@ describe("POST /api/games (venue-slot booking)", () => {
     const data = prismaMock.game.create.mock.calls[0][0].data;
     expect(data).toMatchObject({
       venueId: "v1", slotId: "slot1", location: "EMS Turf A", address: "EMS Stadium",
-      duration: 60, organizerId: "host1", slots: 10, slotsLeft: 10, status: "open",
+      // slotsLeft is slots - 1: the host holds one of their own seats.
+      duration: 60, organizerId: "host1", slots: 10, slotsLeft: 9, status: "open",
     });
     expect(data.scheduledAt).toEqual(slot.startTime);
   });
