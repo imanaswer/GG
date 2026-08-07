@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Trophy, MapPin, ArrowUpRight, Crown } from "lucide-react";
+import { Trophy, MapPin, ArrowUpRight, Crown, ChevronDown } from "lucide-react";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
@@ -25,15 +25,22 @@ const PERIOD_TABS: { key: LeaderboardPeriod; label: string }[] = [
   { key: "month", label: "Last 30 days" },
 ];
 
+// Ranks shown per page, podium included. The API already returns the full top 100
+// in one cached response, so paging is a slice — no second request, no offset
+// param, and no chance of the page shifting under a user between fetches.
+const PAGE = 30;
+
 
 export default function LeaderboardPage() {
   const [type, setType] = useState<LeaderboardType>("players");
   const [period, setPeriod] = useState<LeaderboardPeriod>("all");
+  const [visible, setVisible] = useState(PAGE);
   const { data, isLoading } = useLeaderboard(type, period);
 
   const rows = data?.rows ?? [];
   const podium = rows.slice(0, 3);
-  const rest = rows.slice(3);
+  const rest = rows.slice(3, visible);
+  const remaining = rows.length - visible;
   const activeTypeMeta = TYPE_TABS.find(t => t.key === type)!;
 
   return (
@@ -62,7 +69,7 @@ export default function LeaderboardPage() {
                 {TYPE_TABS.map(t => (
                   <button
                     key={t.key}
-                    onClick={() => setType(t.key)}
+                    onClick={() => { setType(t.key); setVisible(PAGE); }}
                     style={{
                       padding: "9px 18px", borderRadius: 100,
                       fontSize: 13, fontWeight: 700, fontFamily: "inherit",
@@ -81,7 +88,7 @@ export default function LeaderboardPage() {
                 {PERIOD_TABS.map(p => (
                   <button
                     key={p.key}
-                    onClick={() => setPeriod(p.key)}
+                    onClick={() => { setPeriod(p.key); setVisible(PAGE); }}
                     style={{
                       padding: "9px 16px", borderRadius: 100,
                       fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
@@ -140,6 +147,28 @@ export default function LeaderboardPage() {
                     ))}
                   </div>
                 )}
+
+                {remaining > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 28 }}>
+                    <button
+                      onClick={() => setVisible(v => v + PAGE)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 8,
+                        padding: "12px 26px", borderRadius: 100,
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                        cursor: "pointer", transition: "all 200ms",
+                      }}
+                      className="lb-more"
+                    >
+                      Show next {Math.min(PAGE, remaining)} <ChevronDown size={15} />
+                    </button>
+                    <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)" }}>
+                      Showing {Math.min(visible, rows.length)} of {rows.length}
+                    </span>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -152,6 +181,7 @@ export default function LeaderboardPage() {
           --podium-h-second: 188px;
           --podium-h-third: 156px;
         }
+        .lb-more:hover { border-color: rgba(230,57,70,0.45) !important; background: rgba(230,57,70,0.08) !important; }
         .box-first { height: var(--podium-h-first); }
         .box-second { height: var(--podium-h-second); }
         .box-third { height: var(--podium-h-third); }
