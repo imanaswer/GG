@@ -11,8 +11,10 @@ import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { Tilt3D } from "@/components/premium/Tilt3D";
 import { SkillBadge, SportBadge } from "@/components/Shared";
+import { NearMeToggle } from "@/components/NearMeToggle";
 import { useCoaches, type Coach, type CoachFilters } from "@/hooks/useData";
 import { STORY, pickFallback, COACH_FALLBACKS } from "@/lib/premium-images";
+import { distanceKm, sortByDistance, formatKm, type Coords } from "@/lib/maps";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball", "Fitness"] as const;
 const LEVELS = ["Beginner", "Intermediate", "Advanced", "All Levels"] as const;
@@ -146,9 +148,10 @@ function PillGroup({ label, options, value, onChange, compact }: PillGroupProps)
 
 /* ── Coach card ─────────────────────────────────────────── */
 
-function CoachCard({ coach }: { coach: Coach }) {
+function CoachCard({ coach, origin }: { coach: Coach; origin: Coords | null }) {
   const full = coach.seatsLeft === 0;
   const img = coach.imageUrl || pickFallback(COACH_FALLBACKS, coach.id).src;
+  const km = origin ? distanceKm(origin, coach) : null;
 
   return (
     <Link
@@ -272,14 +275,19 @@ function CoachCard({ coach }: { coach: Coach }) {
         <div style={{ padding: "22px 22px 24px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
             {[
-              { Icon: MapPin, v: coach.address || coach.location, c: "rgba(255,255,255,0.55)" },
-              { Icon: Clock,  v: coach.timing,   c: "rgba(255,255,255,0.55)" },
-            ].map(({ Icon, v, c }) => (
+              { Icon: MapPin, v: coach.address || coach.location, c: "rgba(255,255,255,0.55)", right: km != null ? formatKm(km) : null },
+              { Icon: Clock,  v: coach.timing,   c: "rgba(255,255,255,0.55)", right: null },
+            ].map(({ Icon, v, c, right }) => (
               <div key={v} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
                 <Icon size={13} color={c} style={{ flexShrink: 0 }} />
                 <span style={{ color: c, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {v}
                 </span>
+                {right && (
+                  <span style={{ marginLeft: "auto", flexShrink: 0, color: "#ff6b74", fontWeight: 600 }}>
+                    {right}
+                  </span>
+                )}
               </div>
             ))}
             <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
@@ -374,6 +382,12 @@ function LearnContent({ initialCoaches }: { initialCoaches?: Coach[] }) {
     const fromData = [...sports].sort((a, b) => a.localeCompare(b));
     return fromData.length ? fromData : [...SPORTS];
   }, [allCoaches]);
+
+  // Near-me is a sort, not a filter: it reorders what the filters already
+  // returned, so "Clear" deliberately leaves it alone. Coaches with no pinned
+  // location keep their existing order at the bottom of the list.
+  const [origin, setOrigin] = useState<Coords | null>(null);
+  const coaches = useMemo(() => sortByDistance(data ?? [], origin), [data, origin]);
 
   const set = (k: keyof CoachFilters, v: string) =>
     setFilters(p => ({ ...p, [k]: v === "all" || !v ? undefined : v }));
@@ -470,13 +484,16 @@ function LearnContent({ initialCoaches }: { initialCoaches?: Coach[] }) {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               marginBottom: 28, flexWrap: "wrap", gap: 12,
             }}>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em" }}>
-                {isLoading
-                  ? "Loading coaches…"
-                  : error
-                    ? "Couldn't load coaches"
-                    : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "coach" : "coaches"} found`}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em" }}>
+                  {isLoading
+                    ? "Loading coaches…"
+                    : error
+                      ? "Couldn't load coaches"
+                      : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "coach" : "coaches"} found`}
+                </span>
+                <NearMeToggle onChange={setOrigin} />
+              </div>
               {!isLoading && !error && (data?.length ?? 0) > 0 && (
                 <Magnetic strength={6}>
                   <Link href="/play" style={{
@@ -541,7 +558,7 @@ function LearnContent({ initialCoaches }: { initialCoaches?: Coach[] }) {
                   marginBottom: 120,
                 }}
               >
-                {data.map(coach => <CoachCard key={coach.id} coach={coach} />)}
+                {coaches.map(coach => <CoachCard key={coach.id} coach={coach} origin={origin} />)}
               </Stagger>
             )}
           </div>

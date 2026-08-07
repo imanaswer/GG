@@ -11,9 +11,11 @@ import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { Tilt3D } from "@/components/premium/Tilt3D";
 import { SkillBadge, SportBadge, fmtDate } from "@/components/Shared";
+import { NearMeToggle } from "@/components/NearMeToggle";
 import { useGames, useJoinGame, type GameFilters, type Game } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { STORY, gameImage } from "@/lib/premium-images";
+import { distanceKm, sortByDistance, formatKm, type Coords } from "@/lib/maps";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball"] as const;
 const COSTS = [
@@ -151,9 +153,10 @@ function PillGroup({ label, options, value, onChange }: PillGroupProps) {
 
 /* ── Game card ──────────────────────────────────────────── */
 
-function GameCard({ game }: { game: Game }) {
+function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
   const { user } = useAuth();
   const join = useJoinGame();
+  const km = origin ? distanceKm(origin, game) : null;
   const filled = game.slots - game.slotsLeft;
   const pct = Math.min(100, Math.round((filled / game.slots) * 100));
   const isFull = game.slotsLeft === 0 || game.status === "full";
@@ -248,6 +251,11 @@ function GameCard({ game }: { game: Game }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>
             <MapPin size={13} style={{ flexShrink: 0 }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{game.location}</span>
+            {km != null && (
+              <span style={{ flexShrink: 0, marginLeft: "auto", color: "#ff6b74", fontWeight: 600 }}>
+                {formatKm(km)}
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>
             <Clock size={13} style={{ flexShrink: 0 }} />
@@ -398,6 +406,12 @@ function PlayContent({ initialGames }: { initialGames?: Game[] }) {
 
   const { data, isLoading, error } = useGames({ ...filters, q: debounced || undefined }, initialGames);
 
+  // Near-me is a sort, not a filter: it reorders what the filters already
+  // returned, so "Clear" deliberately leaves it alone. Games without venue
+  // coordinates keep their soonest-first order at the bottom of the list.
+  const [origin, setOrigin] = useState<Coords | null>(null);
+  const games = useMemo(() => sortByDistance(data ?? [], origin), [data, origin]);
+
   const set = (k: keyof GameFilters, v: string) =>
     setFilters(p => ({ ...p, [k]: v === "all" || !v ? undefined : v }));
 
@@ -493,13 +507,16 @@ function PlayContent({ initialGames }: { initialGames?: Game[] }) {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               marginBottom: 28, flexWrap: "wrap", gap: 12,
             }}>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em" }}>
-                {isLoading
-                  ? "Loading games…"
-                  : error
-                    ? "Couldn't load games"
-                    : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "game" : "games"} available`}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em" }}>
+                  {isLoading
+                    ? "Loading games…"
+                    : error
+                      ? "Couldn't load games"
+                      : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "game" : "games"} available`}
+                </span>
+                <NearMeToggle onChange={setOrigin} />
+              </div>
               {!isLoading && !error && (data?.length ?? 0) > 0 && (
                 <Magnetic strength={6}>
                   <Link href="/learn" style={{
@@ -573,7 +590,7 @@ function PlayContent({ initialGames }: { initialGames?: Game[] }) {
                   marginBottom: 120,
                 }}
               >
-                {data.map(game => <GameCard key={game.id} game={game} />)}
+                {games.map(game => <GameCard key={game.id} game={game} origin={origin} />)}
               </Stagger>
             )}
           </div>

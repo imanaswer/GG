@@ -3,7 +3,8 @@ import { useState, useCallback } from "react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { Badge }       from "@/components/admin/Badge";
-import { AdminModal, FormInput, FormTextarea, FormSelect, FormMultiSelect, FormCombobox, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
+import { AdminModal, FormField, FormInput, FormTextarea, FormSelect, FormMultiSelect, FormCombobox, FormRow, FormActions, DeleteConfirm } from "@/components/admin/AdminModal";
+import { VenueLocationPicker } from "@/components/admin/VenueLocationPicker";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,8 @@ type BatchRow = { id?: string; day: string; time: string; level: string; seats: 
 
 type Coach = {
   id: string; name: string; sport: string; type: string; skillLevel: string;
-  location: string; address: string; price: string; priceMin: number; priceMax: number;
+  location: string; address: string; lat: number | null; lng: number | null;
+  price: string; priceMin: number; priceMax: number;
   timing: string; phone: string; email: string; description: string;
   features: string[]; certifications: string[]; imageUrl: string; coverImageUrl: string; photos: string[];
   seatsLeft: number; totalSeats: number; rating: number; reviewCount: number;
@@ -27,7 +29,7 @@ type Coach = {
 
 const EMPTY: Partial<Coach> = {
   name: "", sport: "Football", type: "Personal Trainer", skillLevel: "All Levels",
-  location: "", address: "", price: "", priceMin: 0, priceMax: 0,
+  location: "", address: "", lat: null, lng: null, price: "", priceMin: 0, priceMax: 0,
   timing: "", phone: "", email: "", description: "",
   features: [], certifications: [], imageUrl: "", coverImageUrl: "", photos: [],
   totalSeats: 20, seatsLeft: 20, status: "active", batches: [],
@@ -231,7 +233,21 @@ export default function AdminCoaches() {
               <FormInput label="Max Price (₹) — leave 0 for single price" value={form.priceMax ?? 0} onChange={v => update("priceMax", Number(v) as never)} type="number" />
             </FormRow>
             <FormInput label="Location" value={form.location ?? ""} onChange={v => update("location", v)} />
-            <FormInput label="Address" value={form.address ?? ""} onChange={v => update("address", v)} />
+            {/* Pin the coach on the map — the lat/lng it captures is what powers
+                "Near me" on /learn. Same picker the venue form uses. */}
+            <FormField label="Address & map">
+              <VenueLocationPicker
+                address={form.address ?? ""}
+                lat={form.lat ?? null}
+                lng={form.lng ?? null}
+                onChange={n => setForm(p => ({
+                  ...p,
+                  ...(n.address !== undefined ? { address: n.address } : {}),
+                  ...(n.lat !== undefined ? { lat: n.lat } : {}),
+                  ...(n.lng !== undefined ? { lng: n.lng } : {}),
+                }))}
+              />
+            </FormField>
             <FormRow>
               <FormInput label="Phone" value={form.phone ?? ""} onChange={v => update("phone", v)} />
               <FormInput label="Email" value={form.email ?? ""} onChange={v => update("email", v)} type="email" />

@@ -5,6 +5,15 @@ import { formatPrice } from "@/lib/taxonomy";
 import { BILLABLE_STATUSES } from "@/lib/bookings";
 import { normalizeBatches, reconcileBatches, sumSeats, BatchValidationError } from "@/lib/coachBatches";
 
+// A map pin, or null when the coach was never pinned. Explicit about empty
+// input: Number(null) and Number("") are both 0, so a bare Number.isFinite
+// check would drop unpinned coaches onto Null Island off the coast of Africa.
+const coord = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const rows = await prisma.coach.findMany({
@@ -71,6 +80,10 @@ export async function POST(req: NextRequest) {
       timing: body.timing || "",
       location: body.location || "",
       address: body.address || "",
+      // Coordinates come from the map picker. Kept nullable — an unpinned coach
+      // still lists, it just sorts last under "Near me" on /learn.
+      lat: coord(body.lat),
+      lng: coord(body.lng),
       phone: body.phone || "",
       email: body.email || "",
       description: body.description || "",
@@ -152,6 +165,8 @@ export async function PUT(req: NextRequest) {
         ...(body.timing !== undefined && { timing: body.timing }),
         ...(body.location !== undefined && { location: body.location }),
         ...(body.address !== undefined && { address: body.address }),
+        ...(body.lat !== undefined && { lat: coord(body.lat) }),
+        ...(body.lng !== undefined && { lng: coord(body.lng) }),
         ...(body.phone !== undefined && { phone: body.phone }),
         ...(body.email !== undefined && { email: body.email }),
         ...(body.description !== undefined && { description: body.description }),
