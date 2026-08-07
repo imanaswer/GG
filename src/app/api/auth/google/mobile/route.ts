@@ -3,6 +3,8 @@ import { z } from "zod";
 import { signToken } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { googleMobileConfigured, resolveGoogleUser, verifyGoogleIdToken } from "@/lib/google";
+import { prisma } from "@/lib/prisma";
+import { isNewAccount } from "@/lib/socialAuth";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
@@ -45,7 +47,13 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await resolveGoogleUser(profile);
-    return ok({ user, token: await signToken(user) });
+    // Same flag, same rule as the browser-handoff exchange — see isNewAccount.
+    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true } });
+    return ok({
+      user,
+      token: await signToken(user),
+      isNew: row ? isNewAccount(row.createdAt) : false,
+    });
   } catch (e) {
     return handleErr(e);
   }

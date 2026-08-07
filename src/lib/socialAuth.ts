@@ -36,6 +36,30 @@ export function toSessionUser(u: SelectedUser): SessionUser {
   };
 }
 
+/**
+ * Did this sign-in just create the account? The app routes on this: `true` sends
+ * a first-time user into account setup, `false` (or absent) sends them Home.
+ *
+ * Inferred from the row's age rather than plumbed through from the resolver,
+ * because the Google flow crosses a browser hop — the route that *learns* the
+ * answer (callback) is not the route that *answers the app* (exchange), and the
+ * one-time handoff code has nowhere to carry a flag without a schema migration.
+ * The code's TTL is 90s (mobileHandoff.ts), so a row older than this window
+ * cannot have been created by the sign-in being completed.
+ *
+ * Imprecise in one direction only: someone who registered on the web a minute
+ * ago and then signs in on mobile reads as new, which routes them to setup —
+ * where they arguably belong.
+ *
+ * The durable version of this question is "has this person finished setup",
+ * which wants a setupCompletedAt column; this answers "was the row just made".
+ */
+export const NEW_ACCOUNT_WINDOW_MS = 120_000;
+
+export function isNewAccount(createdAt: Date): boolean {
+  return Date.now() - createdAt.getTime() < NEW_ACCOUNT_WINDOW_MS;
+}
+
 /** Slugify the email local-part to a base username matching the app's rules. */
 function baseUsername(email: string): string {
   const local = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "");

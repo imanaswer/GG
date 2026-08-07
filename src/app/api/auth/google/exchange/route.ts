@@ -5,7 +5,7 @@ import { signToken } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { redeemCode } from "@/lib/mobileHandoff";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
-import { USER_SELECT, toSessionUser } from "@/lib/socialAuth";
+import { USER_SELECT, toSessionUser, isNewAccount } from "@/lib/socialAuth";
 
 export const runtime = "nodejs";
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: result.userId },
-      select: { ...USER_SELECT, deletedAt: true },
+      select: { ...USER_SELECT, deletedAt: true, createdAt: true },
     });
     // The code was valid but the account is gone — hard-deleted, or soft-deleted
     // between handoff and exchange, which leaves the row (and so a truthy `user`)
@@ -43,7 +43,14 @@ export async function POST(req: NextRequest) {
     if (!user || user.deletedAt) return fail("This sign-in link is no longer valid. Please try again.", 401);
 
     const sessionUser = toSessionUser(user);
-    return ok({ user: sessionUser, token: await signToken(sessionUser) });
+    // isNew routes the app to account setup instead of Home. Without it, a
+    // first-ever Google user who tapped Login lands on Home and is never
+    // offered setup again.
+    return ok({
+      user: sessionUser,
+      token: await signToken(sessionUser),
+      isNew: isNewAccount(user.createdAt),
+    });
   } catch (e) {
     return handleErr(e);
   }

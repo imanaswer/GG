@@ -3,6 +3,8 @@ import { z } from "zod";
 import { signToken } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { appleConfigured, resolveAppleUser, verifyAppleIdentityToken } from "@/lib/apple";
+import { prisma } from "@/lib/prisma";
+import { isNewAccount } from "@/lib/socialAuth";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
@@ -41,7 +43,16 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await resolveAppleUser(profile, fullName);
-    return ok({ user, token: await signToken(user) });
+    // Same flag the Google exchange returns, from the same rule — see
+    // isNewAccount. One extra indexed read on a path that is never hot, in
+    // exchange for not threading a second return value through the resolver
+    // (and so through the web sign-in path, which has no use for it).
+    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true } });
+    return ok({
+      user,
+      token: await signToken(user),
+      isNew: row ? isNewAccount(row.createdAt) : false,
+    });
   } catch (e) {
     return handleErr(e);
   }
