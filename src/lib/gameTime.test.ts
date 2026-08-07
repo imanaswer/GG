@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   timeSlots, isSlotPast, validateGameSchedule, joinability, SCHEDULE_BUFFER_MIN,
+  withinCancelCutoff, CANCEL_CUTOFF_MIN, CANCEL_CUTOFF_MESSAGE,
 } from "./gameTime";
 
 describe("timeSlots", () => {
@@ -76,5 +77,27 @@ describe("joinability", () => {
   it("checks host before anything else", () => {
     expect(joinability({ ...base, status: "cancelled" }, now, "org"))
       .toBe("You are already the host of this game.");
+  });
+});
+
+describe("withinCancelCutoff", () => {
+  const now = new Date("2026-06-11T12:00:00Z");
+  const at = (minutesFromNow: number) => new Date(now.getTime() + minutesFromNow * 60_000);
+
+  it("allows cancelling outside the cutoff", () => {
+    expect(withinCancelCutoff(at(CANCEL_CUTOFF_MIN + 1), now)).toBe(false);
+  });
+  it("refuses exactly at the cutoff boundary and inside it", () => {
+    expect(withinCancelCutoff(at(CANCEL_CUTOFF_MIN), now)).toBe(false);
+    expect(withinCancelCutoff(at(CANCEL_CUTOFF_MIN - 1), now)).toBe(true);
+  });
+  it("refuses a start time already in the past", () => {
+    expect(withinCancelCutoff(at(-10), now)).toBe(true);
+  });
+  it("accepts an ISO string as well as a Date", () => {
+    expect(withinCancelCutoff(at(10).toISOString(), now)).toBe(true);
+  });
+  it("derives the user-facing message from the same constant", () => {
+    expect(CANCEL_CUTOFF_MESSAGE).toContain(String(CANCEL_CUTOFF_MIN));
   });
 });

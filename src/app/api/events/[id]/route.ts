@@ -7,10 +7,11 @@ import { ok, fail, handleErr } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { sortEventUpdates } from "@/lib/eventUpdates";
+import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
+import { flagRefundDue } from "@/lib/refunds";
+import { refundPolicy } from "@/lib/refundPolicy";
 
 type Ctx = { params: Promise<{ id: string }> };
-
-const CANCEL_CUTOFF_MS = 90 * 60_000;
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   try {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       status,
       registeredCount: registrations.length,
       userRegistration,
+      refundPolicy: refundPolicy("event", event.entryFeeAmount),
       updates: sortEventUpdates(updates.map(u => ({ id: u.id, title: u.title, body: u.body, pinned: u.pinned, createdAt: u.createdAt.toISOString() }))),
     });
   } catch (e) { return handleErr(e); }
@@ -88,26 +90,35 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const reg = await prisma.eventRegistration.findFirst({ where: { eventId: id, userId: session.id, status: { in: ["pending", "approved"] } }, select: { id: true } });
+    const reg = await prisma.eventRegistration.findFirst({ where: { eventId: id, userId: session.id, status: { in: ["pending", "approved"] } }, select: { id: true, paymentStatus: true } });
     if (!reg) return fail("Not registered for this event", 400);
 
     const event = await prisma.sportEvent.findUnique({ where: { id }, select: { startDate: true, status: true } });
     if (!event) return fail("Event not found", 404);
 
-    const now = Date.now();
-    const startTime = new Date(event.startDate).getTime();
-    if (startTime - now < CANCEL_CUTOFF_MS) {
-      return fail("Cancellation is not allowed within 90 minutes of the start time", 403);
-    }
+    if (withinCancelCutoff(event.startDate, new Date())) return fail(CANCEL_CUTOFF_MESSAGE, 403);
 
-    await prisma.$transaction([
-      prisma.eventRegistration.delete({ where: { id: reg.id } }),
-      prisma.sportEvent.update({
+    const refundDue = await prisma.$transaction(async (tx) => {
+      // Paid registrations are marked, not deleted — see src/lib/refunds.ts.
+      const owed = reg.paymentStatus === "paid"
+        && await flagRefundDue(tx, { entityType: "event", entityId: id, userId: session.id });
+
+      if (owed) {
+        await tx.eventRegistration.update({
+          where: { id: reg.id },
+          data: { status: "cancelled", cancelledAt: new Date(), paymentStatus: "refund_pending" satisfies PaymentStatus },
+        });
+      } else {
+        await tx.eventRegistration.delete({ where: { id: reg.id } });
+      }
+
+      await tx.sportEvent.update({
         where: { id },
         data: { participants: { decrement: 1 }, status: event.status === "Full" ? "Registration Open" : undefined },
-      }),
-    ]);
+      });
+      return owed;
+    });
 
-    return ok({ cancelled: true });
+    return ok({ cancelled: true, refundDue });
   } catch (e) { return handleErr(e); }
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { logger } from "@/lib/logger";
+import { sendPush } from "@/lib/push";
 
 export const runtime = "nodejs";
 
@@ -74,6 +75,14 @@ export async function POST(req: NextRequest) {
             });
             // refund events are handled by admin "Mark refunded" action, not the webhook
             await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "paid" satisfies PaymentStatus);
+            // The client may never have come back from the gateway — this is the
+            // only confirmation the user gets that the charge went through.
+            void sendPush(existing.userId, {
+              category: "payment",
+              title: "Payment confirmed",
+              body: `Your ${existing.entityType} booking is confirmed.`,
+              data: { url: `/profile`, entityType: existing.entityType, entityId: existing.entityId },
+            });
           }
         } else {
           // No Payment row yet: the client /verify hasn't run or was abandoned. The
@@ -92,6 +101,12 @@ export async function POST(req: NextRequest) {
             data: { status: "failed" satisfies PaymentStatus, razorpayPaymentId },
           });
           await syncRegistrationStatus(existing.entityType, existing.entityId, existing.userId, "failed" satisfies PaymentStatus);
+          void sendPush(existing.userId, {
+            category: "payment",
+            title: "Payment failed",
+            body: "Your payment didn't go through. No seat was reserved.",
+            data: { url: `/profile`, entityType: existing.entityType, entityId: existing.entityId },
+          });
         }
         return NextResponse.json({ ok: true, event: body.event });
       }

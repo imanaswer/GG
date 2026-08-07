@@ -5,6 +5,7 @@ import { ok, fail, handleErr } from "@/lib/api";
 import { gameGroupStatus, registrationGroupStatus, selectUpcoming, type GroupStatus } from "@/lib/profileGrouping";
 import { computeProfileCompletion } from "@/lib/profileCompletion";
 import { currentSeason, seasonRep } from "@/lib/season";
+import { progressToNextTier } from "@/lib/reputation";
 import { requireSignedAgreement, AgreementGateError } from "@/lib/coachAgreement/gate";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -138,6 +139,9 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
       gamesPlayed, gamesOrganized, sportActivity, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
+      // Rank progress is served rather than recomputed by clients — the mobile app
+      // used to mirror TIER_THRESHOLDS locally and drifted. This is the one source.
+      progress: progressToNextTier(user.reputationScore),
       season: { id: season.id, label: season.label, daysLeft: season.daysLeft, rep: mySeasonRep, rank: seasonRank },
     });
   } catch (e) { return handleErr(e); }

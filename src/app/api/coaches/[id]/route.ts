@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { refundPolicy } from "@/lib/refundPolicy";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -28,6 +29,11 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (booking) userBooking = booking;
     }
 
-    return ok({ ...coach, userBooking });
+    return ok({
+      ...coach,
+      userBooking,
+      // Instant-pay coaching is sold by Game Ground, so the merchant terms apply.
+      refundPolicy: refundPolicy("coach", coach.priceMin),
+    });
   } catch (e) { return handleErr(e); }
 }

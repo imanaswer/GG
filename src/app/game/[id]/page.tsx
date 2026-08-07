@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, CheckCircle, AlertCircle, Share2, MessageCircle, MapPin, Clock, Star, Navigation } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -16,9 +15,10 @@ import { TierBadge } from "@/components/TierBadge";
 import { useGame, useJoinGame, useLeaveGame } from "@/hooks/useData";
 import { mapsHref, hasMapTarget } from "@/lib/maps";
 import { useAuth } from "@/context/AuthContext";
-import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { gameImage } from "@/lib/premium-images";
 import { whatsAppLink } from "@/lib/whatsapp";
+import { CANCEL_CUTOFF_MS, CANCEL_CUTOFF_MIN, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
+import { HostPaymentCard, PayHostPanel, HostPaymentRoster } from "@/components/HostPayment";
 
 export default function GameDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,10 +26,12 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const { user } = useAuth();
   const join  = useJoinGame();
   const leave = useLeaveGame();
-  const qc = useQueryClient();
+  // Captured once at mount rather than read during render: Date.now() in the
+  // render body is an impure call, and a page-load-time reference is what these
+  // "has it started / can I still cancel" decisions actually mean.
+  const [now] = useState(() => Date.now());
   const [completing, setCompleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
   if (isLoading) {
@@ -90,8 +92,10 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
   const rules       = Array.isArray(game.rules) ? game.rules : [];
   const filled      = game.slots - game.slotsLeft;
   const pct         = Math.min(100, Math.round((filled / game.slots) * 100));
-  const isPast      = new Date(game.scheduledAt).getTime() + game.duration * 60000 < Date.now();
-  const canCancel   = new Date(game.scheduledAt).getTime() - Date.now() >= 90 * 60000;
+  const isPast      = new Date(game.scheduledAt).getTime() + game.duration * 60000 < now;
+  // The cutoff comes from the shared rule module — this was the last hand-copied
+  // "90 minutes" left after the server-side copies were consolidated.
+  const canCancel   = new Date(game.scheduledAt).getTime() - now >= CANCEL_CUTOFF_MS;
   // A host may cancel their own game ONLY when nobody has joined. (Backend also
   // enforces this; the UI mirrors it so the action isn't offered when blocked.)
   const playerCount    = game.players?.length ?? 0;
@@ -126,30 +130,16 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
     toast.success("Link copied to clipboard");
   };
 
-  const handleJoin = async () => {
+  // Joining is free of any in-app payment, whatever the entry fee. The fee is
+  // collected by the host directly (see the payment section and the post-join
+  // panel); Game Ground never processes it.
+  const handleJoin = () => {
     if (!game || !user) return;
-    if (game.costAmount <= 0) { join.mutate(game.id); return; }
-    setPaying(true);
-    try {
-      const order = await createPaymentOrder({ amount: game.costAmount, entityType: "game", entityId: game.id });
-      const success = await openRazorpayCheckout({
-        keyId: order.keyId, orderId: order.orderId, amount: order.amount, currency: order.currency,
-        name: "Game Ground", description: `Pickup game · ${game.title}`,
-        prefill: { name: user.name, email: user.email },
-      });
-      await verifyPayment({
-        success, entityType: "game", entityId: game.id, amount: order.amount,
-        registration: { entityType: "game" },
-        devMode: order.devMode,
-      });
-      qc.invalidateQueries({ queryKey: ["games"] });
-      qc.invalidateQueries({ queryKey: ["game", game.id] });
-      toast.success("Payment successful. You've joined the game.");
-    } catch (err) {
-      toast.error((err as Error).message ?? "Payment failed");
-    } finally {
-      setPaying(false);
-    }
+    join.mutate(game.id, {
+      onSuccess: () => {
+        if (game.costAmount > 0) toast.success("You're in. Next step — pay the host directly.");
+      },
+    });
   };
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -405,6 +395,23 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                     </div>
                   </div>
                 </Reveal>
+
+                {/* How the host collects the entry fee. Absent on free games. */}
+                {game.hostPayment && (
+                  <Reveal delay={0.06}>
+                    <HostPaymentCard payment={game.hostPayment} />
+                  </Reveal>
+                )}
+
+                {/* Host's own record of who has paid them. */}
+                {isOrganizer && game.hostPayment && (
+                  <Reveal delay={0.06}>
+                    <HostPaymentRoster
+                      gameId={game.id}
+                      players={(game.players ?? []).map(pl => ({ userId: pl.userId, name: pl.name, paymentStatus: pl.paymentStatus }))}
+                    />
+                  </Reveal>
+                )}
               </div>
 
               {/* Right sidebar */}
@@ -526,6 +533,17 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                   </Reveal>
                 )}
 
+                {/* Joined a paid game — the fee is still outstanding and settling
+                    it is the player's next move, not something joining completed. */}
+                {!isOrganizer && isJoined && game.hostPayment && (
+                  <PayHostPanel
+                    payment={game.hostPayment}
+                    gameId={game.id}
+                    myPaymentStatus={game.players?.find(pl => pl.userId === user?.id)?.paymentStatus}
+                    whatsAppHref={joinedWhatsApp}
+                  />
+                )}
+
                 {/* Player actions */}
                 {!isOrganizer && user && (
                   isJoined ? (
@@ -554,7 +572,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           textAlign: "center",
                         }}>
                           <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>
-                            Cancellation is not allowed within 90 minutes of the start time
+                            {CANCEL_CUTOFF_MESSAGE}
                           </p>
                         </div>
                       )}
@@ -592,12 +610,12 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
                         />
                         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
-                          I agree that cancellations are only allowed up to 90 minutes before the start time
+                          I agree that cancellations are only allowed up to {CANCEL_CUTOFF_MIN} minutes before the start time
                         </span>
                       </label>
                       <Magnetic strength={6}>
                         <button
-                          disabled={!agreed || join.isPending || paying}
+                          disabled={!agreed || join.isPending}
                           onClick={isFull ? () => join.mutate(game.id) : handleJoin}
                           style={{
                             width: "100%", height: 52, borderRadius: 100,
@@ -607,17 +625,17 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                               ? "transparent"
                               : "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
                             color: (!agreed || isFull) ? "rgba(255,255,255,0.55)" : "#fff",
-                            cursor: (!agreed || join.isPending || paying) ? "not-allowed" : "pointer",
-                            opacity: (!agreed || join.isPending || paying) ? 0.5 : 1,
+                            cursor: (!agreed || join.isPending) ? "not-allowed" : "pointer",
+                            opacity: (!agreed || join.isPending) ? 0.5 : 1,
                             boxShadow: (agreed && !isFull) ? "0 0 28px rgba(230,57,70,0.35)" : "none",
                           }}
                         >
-                          {(join.isPending || paying)
-                            ? (paying ? "Processing payment…" : "Joining…")
+                          {join.isPending
+                            ? "Joining…"
                             : isFull
                               ? "Join waitlist"
                               : game.costAmount > 0
-                                ? `Pay ${game.cost} · Join`
+                                ? "Join · Pay host directly"
                                 : "Join game · Free"}
                         </button>
                       </Magnetic>

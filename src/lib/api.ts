@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
+import { HOST_PAYMENT_METHODS, isValidUpiId } from "@/lib/hostPayment";
 
 export const ok = <T>(data: T, status = 200) =>
   NextResponse.json({ ok: true, data }, { status });
@@ -78,10 +79,21 @@ export const CreateGameSchema = z.object({
   slots: z.coerce.number().min(2).max(100),
   skillLevel: z.enum(["Beginner", "Intermediate", "Advanced", "All Levels"]),
   cost: z.string().default("Free"),
-  costAmount: z.coerce.number().default(0),
+  // Entry fee the HOST collects directly. Game Ground creates no order for it.
+  costAmount: z.coerce.number().min(0).max(100000).default(0),
+  paymentMethod: z.enum(HOST_PAYMENT_METHODS).optional(),
+  hostUpiId: z.string().trim().refine(v => v === "" || isValidUpiId(v), "Enter a valid UPI ID, e.g. name@bank").optional(),
+  hostQrUrl: z.string().url().optional(),
+  paymentNote: z.string().max(300).optional(),
+  venueNote: z.string().max(300).optional(),
   description: z.string().max(1000).optional(),
   rules: z.array(z.string()).optional(),
-});
+}).refine(
+  // A paid game needs to tell players how to pay; a free one must not carry
+  // payment details that would render a fee section for a game with no fee.
+  g => g.costAmount === 0 || !!g.paymentMethod,
+  { message: "Choose how players pay you", path: ["paymentMethod"] },
+);
 
 // ─── Venue & slot schemas (admin-managed) ───────────────────────────────────
 export const VenueStatusEnum = z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]);

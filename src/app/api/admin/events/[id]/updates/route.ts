@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { eventUpdateInputSchema, sortEventUpdates } from "@/lib/eventUpdates";
+import { sendPush } from "@/lib/push";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,9 +22,23 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const parsed = eventUpdateInputSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Validation error", details: parsed.error.flatten().fieldErrors }, { status: 422 });
-  const event = await prisma.sportEvent.findUnique({ where: { id }, select: { id: true } });
+  const event = await prisma.sportEvent.findUnique({ where: { id }, select: { id: true, title: true } });
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   await prisma.eventUpdate.create({ data: { eventId: id, title: parsed.data.title, body: parsed.data.body, pinned: parsed.data.pinned } });
+
+  // Tell the people who registered. Cancelled registrations are excluded — they
+  // are no longer attending and should not be pulled back in by announcements.
+  const registrants = await prisma.eventRegistration.findMany({
+    where: { eventId: id, status: { in: ["pending", "approved"] } },
+    select: { userId: true },
+  });
+  void sendPush([...new Set(registrants.map(r => r.userId))], {
+    category: "announcement",
+    title: event.title,
+    body: parsed.data.title,
+    data: { url: `/events/${id}` },
+  });
+
   return NextResponse.json({ updates: await listUpdates(id) }, { status: 201 });
 }
 

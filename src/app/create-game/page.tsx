@@ -3,14 +3,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight, Check } from "lucide-react";
+import { Lock, Trophy, MapPin, CalendarClock, Users, FileText, Sparkles, ArrowRight, Check, IndianRupee, Upload } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useCreateGame } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { defaultGameTitle, formatCost } from "@/lib/gameForm";
+import { SPORTS } from "@/lib/taxonomy";
+import {
+  HOST_PAYMENT_METHODS, HOST_PAYMENT_METHOD_LABELS, HOST_PAYMENT_DISCLAIMER,
+  acceptsUpi, isValidUpiId, type HostPaymentMethod,
+} from "@/lib/hostPayment";
 
-const SPORTS = ["Basketball","Football","Cricket","Badminton","Tennis","Volleyball","Other"];
+// Sports and levels come from the shared taxonomy — a hand-copied list here
+// drifted to 7 sports against the platform's 11, making four of them unhostable.
 const LEVELS = ["Beginner","Intermediate","Advanced","All Levels"];
 
 type Venue = { id: string; name: string; description: string; address: string; supportedSports: string[]; lat?: number | null; lng?: number | null; openSlots?: number };
@@ -20,6 +26,10 @@ type FormState = {
   sport: string; skillLevel: string; title: string;
   venueId: string; slotId: string;
   slots: string; paid: boolean; costAmount: string; description: string;
+  // Host-collected fee details. Game Ground never processes this money, so the
+  // host has to tell players how to send it.
+  paymentMethod: HostPaymentMethod; hostUpiId: string; hostQrUrl: string;
+  paymentNote: string; venueNote: string;
 };
 
 const STEPS = ["What & where", "When", "Details"] as const;
@@ -37,7 +47,9 @@ export default function CreateGamePage() {
     sport: "", skillLevel: "", title: "",
     venueId: "", slotId: "",
     slots: "", paid: false, costAmount: "", description: "",
+    paymentMethod: "upi", hostUpiId: "", hostQrUrl: "", paymentNote: "", venueNote: "",
   });
+  const [qrUploading, setQrUploading] = useState(false);
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(p => ({ ...p, [k]: v }));
   // Sport drives the venue list; changing it clears the downstream choices so a
   // host can never carry a venue/slot that no longer matches their sport.
@@ -62,7 +74,12 @@ export default function CreateGamePage() {
   const amountNum  = parseInt(form.costAmount) || 0;
   const step1Valid = !!(form.sport && form.skillLevel && form.venueId);
   const step2Valid = !!form.slotId;
-  const step3Valid = Number.isInteger(playersNum) && playersNum >= 2 && playersNum <= 100 && (!form.paid || amountNum > 0);
+  // A UPI-accepting paid game needs a usable UPI id or a QR — otherwise the
+  // player is told to pay the host with no way to actually do it.
+  const upiOk = !acceptsUpi(form.paymentMethod)
+    || (form.hostUpiId.trim() !== "" && isValidUpiId(form.hostUpiId)) || !!form.hostQrUrl;
+  const step3Valid = Number.isInteger(playersNum) && playersNum >= 2 && playersNum <= 100
+    && (!form.paid || (amountNum > 0 && upiOk));
   const canSubmit  = step1Valid && step2Valid && step3Valid;
 
   const defaultTitle = defaultGameTitle(form.skillLevel, form.sport, selectedVenue?.name ?? "");
@@ -78,6 +95,13 @@ export default function CreateGamePage() {
       skillLevel: form.skillLevel,
       cost: form.paid ? formatCost(amountNum) : "Free",
       costAmount: form.paid ? amountNum : 0,
+      ...(form.paid ? {
+        paymentMethod: form.paymentMethod,
+        hostUpiId: acceptsUpi(form.paymentMethod) ? form.hostUpiId.trim() || undefined : undefined,
+        hostQrUrl: acceptsUpi(form.paymentMethod) ? form.hostQrUrl || undefined : undefined,
+        paymentNote: form.paymentNote.trim() || undefined,
+        venueNote: form.venueNote.trim() || undefined,
+      } : {}),
       description: form.description || undefined,
     });
     router.push("/play");
@@ -210,6 +234,117 @@ export default function CreateGamePage() {
                 </FieldRow>
               </SectionCard>
 
+              {/* Players pay the host directly — Game Ground never touches this
+                  money, so the host has to say how they want to receive it. */}
+              {form.paid && (
+                <SectionCard Icon={IndianRupee} title="How players pay you" hint={HOST_PAYMENT_DISCLAIMER}>
+                  <FieldRow label="Payment method" required>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {HOST_PAYMENT_METHODS.map(m => (
+                        <CostToggle
+                          key={m}
+                          active={form.paymentMethod === m}
+                          label={HOST_PAYMENT_METHOD_LABELS[m]}
+                          onClick={() => set("paymentMethod", m)}
+                        />
+                      ))}
+                    </div>
+                  </FieldRow>
+
+                  {acceptsUpi(form.paymentMethod) && (
+                    <>
+                      <FieldRow label="Your UPI ID" hint="Players can copy this to pay you. Add a QR instead if you prefer.">
+                        <Input
+                          placeholder="yourname@bank"
+                          value={form.hostUpiId}
+                          onChange={e => set("hostUpiId", e.target.value)}
+                          style={{ maxWidth: 320 }}
+                        />
+                        {form.hostUpiId.trim() !== "" && !isValidUpiId(form.hostUpiId) && (
+                          <p style={{ fontSize: 11.5, color: "#fbbf24", marginTop: 6 }}>
+                            That doesn&apos;t look like a UPI ID — they look like <code>name@bank</code>.
+                          </p>
+                        )}
+                      </FieldRow>
+
+                      <FieldRow label="Your UPI QR code (optional)">
+                        {form.hostQrUrl ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={form.hostQrUrl} alt="Your UPI QR code" width={72} height={72}
+                                 style={{ width: 72, height: 72, objectFit: "contain", background: "#fff", borderRadius: 10, padding: 4 }} />
+                            <button type="button" onClick={() => set("hostQrUrl", "")}
+                              style={{
+                                height: 34, padding: "0 14px", borderRadius: 100,
+                                background: "transparent", color: "#f87171",
+                                border: "1px solid rgba(239,68,68,0.3)",
+                                fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                              }}>
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <label style={{
+                            display: "inline-flex", alignItems: "center", gap: 8,
+                            height: 40, padding: "0 16px", borderRadius: 100,
+                            background: "rgba(255,255,255,0.04)", color: "#fff",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            fontSize: 12.5, fontWeight: 600,
+                            cursor: qrUploading ? "not-allowed" : "pointer",
+                            opacity: qrUploading ? 0.6 : 1,
+                          }}>
+                            <Upload size={14} />
+                            {qrUploading ? "Uploading…" : "Upload QR image"}
+                            <input
+                              type="file" accept="image/*" hidden disabled={qrUploading}
+                              onChange={async e => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setQrUploading(true);
+                                try {
+                                  const fd = new FormData();
+                                  fd.set("file", file);
+                                  fd.set("folder", "gameground/upi-qr");
+                                  const r = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
+                                  const j = await r.json();
+                                  if (!r.ok || !j.ok) throw new Error(j?.error ?? "Upload failed");
+                                  set("hostQrUrl", j.data.url);
+                                } catch (err) {
+                                  alert((err as Error).message);
+                                } finally {
+                                  setQrUploading(false);
+                                  e.target.value = "";
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </FieldRow>
+                    </>
+                  )}
+
+                  <FieldRow label="Payment instructions (optional)">
+                    <Textarea
+                      rows={2}
+                      maxLength={300}
+                      placeholder="e.g. Pay via UPI after joining and send the screenshot on WhatsApp."
+                      value={form.paymentNote}
+                      onChange={e => set("paymentNote", e.target.value)}
+                    />
+                  </FieldRow>
+
+                  <FieldRow label="Venue payment note (optional)" hint="If you're collecting on behalf of a venue. Game Ground is not involved in that transaction.">
+                    <Textarea
+                      rows={2}
+                      maxLength={300}
+                      placeholder="e.g. Host collects the fee and pays the venue."
+                      value={form.venueNote}
+                      onChange={e => set("venueNote", e.target.value)}
+                    />
+                  </FieldRow>
+                </SectionCard>
+              )}
+
               <SectionCard Icon={FileText} title="Title & notes" hint="We'll suggest a title — edit it, or add details below.">
                 <FieldRow label="Game title" hint="Leave blank to use the suggestion.">
                   <Input placeholder={defaultTitle} value={form.title} onChange={e => set("title", e.target.value)} />
@@ -232,8 +367,20 @@ export default function CreateGamePage() {
                 <SummaryRow label="Venue"   value={selectedVenue?.name ?? "—"} />
                 <SummaryRow label="When"    value={selectedSlot ? `${slotDay(selectedSlot.startTime)} · ${slotTime(selectedSlot.startTime)}–${slotTime(selectedSlot.endTime)}` : "—"} />
                 <SummaryRow label="Players" value={Number.isNaN(playersNum) ? "—" : String(playersNum)} />
-                <SummaryRow label="Cost"    value={form.paid ? formatCost(amountNum) : "Free"} last />
+                <SummaryRow label="Cost"    value={form.paid ? `${formatCost(amountNum)} per player` : "Free"} last={!form.paid} />
+                {form.paid && (
+                  <SummaryRow
+                    label="Payment"
+                    value={`You collect this directly · ${HOST_PAYMENT_METHOD_LABELS[form.paymentMethod]}`}
+                    last
+                  />
+                )}
               </div>
+              {form.paid && (
+                <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginTop: 10 }}>
+                  {HOST_PAYMENT_DISCLAIMER} Players see your payment details after they join.
+                </p>
+              )}
             </>
           )}
 

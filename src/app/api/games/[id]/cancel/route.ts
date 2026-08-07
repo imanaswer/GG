@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { sendPush } from "@/lib/push";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -36,7 +37,26 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     // cancelled game can never have earned credit, so there is nothing to reverse.
     // Releasing slotId frees the venue slot so it can be booked again — the
     // @unique constraint would otherwise keep it permanently consumed.
-    await prisma.game.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date(), slotId: null } });
-    return ok({ cancelled: true });
+    const cancelled = await prisma.game.update({
+      where: { id },
+      data: { status: "cancelled", cancelledAt: new Date(), slotId: null },
+      select: { title: true, scheduledAt: true },
+    });
+
+    // Everyone who joined, plus anyone still queued — a waitlisted player is
+    // waiting on a game that is no longer happening.
+    const [players, queued] = await Promise.all([
+      prisma.gamePlayer.findMany({ where: { gameId: id, status: { not: "cancelled" } }, select: { userId: true } }),
+      prisma.waitlistEntry.findMany({ where: { gameId: id }, select: { userId: true } }),
+    ]);
+    const affected = [...new Set([...players, ...queued].map(r => r.userId))];
+    void sendPush(affected, {
+      category: "cancellation",
+      title: "Game cancelled",
+      body: `${cancelled.title} has been cancelled by the organiser.`,
+      data: { url: `/game/${id}` },
+    });
+
+    return ok({ cancelled: true, notified: affected.length });
   } catch (e) { return handleErr(e); }
 }

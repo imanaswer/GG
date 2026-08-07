@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { approveBooking, rejectBooking, completeBooking, cancelBooking } from "@/lib/bookings";
+import { promoteFromWaitlist } from "@/lib/waitlist";
+import { sendPush } from "@/lib/push";
 import type { CategoryKey } from "./types";
 import type { PaymentStatus } from "@/lib/paymentStatus";
 
@@ -115,17 +117,30 @@ export async function applyAction(
     if (action === "mark-attended") { await prisma.gamePlayer.update({ where: { id }, data: { attended: true } }); return; }
     if (action === "mark-no-show")  { await prisma.gamePlayer.update({ where: { id }, data: { attended: false } }); return; }
     if (action === "cancel") {
-      await prisma.$transaction(async (tx) => {
+      // Notified after the transaction commits — a push must never be sent for a
+      // promotion that then rolls back, and it must not hold a DB connection
+      // open while the transaction is still running.
+      const result = await prisma.$transaction(async (tx) => {
         const gp = await tx.gamePlayer.findUnique({ where: { id }, select: { gameId: true, status: true } });
         if (!gp) throw new Error("Not found");
-        if (gp.status === "cancelled") return; // idempotent
+        if (gp.status === "cancelled") return null; // idempotent
         await tx.gamePlayer.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date() } });
-        const game = await tx.game.findUnique({ where: { id: gp.gameId }, select: { status: true } });
-        await tx.game.update({
-          where: { id: gp.gameId },
-          data: { slotsLeft: { increment: 1 }, status: game?.status === "full" ? "open" : undefined },
-        });
+        // Same rule as a player leaving: the seat goes to the queue first.
+        // Note the cancelled GamePlayer row stays (it is the audit trail), so
+        // promoteFromWaitlist's "already in this game" check must not match it —
+        // it looks up by (gameId, userId) and a cancelled row would block a
+        // legitimate promotion of a DIFFERENT user only if it were theirs.
+        return promoteFromWaitlist(tx, gp.gameId);
       });
+
+      if (result) {
+        void sendPush(result.userId, {
+          category: "waitlist",
+          title: "A spot opened up",
+          body: "You're off the waitlist and into the game.",
+          data: { url: `/game/${result.gameId}` },
+        });
+      }
       return;
     }
     throw new Error("Unsupported play-session action");

@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
       batches:  true,
     },
   });
-  const payments = await prisma.payment.groupBy({ by: ["entityId"], where: { status: "paid", entityType: "booking" }, _sum: { amount: true } });
+  // entityType is "coach" — nothing has ever written "booking", so this grouped
+  // over an empty set and every coach reported ₹0 revenue.
+  const payments = await prisma.payment.groupBy({ by: ["entityId"], where: { status: "paid", entityType: "coach" }, _sum: { amount: true } });
   const revenueByEntity = new Map(payments.map(p => [p.entityId, p._sum.amount ?? 0]));
 
   // Latest SIGNED agreement per coach (for the Pending Signature / Signed status column).

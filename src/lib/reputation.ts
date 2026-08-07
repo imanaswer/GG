@@ -63,15 +63,24 @@ export function nextTier(tier: Tier): Tier | null {
   return idx < TIERS.length - 1 ? TIERS[idx + 1] : null;
 }
 
-export function progressToNextTier(score: number): { current: Tier; next: Tier | null; pct: number; pointsToNext: number } {
+export type TierProgress = {
+  current: Tier;
+  next: Tier | null;
+  /** Score at which `next` unlocks. null at the top tier. */
+  nextAt: number | null;
+  pct: number;
+  pointsToNext: number;
+};
+
+export function progressToNextTier(score: number): TierProgress {
   const current = getTier(score);
   const next = nextTier(current);
-  if (!next) return { current, next: null, pct: 100, pointsToNext: 0 };
+  if (!next) return { current, next: null, nextAt: null, pct: 100, pointsToNext: 0 };
   const lo = TIER_THRESHOLDS[current];
   const hi = TIER_THRESHOLDS[next];
   const span = hi - lo;
   const pct = Math.max(0, Math.min(100, Math.round(((score - lo) / span) * 100)));
-  return { current, next, pct, pointsToNext: Math.max(0, hi - score) };
+  return { current, next, nextAt: hi, pct, pointsToNext: Math.max(0, hi - score) };
 }
 
 export type TierLevelInfo = {

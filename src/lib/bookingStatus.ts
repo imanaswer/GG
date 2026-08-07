@@ -53,7 +53,24 @@ export function assertTransition(from: BookingStatus, to: BookingStatus): void {
   if (!canTransition(from, to)) throw new BookingTransitionError(from, to);
 }
 
-// The held seat is released when a booking enters cancelled or rejected.
+/**
+ * The held seat returns to inventory once the booking is over — however it ended.
+ *
+ * `completed` belongs here. It was previously excluded, so a finished enrollment
+ * held its seat forever: with auto-complete running, every coach would drain to
+ * "All seats taken" permanently and drop out of `/api/coaches?available=1`.
+ */
 export function releasesSeat(to: BookingStatus): boolean {
+  return to === "cancelled" || to === "rejected" || to === "completed";
+}
+
+/**
+ * The money goes back — the booking ended WITHOUT the service being delivered.
+ *
+ * Deliberately a different set from releasesSeat: a completed booking frees the
+ * seat but was delivered, so nothing is owed. Collapsing the two would refund
+ * every coaching session that ran to its end.
+ */
+export function refundsPayment(to: BookingStatus): boolean {
   return to === "cancelled" || to === "rejected";
 }

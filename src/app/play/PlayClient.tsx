@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect, Suspense, startTransition } from "react";
-import { Search, Plus, MapPin, Clock, Users, Star, SlidersHorizontal, ArrowUpRight, X } from "lucide-react";
+import { Search, Plus, MapPin, Clock, Users, Star, SlidersHorizontal, ArrowUpRight, X, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -205,7 +205,7 @@ function GameCard({ game }: { game: Game }) {
             border: isFree ? "none" : "1px solid rgba(255,255,255,0.14)",
             backdropFilter: "blur(8px)",
           }}>
-            {game.cost}
+            {isFree ? "Free" : `₹${game.costAmount} / player`}
           </span>
         </div>
 
@@ -255,6 +255,16 @@ function GameCard({ game }: { game: Game }) {
               {fmtDate(game.scheduledAt)} · {game.duration}min
             </span>
           </div>
+          {/* Game Ground is not the merchant for player-hosted games — say so
+              on the card, not only after the player has committed to joining. */}
+          {!isFree && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>
+              <IndianRupee size={13} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                Pay host directly
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Slot bar */}

@@ -5,9 +5,11 @@ import {
   getTier,
   monthsBetween,
   daysBetween,
+  TIER_META,
   type ReputationInput,
   type Tier,
 } from "@/lib/reputation";
+import { sendPush } from "@/lib/push";
 
 export type RecomputeResult = {
   userId: string;
@@ -85,13 +87,19 @@ export async function recomputeUser(userId: string): Promise<RecomputeResult | n
     },
   });
 
-  return {
-    userId,
-    score,
-    tier,
-    previousTier,
-    promoted: tierChanged && tierIndex(tier) > tierIndex(previousTier),
-  };
+  const promoted = tierChanged && tierIndex(tier) > tierIndex(previousTier);
+  if (promoted) {
+    // Fire-and-forget: sendPush never throws, and a reputation recompute must
+    // not fail because a notification did.
+    void sendPush(userId, {
+      category: "tier",
+      title: `You reached ${TIER_META[tier].label}`,
+      body: `${score} reputation points. ${TIER_META[tier].icon}`,
+      data: { url: `/profile`, tier },
+    });
+  }
+
+  return { userId, score, tier, previousTier, promoted };
 }
 
 export async function touchActivity(userId: string): Promise<void> {

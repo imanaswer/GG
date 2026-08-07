@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => {
-  const model = () => ({ update: vi.fn(), findUnique: vi.fn() });
+  const model = () => ({ update: vi.fn(), updateMany: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn() });
   // Loose by design: a hand-rolled Prisma stand-in indexed by model name.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
     gamePlayer: model(),
     game: model(),
+    waitlistEntry: model(),
+    user: model(),
     campRegistration: model(),
     camp: model(),
     eventRegistration: model(),
@@ -132,9 +134,10 @@ describe("applyAction — registration payment status (camps)", () => {
 });
 
 describe("applyAction — play-session cancel", () => {
-  it("cancels a joined player and releases a slot (full→open)", async () => {
+  it("cancels a joined player and releases a slot (full→open) when nobody is waitlisted", async () => {
     prismaMock.gamePlayer.findUnique.mockResolvedValue({ gameId: "g1", status: "joined" });
     prismaMock.game.findUnique.mockResolvedValue({ status: "full" });
+    prismaMock.waitlistEntry.findMany.mockResolvedValue([]); // empty queue
 
     await applyAction("play-sessions", "p1", "cancel");
 
@@ -144,10 +147,10 @@ describe("applyAction — play-session cancel", () => {
         data: expect.objectContaining({ status: "cancelled", cancelledAt: expect.any(Date) }),
       }),
     );
-    expect(prismaMock.game.update).toHaveBeenCalledWith(
+    expect(prismaMock.game.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "g1" },
-        data: expect.objectContaining({ slotsLeft: { increment: 1 }, status: "open" }),
+        data: expect.objectContaining({ slotsLeft: { increment: 1 } }),
       }),
     );
   });
@@ -158,7 +161,23 @@ describe("applyAction — play-session cancel", () => {
     await applyAction("play-sessions", "p1", "cancel");
 
     expect(prismaMock.gamePlayer.update).not.toHaveBeenCalled();
-    expect(prismaMock.game.update).not.toHaveBeenCalled();
+    expect(prismaMock.game.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("hands the freed seat to the waitlist instead of back to open inventory", async () => {
+    prismaMock.gamePlayer.findUnique
+      .mockResolvedValueOnce({ gameId: "g1", status: "joined" }) // the leaver
+      .mockResolvedValue(null);                                  // promoted user isn't in yet
+    prismaMock.game.findUnique.mockResolvedValue({ status: "full" });
+    prismaMock.waitlistEntry.findMany.mockResolvedValue([{ id: "w1", userId: "queued" }]);
+    prismaMock.user.findUnique.mockResolvedValue({ id: "queued", deletedAt: null });
+
+    await applyAction("play-sessions", "p1", "cancel");
+
+    expect(prismaMock.gamePlayer.create).toHaveBeenCalledWith({ data: { gameId: "g1", userId: "queued" } });
+    expect(prismaMock.waitlistEntry.delete).toHaveBeenCalledWith({ where: { id: "w1" } });
+    // The seat transferred — it never went back to the open pool.
+    expect(prismaMock.game.updateMany).not.toHaveBeenCalled();
   });
 });
 

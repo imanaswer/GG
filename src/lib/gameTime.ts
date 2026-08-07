@@ -4,6 +4,21 @@
 
 export const SCHEDULE_BUFFER_MIN = 15;
 
+/**
+ * Self-cancellation is refused inside this window before start. One home for the
+ * policy — games, camps and events all import it, so a change can't land in two
+ * of the three. The user-facing message is derived from the same number.
+ */
+export const CANCEL_CUTOFF_MIN = 90;
+export const CANCEL_CUTOFF_MS = CANCEL_CUTOFF_MIN * 60_000;
+export const CANCEL_CUTOFF_MESSAGE =
+  `Cancellation is not allowed within ${CANCEL_CUTOFF_MIN} minutes of the start time`;
+
+/** True if `start` is inside the cancellation cutoff (or already past). */
+export function withinCancelCutoff(start: Date | string, now: Date): boolean {
+  return new Date(start).getTime() - now.getTime() < CANCEL_CUTOFF_MS;
+}
+
 export type TimeSlot = { value: string; label: string };
 
 /** All slots in a day at `intervalMin` spacing. value = "HH:MM" (24h), label = "h:MM AM/PM". */

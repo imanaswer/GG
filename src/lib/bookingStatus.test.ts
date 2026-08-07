@@ -3,6 +3,7 @@ import {
   canTransition,
   assertTransition,
   releasesSeat,
+  refundsPayment,
   STATUS_TIMESTAMP,
   BILLABLE_STATUSES,
   TERMINAL_STATUSES,
@@ -41,11 +42,34 @@ describe("assertTransition", () => {
 });
 
 describe("releasesSeat", () => {
-  it("releases the held seat only when entering cancelled or rejected", () => {
+  it("releases the held seat whenever a booking ends, completion included", () => {
     expect(releasesSeat("cancelled")).toBe(true);
     expect(releasesSeat("rejected")).toBe(true);
+    expect(releasesSeat("completed")).toBe(true);
     expect(releasesSeat("approved")).toBe(false);
-    expect(releasesSeat("completed")).toBe(false);
+    expect(releasesSeat("pending")).toBe(false);
+  });
+
+  it("does not strand a seat on a finished enrollment", () => {
+    // Completed used to hold its seat forever. With auto-complete sweeping
+    // monthly, every coach would drain to zero seats and never recover.
+    expect(releasesSeat("completed")).toBe(true);
+  });
+});
+
+describe("refundsPayment", () => {
+  it("refunds only when the booking ended WITHOUT the service", () => {
+    expect(refundsPayment("cancelled")).toBe(true);
+    expect(refundsPayment("rejected")).toBe(true);
+    expect(refundsPayment("approved")).toBe(false);
+    expect(refundsPayment("pending")).toBe(false);
+  });
+
+  it("never refunds a completed booking", () => {
+    // The trap: completed now releases a seat, and reusing releasesSeat for the
+    // refund branch would refund every coaching session that ran to its end.
+    expect(refundsPayment("completed")).toBe(false);
+    expect(releasesSeat("completed")).toBe(true);
   });
 });
 

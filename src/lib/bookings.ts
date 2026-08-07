@@ -4,9 +4,12 @@ import {
   type BookingStatus,
   assertTransition,
   releasesSeat,
+  refundsPayment,
   STATUS_TIMESTAMP,
   BookingConflictError,
 } from "@/lib/bookingStatus";
+import { flagBookingRefundDue } from "@/lib/refunds";
+import type { PaymentStatus } from "@/lib/paymentStatus";
 
 // Re-export the pure state machine so callers import everything from "@/lib/bookings".
 export * from "@/lib/bookingStatus";
@@ -27,7 +30,7 @@ export async function transitionBooking(
   return prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id },
-      select: { id: true, status: true, coachId: true, batchId: true, userId: true },
+      select: { id: true, status: true, coachId: true, batchId: true, userId: true, paymentStatus: true },
     });
     if (!booking) throw new Error("Booking not found");
 
@@ -59,6 +62,15 @@ export async function transitionBooking(
     const stamp = STATUS_TIMESTAMP[to];
     if (stamp) (data as Record<string, unknown>)[stamp] = new Date();
     if (to === "rejected") data.rejectionReason = opts.reason ?? null;
+
+    // Cancelling or rejecting a PAID booking gives the seat back but leaves the
+    // money with Game Ground. Flag it so the refund is visible instead of the
+    // charge silently standing. Same rule as camps/events — see src/lib/refunds.ts.
+    if (refundsPayment(to) && booking.paymentStatus === "paid") {
+      if (await flagBookingRefundDue(tx, booking.id)) {
+        data.paymentStatus = "refund_pending" satisfies PaymentStatus;
+      }
+    }
 
     return tx.booking.update({ where: { id }, data });
   });

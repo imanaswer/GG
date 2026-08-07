@@ -79,6 +79,12 @@ function memoryLimiter(limit: number, windowMs: number, prefix: string): Limiter
 }
 
 export const authLimit     = make(5,   "1 m", "auth");
+// Token refresh is machine-to-machine, not a credential-guessing surface: the
+// token is 256 bits of CSPRNG output, so throttling it buys no brute-force
+// protection. It IS bursty and per-IP — a dozen app users on one café or campus
+// NAT all refreshing on app open would lock each other out at the login limit of
+// 5/min. Still bounded, just at a level real traffic won't reach.
+export const refreshLimit  = make(60,  "1 m", "refresh");
 export const aiLimit       = make(10,  "1 h", "ai");
 export const mutationLimit = make(100, "1 m", "mutation");
 export const uploadLimit   = make(20,  "1 h", "upload");

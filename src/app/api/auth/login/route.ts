@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { signToken, cookieOpts } from "@/lib/auth";
 import { ok, fail, handleErr, LoginSchema } from "@/lib/api";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
+import { isMobileClient, issueMobileSession } from "@/lib/refreshToken";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,8 +21,23 @@ export async function POST(req: NextRequest) {
       return fail("Invalid email or password", 401);
 
     const sessionUser = { id: user.id, email: user.email, name: user.name, username: user.username, role: user.role, avatarUrl: user.avatarUrl ?? undefined };
+
+    // isNew tells a client whether to run new-member setup. Always false here —
+    // login never creates an account. The create-or-find social routes are where
+    // this stops being inferable from which button the user tapped.
+    if (isMobileClient(req)) {
+      // Mobile gets a short access token plus a refresh token, so a 401 is
+      // recoverable instead of a logout. The cookie is still set — harmless, and
+      // it keeps any webview inside the app signed in.
+      const deviceId = typeof body?.deviceId === "string" ? body.deviceId : null;
+      const session = await issueMobileSession(sessionUser, deviceId);
+      const res = ok({ user: sessionUser, ...session, isNew: false });
+      res.cookies.set(cookieOpts(session.token));
+      return res;
+    }
+
     const token = await signToken(sessionUser);
-    const res = ok({ user: sessionUser, token });
+    const res = ok({ user: sessionUser, token, isNew: false });
     res.cookies.set(cookieOpts(token));
     return res;
   } catch (e) { return handleErr(e); }

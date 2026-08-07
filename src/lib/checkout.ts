@@ -29,11 +29,9 @@ export function workshopChargePaise(w: { price: number }): number {
   return paise;
 }
 
-export function gameChargePaise(g: { costAmount: number }): number {
-  const paise = rupeesToPaise(g.costAmount);
-  if (paise <= 0) throw new NotPayableError("This is a free game");
-  return paise;
-}
+// There is deliberately no gameChargePaise. Player-hosted games are paid host-to-
+// player outside Game Ground: no order is created, no Payment row is written, and
+// nothing here may be given a price for a game. See src/lib/hostPayment.ts.
 
 export function eventChargePaise(
   e: { entryFeeAmount: number; gstPercent?: number; convenienceFeePct?: number },

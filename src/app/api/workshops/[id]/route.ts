@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
+import { refundPolicy } from "@/lib/refundPolicy";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
 
@@ -32,7 +33,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       };
     }
 
-    return ok({ ...workshop, registeredCount: workshop.registrations.length, userRegistration });
+    return ok({
+      ...workshop,
+      registeredCount: workshop.registrations.length,
+      userRegistration,
+      refundPolicy: refundPolicy("workshop", workshop.price),
+    });
   } catch (e) { return handleErr(e); }
 }
 

@@ -37,6 +37,14 @@ export type Coach = {
 export type Batch = { id: string; coachId: string; day: string; time: string; level: string; seats: number };
 export type CoachReview = { id: string; rating: number; text: string; reviewerName: string; createdAt: string };
 
+export type HostPayment = {
+  amount: number; currency: string;
+  method: "upi" | "cash" | "upi_cash"; methodLabel: string;
+  upiId: string | null; qrUrl: string | null;
+  instructions: string | null; venueNote: string | null;
+  disclaimer: string;
+};
+
 export type Game = {
   id: string; sport: string; title: string; location: string; address: string;
   scheduledAt: string; duration: number; slots: number; slotsLeft: number;
@@ -45,7 +53,10 @@ export type Game = {
   cost: string; costAmount: number; description: string; rules: string[];
   imageUrl: string; status: string; createdAt: string;
   lat?: number | null; lng?: number | null;
-  players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; tier?: string; reputationScore?: number; joinedAt: string }[];
+  // How the host collects the entry fee. null on free games. Composed server-side
+  // (see src/lib/hostPayment.ts) so web and app show identical payment terms.
+  hostPayment?: HostPayment | null;
+  players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; tier?: string; reputationScore?: number; joinedAt: string; paymentStatus?: string; paidAt?: string | null }[];
   playerCount?: number;
 };
 

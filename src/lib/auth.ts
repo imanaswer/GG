@@ -19,11 +19,16 @@ export type SessionUser = {
   role: string; avatarUrl?: string | null;
 };
 
-export async function signToken(payload: SessionUser): Promise<string> {
+/**
+ * `ttl` defaults to the 7-day web/cookie lifetime. Mobile passes a short TTL and
+ * pairs it with a refresh token (src/lib/refreshToken.ts), so a stolen access
+ * token expires quickly without the user being logged out every time one does.
+ */
+export async function signToken(payload: SessionUser, ttl = "7d"): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(ttl)
     .sign(secret());
 }
 

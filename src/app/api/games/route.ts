@@ -133,6 +133,14 @@ export async function POST(req: NextRequest) {
           slots: input.slots, slotsLeft: input.slots - 1,
           skillLevel: input.skillLevel, organizerId: session.id,
           cost: input.cost, costAmount: input.costAmount,
+          // Host-collected fee details. Only stored for paid games — a free game
+          // must not carry payment details, or its detail page renders a fee
+          // section for a fee that does not exist.
+          paymentMethod: input.costAmount > 0 ? input.paymentMethod ?? null : null,
+          hostUpiId:     input.costAmount > 0 ? input.hostUpiId?.trim() || null : null,
+          hostQrUrl:     input.costAmount > 0 ? input.hostQrUrl ?? null : null,
+          paymentNote:   input.costAmount > 0 ? input.paymentNote?.trim() || null : null,
+          venueNote:     input.costAmount > 0 ? input.venueNote?.trim() || null : null,
           description: input.description ?? "",
           rules: input.rules ?? [],
           // Seeded on slotId (unique per game, and known before the insert) so

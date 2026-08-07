@@ -5,7 +5,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import {
-  campChargePaise, workshopChargePaise, gameChargePaise,
+  campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, assertOrderBinding, NotPayableError,
 } from "@/lib/checkout";
 import crypto from "crypto";
@@ -14,7 +14,7 @@ type Body = {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  entityType: "camp" | "event" | "game" | "workshop" | "coach";
+  entityType: "camp" | "event" | "workshop" | "coach";
   entityId: string;
   registration: { childName?: string; childAge?: number; teamName?: string; participantName?: string; participantAge?: number; registrationType?: string; batchId?: string; phone?: string; note?: string };
   devMode?: boolean;
@@ -112,7 +112,12 @@ export async function POST(req: NextRequest) {
           });
           await tx.payment.create({
             data: {
-              userId: session.id, entityType, entityId: created.id,
+              // entityId is the PURCHASED entity everywhere else (campId, gameId, …)
+              // and PaymentOrder already stores the coachId here. Storing the booking
+              // id instead made @@index([entityType, entityId]) unusable for
+              // "all payments for coach X" — admin coach revenue read back zero.
+              // The booking is kept as its own column so refunds can still find it.
+              userId: session.id, entityType, entityId, bookingId: created.id,
               razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
               amount: chargePaise, currency: "INR",
               status: "paid" satisfies PaymentStatus, paidAt: new Date(),
@@ -128,9 +133,13 @@ export async function POST(req: NextRequest) {
       const { childName, childAge } = registration ?? {};
       if (!childName || !childAge) return fail("childName and childAge are required", 400);
 
-      const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, price: true } });
+      const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, price: true, status: true, registrationDeadline: true } });
       if (!camp) return fail("Camp not found", 404);
+      // Status and deadline were checked on neither camp path, where workshops
+      // and events check both — a closed or expired camp still took money.
+      if (["closed", "completed", "archived"].includes(camp.status)) return fail("Registrations are closed for this camp", 409);
       if (camp.participants >= camp.maxParticipants) return fail("Camp is full", 400);
+      if (camp.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
 
       let chargePaise: number;
       try { chargePaise = campChargePaise(camp); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid camp", 400); }
@@ -139,7 +148,7 @@ export async function POST(req: NextRequest) {
       try {
         await prisma.$transaction(async (tx) => {
           const claim = await tx.camp.updateMany({
-            where: { id: entityId, participants: { lt: camp.maxParticipants } },
+            where: { id: entityId, participants: { lt: camp.maxParticipants }, status: { notIn: ["closed", "completed", "archived"] } },
             data: { participants: { increment: 1 } },
           });
           if (claim.count === 0) throw new ApiError("Camp is full", 409);
@@ -194,41 +203,10 @@ export async function POST(req: NextRequest) {
       return ok({ verified: true });
     }
 
-    if (entityType === "game") {
-      const game = await prisma.game.findUnique({ where: { id: entityId }, select: { organizerId: true, slotsLeft: true, status: true, costAmount: true } });
-      if (!game) return fail("Game not found", 404);
-      if (game.organizerId === session.id) return fail("You cannot join your own game", 400);
-      if (["cancelled", "completed", "archived"].includes(game.status)) return fail("This game is no longer open to join", 400);
-      if (game.slotsLeft <= 0 || game.status === "full") return fail("Game is full", 400);
-
-      let chargePaise: number;
-      try { chargePaise = gameChargePaise(game); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid game", 400); }
-      if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
-
-      try {
-        const slotsLeft = await prisma.$transaction(async (tx) => {
-          // Conditional slot claim guards against overselling and re-joins on a closed game.
-          const claim = await tx.game.updateMany({
-            where: { id: entityId, slotsLeft: { gt: 0 }, status: { notIn: ["cancelled", "completed", "archived", "full"] } },
-            data: { slotsLeft: { decrement: 1 } },
-          });
-          if (claim.count === 0) throw new ApiError("Game is full", 409);
-          await tx.game.updateMany({ where: { id: entityId, slotsLeft: { lte: 0 } }, data: { status: "full" } });
-          await tx.payment.create({
-            data: {
-              userId: session.id, entityType, entityId,
-              razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
-              amount: chargePaise, currency: "INR",
-              status: "paid" satisfies PaymentStatus, paidAt: new Date(),
-            },
-          });
-          await tx.gamePlayer.create({ data: { gameId: entityId, userId: session.id } });
-          const g = await tx.game.findUnique({ where: { id: entityId }, select: { slotsLeft: true } });
-          return g?.slotsLeft ?? 0;
-        });
-        return ok({ verified: true, slotsLeft });
-      } catch (e) { return txError(e); }
-    }
+    // "game" is intentionally absent. Player-hosted games are paid host-to-player
+    // outside Game Ground, so a game can never reach a verified-payment join —
+    // it falls through to the unsupported-entityType rejection below. Joining is
+    // done through POST /api/games/:id, which no longer gates on price.
 
     if (entityType === "workshop") {
       const { participantName, participantAge, registrationType } = registration ?? {};

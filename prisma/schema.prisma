@@ -52,6 +52,8 @@ model User {
   eventRegistrations    EventRegistration[]
   workshopRegistrations WorkshopRegistration[]
   payments              Payment[]
+  refreshTokens         RefreshToken[]
+  deviceTokens          DeviceToken[]
   coachProfile       Coach?
   mobileAuthCodes    MobileAuthCode[]
 
@@ -189,7 +191,18 @@ model Game {
   skillLevel    String
   organizerId   String
   cost          String
+  // Player-hosted games are NOT sold by Game Ground. costAmount is the entry fee
+  // the host collects directly (UPI/cash), shown to players as information only —
+  // no Razorpay order is ever created for a game and no Payment row is written.
+  // The field is kept so an online payment layer can plug in later without a
+  // schema change. currency is stored alongside for the same reason.
   costAmount    Int      @default(0)
+  currency      String   @default("INR")
+  paymentMethod String?  // HostPaymentMethod: "upi" | "cash" | "upi_cash"
+  hostUpiId     String?
+  hostQrUrl     String?
+  paymentNote   String?  // host's instructions, e.g. "pay after joining, send screenshot"
+  venueNote     String?  // optional "host pays the venue" note
   description   String   @default("")
   rules         String[] @default([])
   imageUrl      String
@@ -223,6 +236,11 @@ model GamePlayer {
   userId    String
   attended  Boolean?
   status    String   @default("joined")
+  // Host-collected entry fee tracking. "pending" | "paid". Advisory only — the
+  // money moves outside Game Ground, so this records what the host confirms,
+  // not anything GG has processed. Meaningless on free games; the UI hides it.
+  paymentStatus String @default("pending")
+  paidAt        DateTime?
   cancelledAt DateTime?
   joinedAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -240,7 +258,8 @@ model WaitlistEntry {
   position  Int
   createdAt DateTime @default(now())
   game Game @relation(fields: [gameId], references: [id])
-  @@index([gameId]) // waitlist lookup/count/delete per game
+  @@unique([gameId, userId]) // one waitlist entry per user per game (the route's findFirst check raced)
+  @@index([gameId, position]) // promotion picks the lowest position first
 }
 
 model Booking {
@@ -507,11 +526,61 @@ model PaymentOrder {
   @@index([capturedAt]) // reconciliation scan for orphaned captures
 }
 
+// Long-lived session material for non-browser clients. The web keeps its 7-day
+// httpOnly cookie; mobile gets a short access token plus one of these, so a 401
+// no longer means "log the user out" and logout can actually revoke something.
+//
+// Only the SHA-256 of the token is stored: a database leak must not hand out
+// working sessions. `familyId` links every rotation of one login together — if a
+// token that was already rotated is presented again, the token was copied, and
+// the whole family is revoked rather than trusting either holder.
+model RefreshToken {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  familyId   String
+  deviceId   String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  // Set when this token is exchanged for its successor. A token with this set
+  // that is presented again is a replay, not a valid use.
+  rotatedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, deviceId]) // revoke this device
+  @@index([familyId])         // revoke the whole family on replay
+  @@index([expiresAt])        // cleanup sweep
+}
+
+// Push targets. One row per install, not per user — a user with a phone and a
+// tablet must get both. Preferences live per device for the same reason.
+model DeviceToken {
+  id         String   @id @default(cuid())
+  token      String   @unique // FCM/APNs/Expo push token
+  userId     String
+  deviceId   String?
+  platform   String   @default("unknown") // "ios" | "android" | "web"
+  // Categories this device does NOT want. Absent = wants everything, so a new
+  // device is opted in by default and an unknown new category is delivered.
+  mutedCategories String[] @default([])
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
 model Payment {
   id                String    @id @default(cuid())
   userId            String
   entityType        String
-  entityId          String
+  entityId          String    // the PURCHASED entity id — matches PaymentOrder.entityId
+  // Coach purchases create a Booking, and a user can book the same coach more than
+  // once, so (entityType, entityId, userId) is not enough to find it. Kept as its
+  // own column rather than overloading entityId, which broke the coach revenue
+  // rollup that groups by entityId expecting a coachId.
+  bookingId         String?
   razorpayOrderId   String
   razorpayPaymentId String?   @unique // DB-level replay guard: a gateway payment id can be recorded at most once (NULLs stay distinct in Postgres)
   amount            Int
@@ -523,6 +592,7 @@ model Payment {
 
   @@index([razorpayOrderId])
   @@index([entityType, entityId])
+  @@index([bookingId])
   @@index([status, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)]) // "my payment history" (userId-only filter, no existing index leads with it)
 }

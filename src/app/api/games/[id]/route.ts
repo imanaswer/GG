@@ -1,12 +1,15 @@
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { promoteFromWaitlist, nextWaitlistPosition } from "@/lib/waitlist";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
-import { joinability } from "@/lib/gameTime";
+import { joinability, withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
+import { hostPayment } from "@/lib/hostPayment";
+import { refundPolicy } from "@/lib/refundPolicy";
+import { sendPush } from "@/lib/push";
 
 type Ctx = { params: Promise<{ id: string }> };
-
-const CANCEL_CUTOFF_MS = 90 * 60_000;
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   try {
@@ -35,6 +38,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     return ok({
       ...game,
+      // How players pay the host, or null for a free game. Served rather than
+      // assembled client-side so web and app show identical payment terms.
+      hostPayment: hostPayment(game),
+      // The terms in force, or null on a free game. Served so a wording change
+      // reaches installed apps without a release.
+      refundPolicy: refundPolicy("game", game.costAmount),
       organizer: organizerPublic,
       organizerName: game.organizer?.name,
       organizerRating: game.organizer?.reliabilityScore,
@@ -50,6 +59,10 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         tier: gp.user?.tier ?? "bronze",
         reputationScore: gp.user?.reputationScore ?? 0,
         joinedAt: gp.joinedAt,
+        // Advisory: what the host has confirmed receiving. Only meaningful on a
+        // paid game, and only the host acts on it.
+        paymentStatus: gp.paymentStatus,
+        paidAt: gp.paidAt,
       })),
     });
   } catch (e) { return handleErr(e); }
@@ -68,10 +81,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     });
     if (!game) return fail("Game not found", 404);
 
-    // Paid games must go through the payment/verify flow, which creates the
-    // GamePlayer only after a verified payment. This free-join endpoint would
-    // otherwise let a user skip payment entirely for a paid game.
-    if (game.costAmount > 0) return fail("This game requires payment to join", 402);
+    // No payment gate: a player-hosted game's entry fee is collected by the host
+    // directly, outside Game Ground. Joining is what this endpoint grants; the
+    // fee is settled between player and host afterwards and tracked advisorily
+    // on GamePlayer.paymentStatus.
 
     // Host / status / start-and-end-time checks (shared rules).
     const reason = joinability(game, new Date(), session.id);
@@ -97,9 +110,21 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (claim.count === 0) {
       const onWaitlist = await prisma.waitlistEntry.findFirst({ where: { gameId: id, userId: session.id }, select: { id: true } });
       if (onWaitlist) return fail("Already on waitlist", 409);
-      const position = (await prisma.waitlistEntry.count({ where: { gameId: id } })) + 1;
-      await prisma.waitlistEntry.create({ data: { gameId: id, userId: session.id, position } });
-      return ok({ waitlisted: true, position });
+      try {
+        const position = await prisma.$transaction(async (tx) => {
+          const p = await nextWaitlistPosition(tx, id);
+          await tx.waitlistEntry.create({ data: { gameId: id, userId: session.id, position: p } });
+          return p;
+        });
+        return ok({ waitlisted: true, position });
+      } catch (e) {
+        // @@unique([gameId, userId]) — two concurrent requests both passed the
+        // findFirst check above; exactly one row survives.
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+          return fail("Already on waitlist", 409);
+        }
+        throw e;
+      }
     }
 
     // Slot claimed — create participation. If create fails, release the slot so the
@@ -134,20 +159,27 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const game = await prisma.game.findUnique({ where: { id }, select: { scheduledAt: true, status: true } });
     if (!game) return fail("Game not found", 404);
 
-    const now = Date.now();
-    const startTime = new Date(game.scheduledAt).getTime();
-    if (startTime - now < CANCEL_CUTOFF_MS) {
-      return fail("Cancellation is not allowed within 90 minutes of the start time", 403);
+    if (withinCancelCutoff(game.scheduledAt, new Date())) return fail(CANCEL_CUTOFF_MESSAGE, 403);
+
+    // The freed seat goes to the longest-waiting player if anyone is queued, and
+    // only falls back to open inventory when nobody is. Incrementing slotsLeft
+    // unconditionally — what this did before — handed the seat to whoever
+    // refreshed first and skipped the queue entirely.
+    const promoted = await prisma.$transaction(async (tx) => {
+      await tx.gamePlayer.delete({ where: { id: gp.id } });
+      return promoteFromWaitlist(tx, id);
+    });
+
+    if (promoted) {
+      const g = await prisma.game.findUnique({ where: { id }, select: { title: true, scheduledAt: true } });
+      void sendPush(promoted.userId, {
+        category: "waitlist",
+        title: "A spot opened up",
+        body: `You're in for ${g?.title ?? "the game"}.`,
+        data: { url: `/game/${id}` },
+      });
     }
 
-    await prisma.$transaction([
-      prisma.gamePlayer.delete({ where: { id: gp.id } }),
-      prisma.game.update({
-        where: { id },
-        data: { slotsLeft: { increment: 1 }, status: game.status === "full" ? "open" : undefined },
-      }),
-    ]);
-
-    return ok({ left: true });
+    return ok({ left: true, promoted: promoted?.userId ?? null });
   } catch (e) { return handleErr(e); }
 }

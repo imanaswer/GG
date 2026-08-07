@@ -3,7 +3,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import {
-  campChargePaise, workshopChargePaise, gameChargePaise,
+  campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, NotPayableError,
 } from "@/lib/checkout";
 
@@ -37,11 +37,8 @@ async function chargePaiseFor(entityType: string, entityId: string): Promise<{ p
       if (!workshop) throw new NotPayableError("Workshop not found");
       return { paise: workshopChargePaise(workshop), currency: "INR" };
     }
-    case "game": {
-      const game = await prisma.game.findUnique({ where: { id: entityId }, select: { costAmount: true } });
-      if (!game) throw new NotPayableError("Game not found");
-      return { paise: gameChargePaise(game), currency: "INR" };
-    }
+    // "game" is intentionally absent and falls through: players pay the host
+    // directly for player-hosted games, so no Razorpay order may exist for one.
     default:
       throw new NotPayableError("Unsupported entityType");
   }
