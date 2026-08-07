@@ -8,6 +8,8 @@ import { currentSeason, seasonRep } from "@/lib/season";
 import { progressToNextTier } from "@/lib/reputation";
 import { requireSignedAgreement, AgreementGateError } from "@/lib/coachAgreement/gate";
 import { sendPush } from "@/lib/push";
+import { flagBookingRefundDue } from "@/lib/refunds";
+import type { PaymentStatus } from "@/lib/paymentStatus";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -180,6 +182,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
+    // A JWT minted before deletion stays valid until it expires (there is still no
+    // revocation), and could write name/bio/phone/username onto the tombstone.
+    // GET on this file already guards on deletedAt; this matches it.
+    const target = await prisma.user.findUnique({ where: { id }, select: { deletedAt: true } });
+    if (!target || target.deletedAt) return fail("Account not found", 404);
+
     // Coaches must have a signed Partnership Agreement before editing/publishing their profile.
     if (session.role === "coach") await requireSignedAgreement(session.id);
 
@@ -259,7 +267,47 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       // Waitlist rows have no cascade and were previously left behind, where they
       // kept their position and skewed the count+1 the next entrant is given.
       await tx.waitlistEntry.deleteMany({ where: { userId: id } });
-      await tx.booking.updateMany({ where: { userId: id }, data: { status: "cancelled" } });
+      // Coach bookings: only the LIVE ones. A blanket updateMany rewrote completed
+      // and rejected bookings too — terminal states the booking state machine
+      // forbids leaving — destroying the record that the session happened, and it
+      // released no seat, so every deleted student cost their coach a seat forever.
+      // transitionBooking is the one correct mover but opens its own transaction,
+      // so its three effects (seat give-back, cancelledAt, refund flag) are inlined.
+      const liveBookings = await tx.booking.findMany({
+        where: { userId: id, status: { in: ["pending", "approved"] } },
+        select: { id: true, coachId: true, batchId: true, paymentStatus: true },
+      });
+      if (liveBookings.length) {
+        // One statement per DISTINCT coach, incrementing by how many seats this
+        // user held there. NOT an `updateMany` over an id list: Booking carries no
+        // unique on (userId, coachId), so a user can hold two live bookings with
+        // the same coach and updateMany would bump that coach exactly once —
+        // re-creating a smaller version of the leak this is fixing.
+        const seatsPerCoach = new Map<string, number>();
+        const seatsPerBatch = new Map<string, number>();
+        for (const b of liveBookings) {
+          seatsPerCoach.set(b.coachId, (seatsPerCoach.get(b.coachId) ?? 0) + 1);
+          if (b.batchId) seatsPerBatch.set(b.batchId, (seatsPerBatch.get(b.batchId) ?? 0) + 1);
+        }
+        for (const [coachId, n] of seatsPerCoach) {
+          await tx.coach.update({ where: { id: coachId }, data: { seatsLeft: { increment: n } } });
+        }
+        for (const [batchId, n] of seatsPerBatch) {
+          await tx.batch.update({ where: { id: batchId }, data: { seats: { increment: n } } });
+        }
+        await tx.booking.updateMany({
+          where: { id: { in: liveBookings.map(b => b.id) } },
+          data: { status: "cancelled", cancelledAt: now },
+        });
+        // Money already taken stays taken until an admin transfers it back, so
+        // flag it rather than letting the charge silently stand — same rule the
+        // self-cancel path follows (src/lib/refunds.ts).
+        for (const b of liveBookings.filter(b => b.paymentStatus === "paid")) {
+          if (await flagBookingRefundDue(tx, b.id)) {
+            await tx.booking.update({ where: { id: b.id }, data: { paymentStatus: "refund_pending" satisfies PaymentStatus } });
+          }
+        }
+      }
 
       // Release the seats. Two statements rather than one update per game: this
       // runs inside an interactive transaction over a max:1 pool, so a user with

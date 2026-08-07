@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
+import { coachAdmission } from "@/lib/checkout";
 
 export async function GET(req: NextRequest) {
   try {
@@ -53,9 +54,12 @@ export async function POST(req: NextRequest) {
 
     const { coachId, batchId, note, phone } = await req.json();
 
-    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true } });
+    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true, status: true } });
     if (!coach) return fail("Coach not found", 404);
-    if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+    // Seats AND approval — a self-registered coach sits at "pending_approval"
+    // until an admin activates them, and was bookable in the meantime.
+    const refusal = coachAdmission(coach);
+    if (refusal) return fail(refusal.message, refusal.status);
 
     // Capture the player's mobile number so the team can reach them about the session.
     const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
@@ -72,16 +76,18 @@ export async function POST(req: NextRequest) {
         if (cleanedPhone) {
           await tx.user.update({ where: { id: session.id }, data: { phone: cleanedPhone } });
         }
+        // The coach seat is claimed unconditionally — the nesting used to be
+        // inverted, so an unusable batchId (full, another coach's, nonexistent)
+        // silently skipped the claim and created a booking holding NO seat.
+        // Cancelling that booking then released a seat it never took, and
+        // seatsLeft climbed past totalSeats. Matches payments/verify.
+        const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
+        if (claim.count === 0) throw new ApiError("No seats available", 409);
         if (batchId) {
           const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
-          if (batch && batch.coachId === coachId && batch.seats > 0) {
-            await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
-            const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
-            if (claim.count === 0) throw new ApiError("No seats available", 409);
-          }
-        } else {
-          const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
-          if (claim.count === 0) throw new ApiError("No seats available", 409);
+          if (!batch || batch.coachId !== coachId) throw new ApiError("That batch is not available", 400);
+          if (batch.seats <= 0) throw new ApiError("That batch is full", 409);
+          await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
         }
         return tx.booking.create({
           data: { userId: session.id, coachId, batchId: batchId ?? null, status: "pending", note },

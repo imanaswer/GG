@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         take: 15,
       }).then(rows => rows.map(({ description: _d, rules: _r, ...g }) => g)),
       prisma.coach.findMany({
-        where: { seatsLeft: { gt: 0 } },
+        where: { status: "active", seatsLeft: { gt: 0 } },
         take: 15,
       }).then(rows => rows.map(({ description: _d, features: _f, ...c }) => c)),
     ]);

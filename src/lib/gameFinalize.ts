@@ -80,9 +80,13 @@ export async function finalizeGame(gameId: string, opts: FinalizeOptions = {}): 
       const judged = await tx.gamePlayer.findMany({ where: { userId: p.userId, NOT: { attended: null } }, select: { attended: true } });
       const attendedCount = judged.filter(j => j.attended).length;
       const attendanceRate = judged.length > 0 ? Math.round((attendedCount / judged.length) * 100) : 100;
-      const reviewAgg = await tx.review.aggregate({ where: { coachId: p.userId }, _avg: { rating: true }, _count: true });
-      const reviewAvg = reviewAgg._count ? (reviewAgg._avg.rating ?? 4.5) : 4.5;
-      const reliabilityScore = Math.round(((attendanceRate / 100) * 0.6 + (reviewAvg / 5) * 0.4) * 5 * 10) / 10;
+      // Reliability is attendance, full stop. The other 40% of this used to be a
+      // review average read as `Review.coachId = p.userId` — a Coach.id column
+      // filtered by a User.id, so it never matched and every player silently got
+      // the same 4.5 fallback, capping the whole score at 4.8. There is no review
+      // data for a non-coach player in this schema, so the term is gone rather
+      // than repointed at something it was never measuring.
+      const reliabilityScore = Math.round((attendanceRate / 100) * 5 * 10) / 10;
       await tx.user.update({ where: { id: p.userId }, data: { attendanceRate, reliabilityScore } });
       touchedUserIds.push(p.userId);
     }

@@ -5,9 +5,9 @@
 import { computeEventCharge } from "./eventPricing";
 import { coachInstantChargeRupees, type CoachPrice } from "./coachPayment";
 
-/** Entity is not in a payable state (free, or coach not instant-pay eligible). Routes map this to a 400. */
+/** Entity is not in a payable state (free, closed, full, or coach not instant-pay eligible). */
 export class NotPayableError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly status = 400) {
     super(message);
     this.name = "NotPayableError";
   }
@@ -69,4 +69,64 @@ export function assertOrderBinding(
     return { ok: false, status: 400, message: "Order does not match this item" };
   }
   return { ok: true };
+}
+
+// ─── Admission gates ───────────────────────────────────────────────────────────
+// create-order used to ask one question — "is the price above zero?" — while
+// verify applied a much longer list. Every rule verify had and create-order did
+// not was a case where the user completed payment and was then refused: money
+// taken, nothing granted, and only an orphaned PaymentOrder to show for it.
+// These are the single copy of those rules, called from create-order AND verify,
+// and worded to match the free-register endpoints so a paid and a free refusal
+// read the same. Pure / no IO, like the charge functions above.
+
+/** Why the purchase can't proceed, with the status the route should return. Null = admissible. */
+export type Refusal = { message: string; status: number } | null;
+
+const CAMP_CLOSED     = ["closed", "completed", "archived"];
+const WORKSHOP_CLOSED = ["closed", "completed", "archived"];
+const EVENT_CLOSED    = ["Cancelled", "Completed", "Archived", "Full"];
+
+export function campAdmission(
+  c: { status: string; participants: number; maxParticipants: number; registrationDeadline: Date },
+  now: Date,
+): Refusal {
+  if (CAMP_CLOSED.includes(c.status)) return { message: "Registrations are closed for this camp", status: 409 };
+  if (c.participants >= c.maxParticipants) return { message: "Camp is full", status: 400 };
+  if (c.registrationDeadline < now) return { message: "Registration deadline has passed", status: 400 };
+  return null;
+}
+
+export function workshopAdmission(
+  w: { status: string; participants: number; maxParticipants: number; registrationDeadline: Date },
+  now: Date,
+): Refusal {
+  if (WORKSHOP_CLOSED.includes(w.status)) return { message: "Registrations are closed for this workshop", status: 409 };
+  if (w.participants >= w.maxParticipants) return { message: "Workshop is full", status: 400 };
+  if (w.registrationDeadline < now) return { message: "Registration deadline has passed", status: 400 };
+  return null;
+}
+
+export function eventAdmission(
+  e: { status: string; published: boolean; participants: number; maxParticipants: number; registrationDeadline: Date },
+  now: Date,
+): Refusal {
+  // Status and published were checked on the free path only, so a Cancelled event
+  // whose deadline had not yet passed still took money.
+  if (EVENT_CLOSED.includes(e.status) || !e.published) return { message: "Registrations are closed for this event", status: 409 };
+  if (e.participants >= e.maxParticipants) return { message: "Event is full", status: 400 };
+  if (e.registrationDeadline < now) return { message: "Registration deadline has passed", status: 400 };
+  return null;
+}
+
+/**
+ * A coach must be approved before anyone can book or pay for them. Self-service
+ * registration creates the row as "pending_approval"; only an admin makes it
+ * "active". Nothing checked this, so a coach was bookable the moment they signed
+ * up — before a human had looked at them.
+ */
+export function coachAdmission(c: { status: string; seatsLeft: number }): Refusal {
+  if (c.status !== "active") return { message: "This coach is not accepting bookings", status: 409 };
+  if (c.seatsLeft <= 0) return { message: "No seats available", status: 400 };
+  return null;
 }

@@ -7,6 +7,7 @@ import { PaymentStatus } from "@/lib/paymentStatus";
 import {
   campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, assertOrderBinding, NotPayableError,
+  campAdmission, workshopAdmission, eventAdmission, coachAdmission,
 } from "@/lib/checkout";
 import crypto from "crypto";
 
@@ -74,10 +75,11 @@ export async function POST(req: NextRequest) {
       const { batchId, phone, note } = registration ?? {};
       const coach = await prisma.coach.findUnique({
         where: { id: entityId },
-        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true },
+        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true, status: true },
       });
       if (!coach) return fail("Coach not found", 404);
-      if (coach.seatsLeft <= 0) return fail("No seats available", 400);
+      const coachRefusal = coachAdmission(coach);
+      if (coachRefusal) return fail(coachRefusal.message, coachRefusal.status);
 
       let chargePaise: number;
       try { chargePaise = coachChargePaise(coach); }
@@ -135,11 +137,8 @@ export async function POST(req: NextRequest) {
 
       const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, price: true, status: true, registrationDeadline: true } });
       if (!camp) return fail("Camp not found", 404);
-      // Status and deadline were checked on neither camp path, where workshops
-      // and events check both — a closed or expired camp still took money.
-      if (["closed", "completed", "archived"].includes(camp.status)) return fail("Registrations are closed for this camp", 409);
-      if (camp.participants >= camp.maxParticipants) return fail("Camp is full", 400);
-      if (camp.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
+      const campRefusal = campAdmission(camp, new Date());
+      if (campRefusal) return fail(campRefusal.message, campRefusal.status);
 
       let chargePaise: number;
       try { chargePaise = campChargePaise(camp); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid camp", 400); }
@@ -171,10 +170,10 @@ export async function POST(req: NextRequest) {
 
     if (entityType === "event") {
       const { teamName } = registration ?? {};
-      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, approvalMode: true, entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true } });
+      const event = await prisma.sportEvent.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, approvalMode: true, entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true, status: true, published: true } });
       if (!event) return fail("Event not found", 404);
-      if (event.participants >= event.maxParticipants) return fail("Event is full", 400);
-      if (event.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
+      const eventRefusal = eventAdmission(event, new Date());
+      if (eventRefusal) return fail(eventRefusal.message, eventRefusal.status);
 
       let chargePaise: number;
       try { chargePaise = eventChargePaise(event); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid event", 400); }
@@ -215,9 +214,8 @@ export async function POST(req: NextRequest) {
 
       const workshop = await prisma.workshop.findUnique({ where: { id: entityId }, select: { participants: true, maxParticipants: true, registrationDeadline: true, status: true, price: true } });
       if (!workshop) return fail("Workshop not found", 404);
-      if (["closed", "completed", "archived"].includes(workshop.status)) return fail("Registrations are closed for this workshop", 409);
-      if (workshop.participants >= workshop.maxParticipants) return fail("Workshop is full", 400);
-      if (workshop.registrationDeadline < new Date()) return fail("Registration deadline has passed", 400);
+      const workshopRefusal = workshopAdmission(workshop, new Date());
+      if (workshopRefusal) return fail(workshopRefusal.message, workshopRefusal.status);
 
       let chargePaise: number;
       try { chargePaise = workshopChargePaise(workshop); } catch (e) { return fail(e instanceof NotPayableError ? e.message : "Invalid workshop", 400); }

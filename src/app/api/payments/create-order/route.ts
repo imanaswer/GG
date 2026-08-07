@@ -5,36 +5,59 @@ import { prisma } from "@/lib/prisma";
 import {
   campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, NotPayableError,
+  campAdmission, workshopAdmission, eventAdmission, coachAdmission, type Refusal,
 } from "@/lib/checkout";
+
+// A refusal here is the whole point of this route knowing the rules: better a 409
+// before the gateway is called than a captured payment verify will turn away.
+function refuse(r: Refusal): void {
+  if (r) throw new NotPayableError(r.message, r.status);
+}
 
 // Server-authoritative order amount. The client sends only entityType + entityId;
 // the price is ALWAYS derived from the database. A client-sent amount is ignored.
-async function chargePaiseFor(entityType: string, entityId: string): Promise<{ paise: number; currency: string }> {
+//
+// This also applies the SAME admission rules verify applies (src/lib/checkout.ts).
+// It used to ask only "is the price above zero?", so a full/closed/expired item
+// still minted a live Razorpay order and the refusal arrived after the charge.
+async function chargePaiseFor(entityType: string, entityId: string, now: Date): Promise<{ paise: number; currency: string }> {
   switch (entityType) {
     case "event": {
       const event = await prisma.sportEvent.findUnique({
         where: { id: entityId },
-        select: { entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true },
+        select: {
+          entryFeeAmount: true, gstPercent: true, convenienceFeePct: true, currency: true,
+          status: true, published: true, participants: true, maxParticipants: true, registrationDeadline: true,
+        },
       });
-      if (!event) throw new NotPayableError("Event not found");
+      if (!event) throw new NotPayableError("Event not found", 404);
+      refuse(eventAdmission(event, now));
       return { paise: eventChargePaise(event), currency: event.currency || "INR" };
     }
     case "coach": {
       const coach = await prisma.coach.findUnique({
-        where: { id: entityId }, select: { priceMin: true, priceMax: true, seatsLeft: true },
+        where: { id: entityId }, select: { priceMin: true, priceMax: true, seatsLeft: true, status: true },
       });
-      if (!coach) throw new NotPayableError("Coach not found");
-      if (coach.seatsLeft <= 0) throw new NotPayableError("No seats available");
+      if (!coach) throw new NotPayableError("Coach not found", 404);
+      refuse(coachAdmission(coach));
       return { paise: coachChargePaise(coach), currency: "INR" };
     }
     case "camp": {
-      const camp = await prisma.camp.findUnique({ where: { id: entityId }, select: { price: true } });
-      if (!camp) throw new NotPayableError("Camp not found");
+      const camp = await prisma.camp.findUnique({
+        where: { id: entityId },
+        select: { price: true, status: true, participants: true, maxParticipants: true, registrationDeadline: true },
+      });
+      if (!camp) throw new NotPayableError("Camp not found", 404);
+      refuse(campAdmission(camp, now));
       return { paise: campChargePaise(camp), currency: "INR" };
     }
     case "workshop": {
-      const workshop = await prisma.workshop.findUnique({ where: { id: entityId }, select: { price: true } });
-      if (!workshop) throw new NotPayableError("Workshop not found");
+      const workshop = await prisma.workshop.findUnique({
+        where: { id: entityId },
+        select: { price: true, status: true, participants: true, maxParticipants: true, registrationDeadline: true },
+      });
+      if (!workshop) throw new NotPayableError("Workshop not found", 404);
+      refuse(workshopAdmission(workshop, now));
       return { paise: workshopChargePaise(workshop), currency: "INR" };
     }
     // "game" is intentionally absent and falls through: players pay the host
@@ -55,9 +78,9 @@ export async function POST(req: NextRequest) {
 
     let amountPaise: number, currency: string;
     try {
-      ({ paise: amountPaise, currency } = await chargePaiseFor(entityType, entityId));
+      ({ paise: amountPaise, currency } = await chargePaiseFor(entityType, entityId, new Date()));
     } catch (e) {
-      if (e instanceof NotPayableError) return fail(e.message, 400);
+      if (e instanceof NotPayableError) return fail(e.message, e.status);
       throw e;
     }
 

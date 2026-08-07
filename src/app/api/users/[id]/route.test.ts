@@ -6,6 +6,7 @@ const { prismaMock, txMock, sessionMock, sendPushMock } = vi.hoisted(() => {
   const txMock: any = {
     review: model(), gamePlayer: model(), waitlistEntry: model(),
     booking: model(), game: model(), user: model(),
+    coach: model(), batch: model(), payment: { findFirst: vi.fn(), update: vi.fn() },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
@@ -36,6 +37,8 @@ beforeEach(() => {
   prismaMock.game.findMany.mockResolvedValue([]);
   prismaMock.gamePlayer.findMany.mockResolvedValue([]);
   prismaMock.waitlistEntry.findMany.mockResolvedValue([]);
+  txMock.booking.findMany.mockResolvedValue([]);
+  txMock.payment.findFirst.mockResolvedValue(null);
 });
 
 const tombstone = () => txMock.user.update.mock.calls[0][0].data;
@@ -137,15 +140,12 @@ describe("DELETE /api/users/[id] — the rest of the sweep", () => {
     expect(txMock.waitlistEntry.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1" } });
   });
 
-  it("anonymises reviews, drops game memberships and cancels bookings", async () => {
+  it("anonymises reviews and drops game memberships", async () => {
     await del();
     expect(txMock.review.updateMany).toHaveBeenCalledWith({
       where: { userId: "u1" }, data: { reviewerName: "Deleted User" },
     });
     expect(txMock.gamePlayer.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1" } });
-    expect(txMock.booking.updateMany).toHaveBeenCalledWith({
-      where: { userId: "u1" }, data: { status: "cancelled" },
-    });
   });
 
   it("clears the session cookie and reports success", async () => {
@@ -177,5 +177,58 @@ describe("DELETE /api/users/[id] — notifying abandoned players", () => {
     await del();
     await new Promise(r => setImmediate(r));
     expect(sendPushMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("DELETE /api/users/[id] — coach bookings", () => {
+  it("only touches live bookings, and hands the seat back to the coach", async () => {
+    txMock.booking.findMany.mockResolvedValue([
+      { id: "b1", coachId: "c1", batchId: null, paymentStatus: "unpaid" },
+      { id: "b2", coachId: "c2", batchId: "bt1", paymentStatus: "unpaid" },
+    ]);
+    await del();
+
+    // Terminal states (completed / rejected / cancelled) are historical record.
+    expect(txMock.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId: "u1", status: { in: ["pending", "approved"] } },
+    }));
+    expect(txMock.coach.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { seatsLeft: { increment: 1 } } });
+    expect(txMock.coach.update).toHaveBeenCalledWith({ where: { id: "c2" }, data: { seatsLeft: { increment: 1 } } });
+    expect(txMock.batch.update).toHaveBeenCalledWith({ where: { id: "bt1" }, data: { seats: { increment: 1 } } });
+    const [call] = txMock.booking.updateMany.mock.calls;
+    expect(call[0].where).toEqual({ id: { in: ["b1", "b2"] } });
+    expect(call[0].data.status).toBe("cancelled");
+    expect(call[0].data.cancelledAt).toBeInstanceOf(Date);
+  });
+
+  // Booking has no unique on (userId, coachId), so this is reachable — and an
+  // updateMany over the id list would have given this coach back one seat, not two.
+  it("gives back one seat per booking when two are held with the same coach", async () => {
+    txMock.booking.findMany.mockResolvedValue([
+      { id: "b1", coachId: "c1", batchId: "bt1", paymentStatus: "unpaid" },
+      { id: "b2", coachId: "c1", batchId: "bt1", paymentStatus: "unpaid" },
+    ]);
+    await del();
+    expect(txMock.coach.update).toHaveBeenCalledExactlyOnceWith({ where: { id: "c1" }, data: { seatsLeft: { increment: 2 } } });
+    expect(txMock.batch.update).toHaveBeenCalledExactlyOnceWith({ where: { id: "bt1" }, data: { seats: { increment: 2 } } });
+  });
+
+  it("leaves no bookings to release alone", async () => {
+    await del();
+    expect(txMock.coach.update).not.toHaveBeenCalled();
+    expect(txMock.booking.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("flags a paid booking for refund rather than letting the charge stand", async () => {
+    txMock.booking.findMany.mockResolvedValue([{ id: "b1", coachId: "c1", batchId: null, paymentStatus: "paid" }]);
+    txMock.payment.findFirst.mockResolvedValue({ id: "pay1" });
+    await del();
+
+    expect(txMock.payment.update).toHaveBeenCalledWith({
+      where: { id: "pay1" }, data: { status: "refund_pending" },
+    });
+    expect(txMock.booking.update).toHaveBeenCalledWith({
+      where: { id: "b1" }, data: { paymentStatus: "refund_pending" },
+    });
   });
 });

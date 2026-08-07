@@ -19,11 +19,14 @@ export async function GET(req: NextRequest) {
         take: 3,
       }),
       prisma.camp.findMany({
-        where: { status: { not: "completed" }, OR: [{ title: insensitive }, { sport: insensitive }] },
+        // `not: "completed"` excluded exactly one value, so archived camps and
+        // cancelled events were still typeahead results (and cached for 30s).
+        // These now match the list endpoints' own filters.
+        where: { status: { notIn: ["completed", "archived", "closed"] }, OR: [{ title: insensitive }, { sport: insensitive }] },
         take: 2,
       }),
       prisma.sportEvent.findMany({
-        where: { published: true, status: { not: "Completed" }, OR: [{ title: insensitive }, { sport: insensitive }] },
+        where: { published: true, status: { notIn: ["Completed", "Archived", "Cancelled"] }, OR: [{ title: insensitive }, { sport: insensitive }] },
         take: 2,
       }),
     ]);

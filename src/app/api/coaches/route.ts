@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     const type = p.get("type");
     const available = p.get("available") === "true";
 
-    const where: Prisma.CoachWhereInput = {};
+    // Only approved coaches are public. Self-service registration creates the row
+    // as "pending_approval"; without this every signup was listed on /learn — with
+    // the name, phone and address they typed — before anyone had reviewed them.
+    const where: Prisma.CoachWhereInput = { status: "active" };
     if (sport && sport !== "all") where.sport = sport;
     // `type` is a comma-joined string ("Academy, Personal Trainer"), so match on
     // substring — a coach tagged with several types still matches a single-type

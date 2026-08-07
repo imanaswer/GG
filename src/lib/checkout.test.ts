@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  campAdmission,
+  workshopAdmission,
+  eventAdmission,
+  coachAdmission,
   campChargePaise,
   workshopChargePaise,
   eventChargePaise,
@@ -56,5 +60,42 @@ describe("assertOrderBinding — cross-entity replay guard", () => {
     const r = assertOrderBinding(null, { userId: "u1", entityType: "camp", entityId: "c1" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.status).toBe(400);
+  });
+});
+
+describe("admission gates — the rules create-order used to skip", () => {
+  const now = new Date("2026-06-01T00:00:00Z");
+  const open = { status: "open", participants: 3, maxParticipants: 10, registrationDeadline: new Date("2026-07-01T00:00:00Z") };
+
+  it("admits an open, unfilled, in-deadline camp", () => {
+    expect(campAdmission(open, now)).toBeNull();
+  });
+
+  it("refuses a closed camp, a full camp and an expired camp", () => {
+    expect(campAdmission({ ...open, status: "archived" }, now)?.status).toBe(409);
+    expect(campAdmission({ ...open, participants: 10 }, now)?.message).toBe("Camp is full");
+    expect(campAdmission({ ...open, registrationDeadline: new Date("2026-05-01T00:00:00Z") }, now)?.message)
+      .toBe("Registration deadline has passed");
+  });
+
+  it("refuses a workshop the same way", () => {
+    expect(workshopAdmission(open, now)).toBeNull();
+    expect(workshopAdmission({ ...open, status: "completed" }, now)?.status).toBe(409);
+    expect(workshopAdmission({ ...open, participants: 99 }, now)?.message).toBe("Workshop is full");
+  });
+
+  it("refuses a cancelled or unpublished event — verify checked the deadline but not the status", () => {
+    const ev = { ...open, status: "Registration Open", published: true };
+    expect(eventAdmission(ev, now)).toBeNull();
+    expect(eventAdmission({ ...ev, status: "Cancelled" }, now)?.status).toBe(409);
+    expect(eventAdmission({ ...ev, published: false }, now)?.status).toBe(409);
+  });
+
+  it("refuses a coach who has not been approved yet", () => {
+    expect(coachAdmission({ status: "active", seatsLeft: 2 })).toBeNull();
+    expect(coachAdmission({ status: "pending_approval", seatsLeft: 2 })?.message)
+      .toBe("This coach is not accepting bookings");
+    expect(coachAdmission({ status: "inactive", seatsLeft: 2 })?.status).toBe(409);
+    expect(coachAdmission({ status: "active", seatsLeft: 0 })?.message).toBe("No seats available");
   });
 });

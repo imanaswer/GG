@@ -53,6 +53,18 @@ export async function GET(req: NextRequest) {
     data: { status: "completed" },
   });
 
+  // --- Workshops: mark completed when endDate passes ---
+  // There was no workshop branch at all, so Workshop.status never left "open" and
+  // the list endpoint's `notIn: ["completed","archived","closed"]` filter could
+  // never match anything — every workshop ever created stayed on /workshops.
+  const workshopsCompleted = await prisma.workshop.updateMany({
+    where: {
+      status: { notIn: ["completed", "archived"] },
+      endDate: { lt: now },
+    },
+    data: { status: "completed" },
+  });
+
   // --- Archive: games completed > 1h ago (visibility window per business rules) ---
   // Completed games stay visible for only 1 hour, then move to "archived" which
   // every public/feed query already hides. Prefer the precise completedAt stamp;
@@ -93,6 +105,15 @@ export async function GET(req: NextRequest) {
     data: { status: "archived" },
   });
 
+  // --- Archive: workshops completed > 24h ago ---
+  const workshopsArchived = await prisma.workshop.updateMany({
+    where: {
+      status: "completed",
+      endDate: { lt: oneDayAgo },
+    },
+    data: { status: "archived" },
+  });
+
   return ok({
     checkedAt: now.toISOString(),
     gamesCompleted: gamesToComplete.length,
@@ -101,5 +122,7 @@ export async function GET(req: NextRequest) {
     eventsArchived: eventsArchived.count,
     campsCompleted: campsCompleted.count,
     campsArchived: campsArchived.count,
+    workshopsCompleted: workshopsCompleted.count,
+    workshopsArchived: workshopsArchived.count,
   });
 }

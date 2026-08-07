@@ -71,8 +71,12 @@ export async function POST(req: NextRequest, { params }: Ctx) {
         });
         if (claim.count === 0) throw new ApiError("Camp is full", 409);
         await tx.camp.updateMany({ where: { id, participants: { gte: camp.maxParticipants } }, data: { status: "full" } });
+        // Only free camps reach this route (paid ones 402 above), so the schema's
+        // "pending" default was permanently awaiting a payment that never exists —
+        // and reputationService counts camps on paymentStatus: "paid", so free
+        // camps never counted. Events and workshops already stamp this explicitly.
         await tx.campRegistration.create({
-          data: { campId: id, userId: session.id, childName, childAge: parseInt(String(childAge)) },
+          data: { campId: id, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
         });
       });
     } catch (e) {
