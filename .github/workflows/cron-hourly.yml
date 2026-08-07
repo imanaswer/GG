@@ -1,0 +1,26 @@
+name: hourly lifecycle cron
+
+# Vercel Hobby caps native crons at once per day, and a more frequent schedule
+# in vercel.json fails the deployment outright. The lifecycle sweep has to run
+# hourly or the documented 1-hour "completed" visibility window becomes 24.
+# So GitHub runs it hourly and vercel.json keeps a daily entry as the fallback
+# for when scheduled workflows are disabled (GitHub pauses them after 60 days
+# of repo inactivity). Delete this file and restore "0 * * * *" in vercel.json
+# if the project ever moves to Pro.
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      # -f makes a 401/500 fail the job: a missing or wrong CRON_SECRET has to
+      # be loud, not a green run that never completed a single game.
+      - name: Complete and archive finished games, events, camps, workshops
+        run: |
+          curl -fsS --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/complete-games"
