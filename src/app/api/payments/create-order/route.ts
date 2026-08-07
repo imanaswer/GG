@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import {
   campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, NotPayableError,
@@ -111,7 +112,18 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ amount: amountPaise, currency, receipt: `${entityType}_${entityId}` }),
     });
 
-    if (!res.ok) return fail("Payment gateway error", 502);
+    if (!res.ok) {
+      // Razorpay's body is the only thing that says WHY (bad key, live mode not
+      // activated, amount below the minimum). Discarding it made every cause the
+      // same undiagnosable 502. keyId is public — it ships to the browser on
+      // success — so its mode prefix is safe to log; the secret never is.
+      const detail = await res.text().catch(() => "");
+      logger.error("razorpay order creation failed", {
+        status: res.status, keyMode: keyId.slice(0, 9),
+        entityType, entityId, amountPaise, currency, detail: detail.slice(0, 500),
+      });
+      return fail("Payment gateway error", 502);
+    }
     const order = await res.json() as { id: string };
     await persistOrder(order.id);
     return ok({ orderId: order.id, amount: amountPaise, currency, keyId });
