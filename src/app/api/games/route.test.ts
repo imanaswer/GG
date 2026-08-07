@@ -7,6 +7,8 @@ const { prismaMock, sessionMock } = vi.hoisted(() => {
     user: { findUnique: vi.fn() },
     venueSlot: { findUnique: vi.fn() },
     game: { create: vi.fn(), findMany: vi.fn() },
+    gamePlayer: { findMany: vi.fn() },
+    waitlistEntry: { findMany: vi.fn() },
   };
   const sessionMock = vi.fn();
   return { prismaMock, sessionMock };
@@ -15,7 +17,7 @@ const { prismaMock, sessionMock } = vi.hoisted(() => {
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => ({ getSessionFromRequest: sessionMock }));
 
-import { POST } from "./route";
+import { POST, GET } from "./route";
 
 const future = () => new Date(Date.now() + 2 * 60 * 60_000); // 2h out, beyond buffer
 const reqWith = (body: unknown) => ({ json: async () => body } as unknown as Request);
@@ -108,5 +110,49 @@ describe("POST /api/games (venue-slot booking)", () => {
       duration: 60, organizerId: "host1", slots: 10, slotsLeft: 9, status: "open",
     });
     expect(data.scheduledAt).toEqual(slot.startTime);
+  });
+});
+
+describe("GET /api/games (viewer's own standing)", () => {
+  const listed = [
+    { id: "g1", title: "5v5", sport: "Football", location: "EMS", organizer: {}, _count: { players: 3 } },
+    { id: "g2", title: "3v3", sport: "Basketball", location: "SM St", organizer: {}, _count: { players: 8 } },
+  ];
+  const getGames = async () => {
+    const res = await GET(new Request("http://t/api/games") as never);
+    const j = await res.json();
+    return j.data as { id: string; joined: boolean; waitlisted: boolean }[];
+  };
+
+  beforeEach(() => {
+    prismaMock.game.findMany.mockResolvedValue(listed);
+    prismaMock.gamePlayer.findMany.mockResolvedValue([]);
+    prismaMock.waitlistEntry.findMany.mockResolvedValue([]);
+  });
+
+  it("flags the games the viewer has joined or is waitlisted on", async () => {
+    sessionMock.mockResolvedValue({ id: "u1" });
+    prismaMock.gamePlayer.findMany.mockResolvedValue([{ gameId: "g1" }]);
+    prismaMock.waitlistEntry.findMany.mockResolvedValue([{ gameId: "g2" }]);
+
+    const games = await getGames();
+    expect(games.find(g => g.id === "g1")).toMatchObject({ joined: true, waitlisted: false });
+    expect(games.find(g => g.id === "g2")).toMatchObject({ joined: false, waitlisted: true });
+  });
+
+  it("scopes the lookup to the viewer and the listed games", async () => {
+    sessionMock.mockResolvedValue({ id: "u1" });
+    await getGames();
+    expect(prismaMock.gamePlayer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "u1", gameId: { in: ["g1", "g2"] } } }),
+    );
+  });
+
+  it("reports no standing for an anonymous viewer, without querying membership", async () => {
+    sessionMock.mockResolvedValue(null);
+    const games = await getGames();
+    expect(games.every(g => !g.joined && !g.waitlisted)).toBe(true);
+    expect(prismaMock.gamePlayer.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.waitlistEntry.findMany).not.toHaveBeenCalled();
   });
 });

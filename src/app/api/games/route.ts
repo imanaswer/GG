@@ -55,12 +55,31 @@ export async function GET(req: NextRequest) {
       g.location.toLowerCase().includes(q)
     );
 
+    // The viewer's own relationship to each listed game. Without this the cards
+    // can only ever say "Join" — a player who has already joined sees the same
+    // button they just pressed. Two indexed lookups over the listed ids, and
+    // only for a signed-in viewer, so anonymous listing is unchanged.
+    // Response stays uncached (plain ok(), no s-maxage) because it is now
+    // per-user; never switch this handler to okCached.
+    const session = await getSessionFromRequest(req);
+    const ids = games.map(g => g.id);
+    const [mine, waiting] = session && ids.length
+      ? await Promise.all([
+          prisma.gamePlayer.findMany({ where: { userId: session.id, gameId: { in: ids } }, select: { gameId: true } }),
+          prisma.waitlistEntry.findMany({ where: { userId: session.id, gameId: { in: ids } }, select: { gameId: true } }),
+        ])
+      : [[], []];
+    const joinedIds = new Set(mine.map(r => r.gameId));
+    const waitlistedIds = new Set(waiting.map(r => r.gameId));
+
     const enriched = games.map(g => ({
       ...g,
       organizerName: g.organizer?.name,
       organizerRating: g.organizer?.reliabilityScore,
       organizerGames: g.organizer?.gamesOrganized,
       playerCount: g._count.players,
+      joined: joinedIds.has(g.id),
+      waitlisted: waitlistedIds.has(g.id),
     }));
 
     return ok(enriched);

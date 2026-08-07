@@ -58,6 +58,11 @@ export type Game = {
   hostPayment?: HostPayment | null;
   players?: { id: string; userId: string; name: string; username: string; avatarUrl?: string; rating: number; tier?: string; reputationScore?: number; joinedAt: string; paymentStatus?: string; paidAt?: string | null }[];
   playerCount?: number;
+  // Set by the listing endpoint for the signed-in viewer. Absent on the SSR
+  // seed (that request carries no cookies), which is why the listing refetches
+  // on mount — see seed() above.
+  joined?: boolean;
+  waitlisted?: boolean;
 };
 
 export type Booking = {

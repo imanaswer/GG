@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect, Suspense, startTransition } from "react";
-import { Search, Plus, MapPin, Clock, Users, Star, SlidersHorizontal, ArrowUpRight, X, IndianRupee } from "lucide-react";
+import { Search, Plus, MapPin, Clock, Users, Star, SlidersHorizontal, ArrowUpRight, X, IndianRupee, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -163,6 +163,13 @@ function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
   const joinable = !["cancelled", "completed", "archived"].includes(game.status);
   const isFree = game.costAmount === 0;
   const img = game.imageUrl || gameImage(game.sport, game.id).src;
+  // Where the viewer already stands with this game. Hosting is derived from
+  // data the card already had; joined/waitlisted come from the listing endpoint.
+  const standing =
+    user && game.organizerId === user.id ? "Hosting"
+    : game.joined     ? "Joined"
+    : game.waitlisted ? "Waitlisted"
+    : null;
 
   return (
     <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>
@@ -325,6 +332,19 @@ function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
             }}>
               {game.status === "completed" ? "Completed" : "Closed"}
             </span>
+          ) : standing ? (
+            // Already in this game (or hosting it) — say so instead of offering
+            // a button that can only fail. Links through to the game page,
+            // which is where you leave, pay or message the host.
+            <Link href={`/game/${game.id}`} style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "8px 16px", borderRadius: 100, fontSize: 12, fontWeight: 700,
+              background: "rgba(34,197,94,0.1)", color: "#4ade80",
+              border: "1px solid rgba(34,197,94,0.3)",
+              textDecoration: "none", flexShrink: 0,
+            }}>
+              <Check size={12} /> {standing}
+            </Link>
           ) : user ? (
             <button
               disabled={join.isPending}
