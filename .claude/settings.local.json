@@ -178,7 +178,31 @@
       "Bash(kill 64816)",
       "Bash(echo \"audit exit: $?\")",
       "Bash(echo \"exit $?\")",
-      "Bash(echo \"tsc-exit=$?\")"
+      "Bash(echo \"tsc-exit=$?\")",
+      "Bash(mkdir -p release-evidence/__CMDSUB_OUTPUT__)",
+      "Bash(docker info *)",
+      "Bash(echo \"audit-exit=$?\")",
+      "Bash(artillery --version)",
+      "Bash(command -v k6)",
+      "Bash(command -v gitleaks)",
+      "Bash(command -v semgrep)",
+      "Bash(k6 version *)",
+      "Bash(gitleaks version *)",
+      "Bash(semgrep --version)",
+      "Bash(semgrep --config=auto --json -o release-evidence/2026-07-09/p2-semgrep.json .)",
+      "Bash(echo \"semgrep-exit=$?\")",
+      "Bash(sips -g pixelWidth -g pixelHeight public/logo.png public/icon-512.png public/Logo-Photoroom.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/anaswerajay/GAMEGROUND/public/og-image.png)",
+      "Bash(vercel whoami *)",
+      "Bash(vercel dns *)",
+      "Bash(dig TXT gameground.net +short)",
+      "Bash(dig TXT gameground.net @8.8.8.8 +short)",
+      "Bash(PORT=3111 npm start *)",
+      "Bash(gh run *)",
+      "Bash(echo \"=== exit $? ===\")",
+      "Bash(npm ci *)",
+      "Bash(npx audit-ci *)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }
