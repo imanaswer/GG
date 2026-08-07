@@ -82,8 +82,12 @@ export async function resolveAppleUser(
 ): Promise<SessionUser> {
   // 1. Existing Apple identity. Checked before email so a user who later hid their address (or
   //    switched to the private relay) still lands on the same account.
-  const byApple = await prisma.user.findUnique({
-    where: { appleId: profile.sub },
+  //    findFirst rather than findUnique so the deletedAt guard can ride along: a
+  //    soft-deleted row keeps its columns, and without this a deleted account is
+  //    signed straight back in. Deletion also nulls appleId (users/[id] DELETE);
+  //    this is the second lock on the same door.
+  const byApple = await prisma.user.findFirst({
+    where: { appleId: profile.sub, deletedAt: null },
     select: USER_SELECT,
   });
   if (byApple) return toSessionUser(byApple);
@@ -102,8 +106,8 @@ export async function resolveAppleUser(
     throw new ApiError("This Apple account's email is not verified.", 401);
   }
 
-  const byEmail = await prisma.user.findUnique({
-    where: { email: profile.email },
+  const byEmail = await prisma.user.findFirst({
+    where: { email: profile.email, deletedAt: null },
     select: { ...USER_SELECT, appleId: true },
   });
   if (byEmail) {
@@ -134,8 +138,8 @@ export async function resolveAppleUser(
     // P2002: a concurrent request already created the row. Re-resolve rather than 500.
     if (isUniqueViolation(e)) {
       const raced =
-        (await prisma.user.findUnique({ where: { appleId: profile.sub }, select: USER_SELECT })) ??
-        (await prisma.user.findUnique({ where: { email: profile.email }, select: USER_SELECT }));
+        (await prisma.user.findFirst({ where: { appleId: profile.sub, deletedAt: null }, select: USER_SELECT })) ??
+        (await prisma.user.findFirst({ where: { email: profile.email, deletedAt: null }, select: USER_SELECT }));
       if (raced) return toSessionUser(raced);
     }
     throw e;

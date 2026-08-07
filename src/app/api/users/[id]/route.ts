@@ -7,8 +7,35 @@ import { computeProfileCompletion } from "@/lib/profileCompletion";
 import { currentSeason, seasonRep } from "@/lib/season";
 import { progressToNextTier } from "@/lib/reputation";
 import { requireSignedAgreement, AgreementGateError } from "@/lib/coachAgreement/gate";
+import { sendPush } from "@/lib/push";
 
 type Ctx = { params: Promise<{ id: string }> };
+
+/**
+ * Tell everyone booked into games that were cancelled by their host's account
+ * deletion. Runs after the delete transaction commits — a push is a side effect
+ * and must never hold a database transaction open.
+ */
+async function notifyCancelled(gameIds: string[]) {
+  const [games, players, queued] = await Promise.all([
+    prisma.game.findMany({ where: { id: { in: gameIds } }, select: { id: true, title: true } }),
+    prisma.gamePlayer.findMany({ where: { gameId: { in: gameIds }, status: { not: "cancelled" } }, select: { gameId: true, userId: true } }),
+    prisma.waitlistEntry.findMany({ where: { gameId: { in: gameIds } }, select: { gameId: true, userId: true } }),
+  ]);
+
+  for (const game of games) {
+    const affected = [...new Set(
+      [...players, ...queued].filter(r => r.gameId === game.id).map(r => r.userId),
+    )];
+    if (!affected.length) continue;
+    void sendPush(affected, {
+      category: "cancellation",
+      title: "Game cancelled",
+      body: `${game.title} has been cancelled — the organiser's account was deleted.`,
+      data: { url: `/game/${game.id}` },
+    });
+  }
+}
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   try {
@@ -201,23 +228,95 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     if (!session || session.id !== id) return fail("Unauthorized", 403);
 
     const stamp = Date.now();
-    await prisma.$transaction([
-      prisma.review.updateMany({ where: { userId: id }, data: { reviewerName: "Deleted User" } }),
-      prisma.gamePlayer.deleteMany({ where: { userId: id } }),
-      prisma.booking.updateMany({ where: { userId: id }, data: { status: "cancelled" } }),
-      prisma.user.update({
+    const now = new Date();
+
+    // Interactive form, not the array form: the seat give-back needs to read the
+    // games before it deletes the rows that identify them, and doing that read
+    // inside the transaction closes the read/write race.
+    const cancelledGameIds = await prisma.$transaction(async (tx) => {
+      // Seats to hand back, and which of those games were full only because this
+      // user held one. Deliberately limited to games that have not happened:
+      // bumping slotsLeft on a completed game would make a finished game look
+      // joinable again.
+      const joined = await tx.gamePlayer.findMany({
+        where: { userId: id, game: { status: { in: ["open", "full"] } } },
+        select: { gameId: true, game: { select: { status: true } } },
+      });
+      const joinedIds = joined.map(j => j.gameId);
+      const wasFullIds = joined.filter(j => j.game?.status === "full").map(j => j.gameId);
+
+      // Captured BEFORE the cancel below, because updateMany returns no ids and
+      // re-querying for cancelled games afterwards would also sweep up games this
+      // user cancelled weeks ago — and then notify their players a second time.
+      const hosted = await tx.game.findMany({
+        where: { organizerId: id, status: { in: ["open", "full"] } },
+        select: { id: true },
+      });
+      const hostedIds = hosted.map(g => g.id);
+
+      await tx.review.updateMany({ where: { userId: id }, data: { reviewerName: "Deleted User" } });
+      await tx.gamePlayer.deleteMany({ where: { userId: id } });
+      // Waitlist rows have no cascade and were previously left behind, where they
+      // kept their position and skewed the count+1 the next entrant is given.
+      await tx.waitlistEntry.deleteMany({ where: { userId: id } });
+      await tx.booking.updateMany({ where: { userId: id }, data: { status: "cancelled" } });
+
+      // Release the seats. Two statements rather than one update per game: this
+      // runs inside an interactive transaction over a max:1 pool, so a user with
+      // a dozen games would otherwise be a dozen sequential round trips against
+      // the only connection, under Prisma's 5s interactive timeout.
+      if (joinedIds.length) {
+        await tx.game.updateMany({ where: { id: { in: joinedIds } }, data: { slotsLeft: { increment: 1 } } });
+        if (wasFullIds.length) {
+          await tx.game.updateMany({ where: { id: { in: wasFullIds } }, data: { status: "open" } });
+        }
+      }
+
+      // Hosted games do not survive their host. Left alone they stay on the public
+      // list, joinable, with a dead tap-to-chat link — and hold their VenueSlot
+      // forever, since slotId is @unique and only the cancel path releases it.
+      // Past and completed games are untouched: they are historical record.
+      //
+      // This deliberately bypasses the rule in games/[id]/cancel that a host may
+      // not cancel a game people have joined. Deletion has to resolve to
+      // something, and the alternative — refusing to delete an account while it
+      // hosts a game — leaves a user stranded with no way out.
+      if (hostedIds.length) {
+        await tx.game.updateMany({
+          where: { id: { in: hostedIds } },
+          data: { status: "cancelled", cancelledAt: now, slotId: null },
+        });
+      }
+
+      await tx.user.update({
         where: { id },
         data: {
-          deletedAt: new Date(),
+          deletedAt: now,
           email: `deleted-${id}-${stamp}@deleted.local`,
           username: `deleted_${id}_${stamp}`,
+          // Reviews were already anonymised; game listings were not, so a deleted
+          // account's real name kept appearing publicly as organizerName.
+          name: "Deleted User",
+          // Both @unique. Left set, the next social sign-in resolves straight back
+          // to this tombstone — and the unique constraint means a fresh create
+          // could never take their place either.
+          googleId: null,
+          appleId: null,
           phone: null,
           avatarUrl: null,
           bio: null,
           reputationOverride: null,
         },
-      }),
-    ]);
+      });
+
+      return hostedIds;
+    });
+
+    // Deferred to after commit, matching how the cancel route notifies: players
+    // whose game just disappeared deserve the same push they would have got had
+    // the host cancelled it by hand. The deleted user's own GamePlayer rows are
+    // already gone, so nobody is notified about their own deletion.
+    if (cancelledGameIds.length) void notifyCancelled(cancelledGameIds);
 
     const res = NextResponse.json({ ok: true, data: { deleted: true } });
     const opts = clearCookie();

@@ -35,10 +35,12 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: result.userId },
-      select: USER_SELECT,
+      select: { ...USER_SELECT, deletedAt: true },
     });
-    // The code was valid but the account is gone (deleted between handoff and exchange).
-    if (!user) return fail("This sign-in link is no longer valid. Please try again.", 401);
+    // The code was valid but the account is gone — hard-deleted, or soft-deleted
+    // between handoff and exchange, which leaves the row (and so a truthy `user`)
+    // in place. Same opaque message either way.
+    if (!user || user.deletedAt) return fail("This sign-in link is no longer valid. Please try again.", 401);
 
     const sessionUser = toSessionUser(user);
     return ok({ user: sessionUser, token: await signToken(sessionUser) });

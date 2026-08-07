@@ -4,6 +4,10 @@ const { prismaMock } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
     user: {
+      // findFirst: the resolver's own lookups (they carry a deletedAt filter, so
+      // they cannot be findUnique). findUnique: uniqueUsername's availability
+      // probe, which is still keyed on the unique username column.
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
       create: vi.fn(),
@@ -35,6 +39,7 @@ const profile = (over: Partial<AppleProfile> = {}): AppleProfile => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  prismaMock.user.findFirst.mockResolvedValue(null);
   prismaMock.user.findUnique.mockResolvedValue(null);
 });
 
@@ -54,12 +59,12 @@ describe("appleConfigured", () => {
 
 describe("resolveAppleUser", () => {
   it("matches on appleId first, before email", async () => {
-    prismaMock.user.findUnique.mockResolvedValueOnce(ROW);
+    prismaMock.user.findFirst.mockResolvedValueOnce(ROW);
 
     expect(await resolveAppleUser(profile())).toMatchObject({ id: "u1", username: "player" });
     // One lookup only — the email branch must not run.
-    expect(prismaMock.user.findUnique).toHaveBeenCalledTimes(1);
-    expect(prismaMock.user.findUnique.mock.calls[0][0].where).toEqual({ appleId: "000123.abc.0001" });
+    expect(prismaMock.user.findFirst).toHaveBeenCalledTimes(1);
+    expect(prismaMock.user.findFirst.mock.calls[0][0].where).toEqual({ appleId: "000123.abc.0001", deletedAt: null });
     expect(prismaMock.user.create).not.toHaveBeenCalled();
   });
 
@@ -68,12 +73,12 @@ describe("resolveAppleUser", () => {
    * address changes, still lands on the same account instead of silently getting a second one.
    */
   it("logs in a known appleId even when Apple sends no email at all", async () => {
-    prismaMock.user.findUnique.mockResolvedValueOnce(ROW);
+    prismaMock.user.findFirst.mockResolvedValueOnce(ROW);
     expect(await resolveAppleUser(profile({ email: null }))).toMatchObject({ id: "u1" });
   });
 
   it("links an existing email account rather than creating a duplicate", async () => {
-    prismaMock.user.findUnique
+    prismaMock.user.findFirst
       .mockResolvedValueOnce(null) // by appleId
       .mockResolvedValueOnce({ ...ROW, appleId: null }); // by email
     prismaMock.user.update.mockResolvedValue(ROW);
@@ -86,7 +91,7 @@ describe("resolveAppleUser", () => {
   });
 
   it("keeps an already-linked appleId instead of overwriting it", async () => {
-    prismaMock.user.findUnique
+    prismaMock.user.findFirst
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ ...ROW, appleId: "000123.abc.EXISTING" });
     prismaMock.user.update.mockResolvedValue(ROW);
@@ -131,12 +136,34 @@ describe("resolveAppleUser", () => {
 
   it("re-resolves instead of 500ing when a concurrent request wins the create", async () => {
     prismaMock.user.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
-    prismaMock.user.findUnique
+    prismaMock.user.findFirst
       .mockResolvedValueOnce(null) // by appleId
       .mockResolvedValueOnce(null) // by email
-      .mockResolvedValueOnce(null) // username availability check inside uniqueUsername
       .mockResolvedValueOnce(ROW); // post-race re-lookup by appleId
 
     expect(await resolveAppleUser(profile())).toMatchObject({ id: "u1" });
+  });
+});
+
+describe("resolveAppleUser and soft-deleted accounts", () => {
+  // The bug this guard exists for: deletion is a soft delete, so the row keeps
+  // its appleId. Without the deletedAt filter the next Sign in with Apple
+  // resolves the tombstone and the server mints a valid token for a dead account.
+  it("scopes both lookups to rows that are not soft-deleted", async () => {
+    prismaMock.user.create.mockResolvedValue(ROW);
+    await resolveAppleUser(profile());
+
+    for (const call of prismaMock.user.findFirst.mock.calls) {
+      expect(call[0].where).toMatchObject({ deletedAt: null });
+    }
+  });
+
+  it("creates a fresh account rather than reviving a deleted one", async () => {
+    // Both lookups miss because the tombstone is filtered out by deletedAt.
+    prismaMock.user.findFirst.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue({ ...ROW, id: "u2" });
+
+    expect(await resolveAppleUser(profile())).toMatchObject({ id: "u2" });
+    expect(prismaMock.user.create).toHaveBeenCalledTimes(1);
   });
 });

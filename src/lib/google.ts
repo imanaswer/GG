@@ -143,12 +143,23 @@ const SELECT = USER_SELECT;
  * P2002 unique-violation races during create fall back to a re-lookup-and-link.
  */
 export async function resolveGoogleUser(profile: GoogleProfile): Promise<SessionUser> {
-  // 1. Existing Google identity.
-  const byGoogle = await prisma.user.findUnique({ where: { googleId: profile.sub }, select: SELECT });
+  // 1. Existing Google identity. findFirst rather than findUnique so the
+  //    deletedAt guard can ride along: a soft-deleted row keeps its columns, and
+  //    without this a deleted account is signed straight back in. Deletion also
+  //    nulls googleId (users/[id] DELETE) — this is the second lock on the same
+  //    door, so the invariant "a soft-deleted row is never a sign-in target"
+  //    holds even if a tombstone somewhere kept its identifier.
+  const byGoogle = await prisma.user.findFirst({
+    where: { googleId: profile.sub, deletedAt: null },
+    select: SELECT,
+  });
   if (byGoogle) return toSessionUser(byGoogle);
 
   // 2. Existing email account → link.
-  const byEmail = await prisma.user.findUnique({ where: { email: profile.email }, select: { ...SELECT, googleId: true } });
+  const byEmail = await prisma.user.findFirst({
+    where: { email: profile.email, deletedAt: null },
+    select: { ...SELECT, googleId: true },
+  });
   if (byEmail) {
     const linked = await prisma.user.update({
       where: { id: byEmail.id },
@@ -180,8 +191,8 @@ export async function resolveGoogleUser(profile: GoogleProfile): Promise<Session
     // P2002: a concurrent callback already created the row. Re-resolve and link.
     if (isUniqueViolation(e)) {
       const raced =
-        (await prisma.user.findUnique({ where: { googleId: profile.sub }, select: SELECT })) ??
-        (await prisma.user.findUnique({ where: { email: profile.email }, select: SELECT }));
+        (await prisma.user.findFirst({ where: { googleId: profile.sub, deletedAt: null }, select: SELECT })) ??
+        (await prisma.user.findFirst({ where: { email: profile.email, deletedAt: null }, select: SELECT }));
       if (raced) return toSessionUser(raced);
     }
     throw e;
