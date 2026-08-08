@@ -103,3 +103,42 @@ describe("DELETE /workshops/[id] — paid cancellation leaves a refund trail", (
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });
+
+// ── The overselling race ──────────────────────────────────────────────────────
+// The capacity check and the increment used to be separate statements, so two
+// users taking the last seat both passed the check and both incremented. The
+// guard now lives in the WHERE clause, where the database resolves the race.
+describe("POST /workshops/[id] — the last seat is claimed atomically", () => {
+  it("claims conditionally on participants < max, not on a stale read", async () => {
+    prismaMock.workshop.findUnique.mockResolvedValue({ participants: 9, maxParticipants: 10, registrationDeadline: future, price: 0, status: "open" });
+    prismaMock.workshopRegistration.findFirst.mockResolvedValue(null);
+    const tx = {
+      workshop: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      workshopRegistration: { create: vi.fn() },
+    };
+    prismaMock.$transaction.mockImplementation(async (fn: (c: unknown) => unknown) => fn(tx));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await POST(req({ participantName: "P", registrationType: "adult" }) as any, ctx("w1"));
+
+    expect(tx.workshop.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ participants: { lt: 10 } }),
+    }));
+  });
+
+  it("refuses with 409 when the claim matches no rows — someone else took it", async () => {
+    prismaMock.workshop.findUnique.mockResolvedValue({ participants: 9, maxParticipants: 10, registrationDeadline: future, price: 0, status: "open" });
+    prismaMock.workshopRegistration.findFirst.mockResolvedValue(null);
+    const tx = {
+      workshop: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) }, // lost the race
+      workshopRegistration: { create: vi.fn() },
+    };
+    prismaMock.$transaction.mockImplementation(async (fn: (c: unknown) => unknown) => fn(tx));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await POST(req({ participantName: "P", registrationType: "adult" }) as any, ctx("w1"));
+
+    expect(res.status).toBe(409);
+    expect(tx.workshopRegistration.create).not.toHaveBeenCalled(); // no seat, no row
+  });
+});

@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, fail, handleErr, ApiError } from "@/lib/api";
+import { Prisma } from "@prisma/client";
 import { refundPolicy } from "@/lib/refundPolicy";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
@@ -70,20 +71,35 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const existing = await prisma.workshopRegistration.findFirst({ where: { workshopId: id, userId: session.id }, select: { id: true } });
     if (existing) return fail("Already registered", 409);
 
-    const newCount = workshop.participants + 1;
-    const statusUpdate = newCount >= workshop.maxParticipants ? "full" : undefined;
     const isFree = workshop.price === 0;
 
-    await prisma.$transaction([
-      prisma.workshopRegistration.create({
-        data: {
-          workshopId: id, userId: session.id,
-          participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
-          registrationType, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus,
-        },
-      }),
-      prisma.workshop.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),
-    ]);
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Conditional claim, not read-then-increment. The capacity check above and
+        // the increment below used to be separate statements, so two users taking
+        // the last seat both passed the check and both incremented — the exact
+        // overselling bug already fixed for camps. The guard belongs in the WHERE,
+        // where the database resolves the race.
+        const claim = await tx.workshop.updateMany({
+          where: { id, participants: { lt: workshop.maxParticipants }, status: { notIn: ["closed", "completed", "archived"] } },
+          data: { participants: { increment: 1 } },
+        });
+        if (claim.count === 0) throw new ApiError("Workshop is full", 409);
+        await tx.workshop.updateMany({ where: { id, participants: { gte: workshop.maxParticipants } }, data: { status: "full" } });
+        await tx.workshopRegistration.create({
+          data: {
+            workshopId: id, userId: session.id,
+            participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
+            registrationType, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus,
+          },
+        });
+      });
+    } catch (e) {
+      if (e instanceof ApiError) return fail(e.message, e.status);
+      // @@unique([workshopId, userId]) — a double-submit races past the check above.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return fail("Already registered", 409);
+      throw e;
+    }
 
     await recordActivityAndRecompute(session.id);
 
@@ -98,7 +114,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       dedupeKey: `registration.created:workshop:${id}:${session.id}`,
     }));
 
-    return ok({ registered: true, participants: newCount });
+    const after = await prisma.workshop.findUnique({ where: { id }, select: { participants: true } });
+    return ok({ registered: true, participants: after?.participants ?? workshop.participants + 1 });
   } catch (e) { return handleErr(e); }
 }
 

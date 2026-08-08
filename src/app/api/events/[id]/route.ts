@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getSessionFromRequest } from "@/lib/auth";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { deriveEventStatus } from "@/lib/events";
-import { ok, fail, handleErr } from "@/lib/api";
+import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { sortEventUpdates } from "@/lib/eventUpdates";
@@ -69,14 +70,35 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const existing = await prisma.eventRegistration.findFirst({ where: { eventId: id, userId: session.id }, select: { id: true } });
     if (existing) return fail("Already registered", 409);
 
-    const newCount = event.participants + 1;
-    const statusUpdate = newCount >= event.maxParticipants ? "Full" : undefined;
     const isFree = event.entryFeeAmount === 0;
 
-    await prisma.$transaction([
-      prisma.eventRegistration.create({ data: { eventId: id, userId: session.id, teamName, paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus, status: event.approvalMode === "manual" ? "pending" : "approved" } }),
-      prisma.sportEvent.update({ where: { id }, data: { participants: { increment: 1 }, status: statusUpdate } }),
-    ]);
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Conditional claim, not read-then-increment. The capacity check above and
+        // the increment below used to be separate statements, so two users taking
+        // the last seat both passed the check and both incremented — the exact
+        // overselling bug already fixed for camps. The guard belongs in the WHERE,
+        // where the database resolves the race.
+        const claim = await tx.sportEvent.updateMany({
+          where: { id, participants: { lt: event.maxParticipants }, status: { notIn: ["Cancelled", "Completed", "Archived", "Full"] }, published: true },
+          data: { participants: { increment: 1 } },
+        });
+        if (claim.count === 0) throw new ApiError("Event is full", 409);
+        await tx.sportEvent.updateMany({ where: { id, participants: { gte: event.maxParticipants } }, data: { status: "Full" } });
+        await tx.eventRegistration.create({
+          data: {
+            eventId: id, userId: session.id, teamName,
+            paymentStatus: (isFree ? "paid" : "pending") satisfies PaymentStatus,
+            status: event.approvalMode === "manual" ? "pending" : "approved",
+          },
+        });
+      });
+    } catch (e) {
+      if (e instanceof ApiError) return fail(e.message, e.status);
+      // @@unique([eventId, userId]) — a double-submit races past the check above.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return fail("Already registered", 409);
+      throw e;
+    }
 
     await recordActivityAndRecompute(session.id);
 
@@ -91,7 +113,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       dedupeKey: `registration.created:event:${id}:${session.id}`,
     }));
 
-    return ok({ registered: true, participants: newCount });
+    const after = await prisma.sportEvent.findUnique({ where: { id }, select: { participants: true } });
+    return ok({ registered: true, participants: after?.participants ?? event.participants + 1 });
   } catch (e) { return handleErr(e); }
 }
 
