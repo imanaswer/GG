@@ -73,6 +73,9 @@ export async function GET(req: NextRequest) {
     prisma.booking.count({ where }),
     // Counted per bucket through the same where-fragment the filter uses. A groupBy
     // on `status` alone cannot express refund-due, which lives on the payment axis.
+    // No `delete` of status/paymentStatus is needed here (unlike the registration
+    // routes): countWhere is built with status="all", and coachWhereForStatus("all")
+    // plus coachDateWhere emit neither key, so nothing conflicts with the spread.
     Promise.all(CATEGORY_STATUSES.coaches.map(s =>
       prisma.booking.count({ where: { ...countWhere, ...coachWhereForStatus(s) } }))),
   ]);
