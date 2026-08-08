@@ -8,7 +8,7 @@ import { refundPolicy } from "@/lib/refundPolicy";
 import type { PaymentStatus } from "@/lib/paymentStatus";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
-import { logOps } from "@/lib/ops";
+import { logOpsSafe } from "@/lib/ops";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const { childName, childAge } = await req.json();
     if (!childName || !childAge) return fail("childName and childAge are required", 400);
 
-    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, status: true, price: true, registrationDeadline: true } });
+    const camp = await prisma.camp.findUnique({ where: { id }, select: { participants: true, maxParticipants: true, status: true, price: true, registrationDeadline: true, title: true, startDate: true, endDate: true, location: true } });
     if (!camp) return fail("Camp not found", 404);
     // Paid camps must go through the payment/verify flow (which creates the paid
     // registration). This free-register endpoint would otherwise let a user occupy
@@ -93,14 +93,23 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     const after = await prisma.camp.findUnique({ where: { id }, select: { participants: true } });
     // Only FREE registrations reach this route — paid ones go through
     // payments/verify and are announced by payment.captured instead.
-    void logOps({
+    logOpsSafe(() => ({
       type: "registration.created",
       title: "[GG] New camp registration (free)",
       body: `${session.name ?? "A player"} registered.`,
       link: "/admin/bookings/camps",
       entityType: "camp", entityId: id, userId: session.id,
       dedupeKey: `registration.created:camp:${id}:${session.id}`,
-    });
+      // Feeds emails.campRegistered on the customer channel — see lib/ops.ts.
+      meta: {
+        entity: "camp",
+        parentName: session.name ?? "there",
+        childName: String(childName),
+        campName: camp.title,
+        dates: `${camp.startDate.toLocaleDateString("en-IN")} – ${camp.endDate.toLocaleDateString("en-IN")}`,
+        contact: camp.location,
+      },
+    }));
 
     return ok({ registered: true, slotsLeft: Math.max(0, camp.maxParticipants - (after?.participants ?? camp.maxParticipants)) });
   } catch (e) { return handleErr(e); }
@@ -150,7 +159,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     // Logged AFTER the transaction commits — a duplicate dedupeKey raises P2002,
     // and a P2002 inside a live transaction would poison it and roll back the
     // cancellation. dedupeKey makes a double-cancel a single alert.
-    if (refundDue) void logOps({
+    if (refundDue) logOpsSafe(() => ({
       type: "refund.due",
       severity: "action",
       title: `[GG] Refund due — camp cancellation`,
@@ -158,7 +167,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       link: "/admin/bookings/camps?status=refund_pending",
       entityType: "camp", entityId: id, userId: session.id,
       dedupeKey: `refund.due:camp:${id}:${session.id}`,
-    });
+    }));
 
     return ok({ cancelled: true, refundDue });
   } catch (e) { return handleErr(e); }

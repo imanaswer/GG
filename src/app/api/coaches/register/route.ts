@@ -4,7 +4,7 @@ import { ok, fail, handleErr } from "@/lib/api";
 import bcrypt from "bcryptjs";
 import { generateSigningToken, buildSignLink } from "@/lib/coachAgreement/signingToken";
 import { sendEmail, emails } from "@/lib/email";
-import { logOps } from "@/lib/ops";
+import { logOpsSafe } from "@/lib/ops";
 
 type BatchInput = { day: string; time: string; level: string; seats: number };
 
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // A self-registered coach is invisible until approved: filtered out of every
     // public listing and blocked from bookings by coachAdmission. Nothing told an
     // admin they were waiting, so a coach could sit for days with nobody knowing.
-    void logOps({
+    logOpsSafe(() => ({
       type: "coach.pending_approval",
       severity: "action",
       title: "[GG] New coach awaiting approval",
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       link: "/admin/coaches",
       entityType: "coach", entityId: coach.id,
       dedupeKey: `coach.pending_approval:${coach.id}`,
-    });
+    }));
 
     return ok({
       registered: true,

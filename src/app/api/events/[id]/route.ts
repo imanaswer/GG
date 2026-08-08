@@ -10,7 +10,7 @@ import { sortEventUpdates } from "@/lib/eventUpdates";
 import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
 import { flagRefundDue } from "@/lib/refunds";
 import { refundPolicy } from "@/lib/refundPolicy";
-import { logOps } from "@/lib/ops";
+import { logOpsSafe } from "@/lib/ops";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -82,14 +82,14 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
     // Only FREE registrations reach this route — paid ones go through
     // payments/verify and are announced by payment.captured instead.
-    void logOps({
+    logOpsSafe(() => ({
       type: "registration.created",
       title: "[GG] New event registration (free)",
       body: `${session.name ?? "A player"} registered.`,
       link: "/admin/bookings/events",
       entityType: "event", entityId: id, userId: session.id,
       dedupeKey: `registration.created:event:${id}:${session.id}`,
-    });
+    }));
 
     return ok({ registered: true, participants: newCount });
   } catch (e) { return handleErr(e); }
@@ -134,7 +134,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     // Logged AFTER the transaction commits — a duplicate dedupeKey raises P2002,
     // and a P2002 inside a live transaction would poison it and roll back the
     // cancellation. dedupeKey makes a double-cancel a single alert.
-    if (refundDue) void logOps({
+    if (refundDue) logOpsSafe(() => ({
       type: "refund.due",
       severity: "action",
       title: `[GG] Refund due — event cancellation`,
@@ -142,7 +142,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       link: "/admin/bookings/events?status=refund_pending",
       entityType: "event", entityId: id, userId: session.id,
       dedupeKey: `refund.due:event:${id}:${session.id}`,
-    });
+    }));
 
     return ok({ cancelled: true, refundDue });
   } catch (e) { return handleErr(e); }

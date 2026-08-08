@@ -20,6 +20,7 @@
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { notifyAdmin } from "@/lib/notifyAdmin";
+import { sendEmail, emails } from "@/lib/email";
 
 /** Feed item, work item, or audit row. Only "info" and "action" are ever notified. */
 export type OpsSeverity = "info" | "action" | "audit";
@@ -41,8 +42,32 @@ export type OpsInput = {
 };
 
 const ADMIN_CHANNEL = "admin-email";
-/** Every channel an event is expected to reach. Phase 3 appends the customer one. */
-const INTENDED_CHANNELS = [ADMIN_CHANNEL];
+const CUSTOMER_CHANNEL = "customer-email";
+
+// ─── Customer templates ───────────────────────────────────────────────────────
+// Six of the eleven templates in lib/email.ts were fully written and sent by
+// nothing: bookingMade, bookingConfirmed, campRegistered, newBookingForCoach,
+// bookingApproved, bookingRejected. They are wired here rather than at each call
+// site so a customer mail gets the same durability and retry as an admin alert.
+//
+// Everything a template needs travels in `meta`, set by the emit site. The
+// recipient is meta.to when present (a coach, who may not be a User at all) and
+// otherwise the row's user, resolved at send time so a changed address is picked
+// up and no email is copied into this table.
+type Meta = Record<string, string>;
+type Rendered = { subject: string; html: string };
+
+const CUSTOMER_TEMPLATES: Record<string, (m: Meta) => Rendered | null> = {
+  "booking.created":       m => emails.bookingMade(m.playerName, m.coachName, m.batch),
+  "booking.created.coach": m => emails.newBookingForCoach(m.coachName, m.playerName, m.batch, m.note || undefined),
+  "booking.approved":      m => emails.bookingApproved(m.playerName, m.coachName, m.batch, m.address ?? "", m.phone ?? ""),
+  "booking.rejected":      m => emails.bookingRejected(m.playerName, m.coachName, m.batch, m.reason || undefined),
+  "booking.confirmed":     m => emails.bookingConfirmed(m.playerName, m.coachName, m.batch, m.address ?? "", m.phone ?? ""),
+  // One type covers camps, workshops and events; only camps has a written template.
+  "registration.created":  m => (m.entity === "camp"
+    ? emails.campRegistered(m.parentName, m.childName, m.campName, m.dates, m.contact ?? "")
+    : null),
+};
 /** Give up after this many tries; the row stays visible as a failed alert. */
 export const MAX_ATTEMPTS = 5;
 /** A claim older than this is assumed dead (function timed out) and may be retaken. */
@@ -81,6 +106,24 @@ export async function logOps(input: OpsInput): Promise<string | null> {
   }
 }
 
+/**
+ * Build the input and log it, swallowing failures in the BUILDER as well as the
+ * write. `void logOps({ ...expr })` looks safe but is not: the object literal is
+ * evaluated in the request path, so one unexpected null while assembling an alert
+ * would throw and fail a booking that had already committed. That is precisely the
+ * inversion this module exists to prevent, so the builder runs behind the guard too.
+ */
+export function logOpsSafe(build: () => OpsInput): void {
+  let input: OpsInput;
+  try {
+    input = build();
+  } catch (err) {
+    logger.error("logOps input build failed", { err });
+    return;
+  }
+  void logOps(input);
+}
+
 function isUniqueViolation(err: unknown): boolean {
   return typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002";
 }
@@ -108,7 +151,7 @@ export async function dispatchPending(limit = 25): Promise<{ sent: number; faile
       },
       orderBy: { createdAt: "asc" }, // oldest first: a stuck alert is the urgent one
       take: limit,
-      select: { id: true, type: true, title: true, body: true, link: true, channels: true },
+      select: { id: true, type: true, title: true, body: true, link: true, channels: true, userId: true, meta: true },
     });
 
     for (const row of candidates) {
@@ -125,17 +168,19 @@ export async function dispatchPending(limit = 25): Promise<{ sent: number; faile
       if (claim.count !== 1) continue;
 
       // Send only the channels this row still owes. Skipping the whole row when ANY
-      // channel had succeeded would strand the rest: once a customer channel is
-      // added, a row whose admin mail sent and whose customer mail failed would
-      // never retry the customer send, and would be counted as delivered.
-      const missing = INTENDED_CHANNELS.filter(c => !row.channels.includes(c));
+      // channel had succeeded would strand the rest: a row whose admin mail sent
+      // and whose customer mail failed would never retry the customer send, and
+      // would be counted as delivered.
+      const intended = [ADMIN_CHANNEL, ...(CUSTOMER_TEMPLATES[row.type] ? [CUSTOMER_CHANNEL] : [])];
+      const missing = intended.filter(c => !row.channels.includes(c));
       if (missing.length === 0) { sent++; continue; }
 
       const delivered: string[] = [];
       for (const channel of missing) {
-        if (channel === ADMIN_CHANNEL && await notifyAdmin(row.title, adminBody(row))) {
-          delivered.push(channel);
-        }
+        const ok = channel === ADMIN_CHANNEL
+          ? await notifyAdmin(row.title, adminBody(row))
+          : await sendCustomerEmail(row);
+        if (ok) delivered.push(channel);
       }
 
       if (delivered.length > 0) {
@@ -155,6 +200,29 @@ export async function dispatchPending(limit = 25): Promise<{ sent: number; faile
     logger.error("dispatchPending failed", { err });
   }
   return { sent, failed };
+}
+
+/**
+ * Render and send this event's customer email. Returns true when there was nothing
+ * to send, so a row with no resolvable recipient settles instead of retrying five
+ * times against an address that will never exist.
+ */
+async function sendCustomerEmail(row: {
+  type: string; userId: string | null; meta: unknown;
+}): Promise<boolean> {
+  const render = CUSTOMER_TEMPLATES[row.type];
+  if (!render) return true;
+
+  const meta = (row.meta ?? {}) as Meta;
+  const to = meta.to
+    ?? (row.userId
+      ? (await prisma.user.findUnique({ where: { id: row.userId }, select: { email: true } }))?.email
+      : null);
+  if (!to) return true; // nobody to tell — not a failure worth retrying
+
+  const tpl = render(meta);
+  if (!tpl) return true; // this type has no template for this entity
+  return sendEmail({ to, subject: tpl.subject, html: tpl.html });
 }
 
 function adminBody(row: { title: string; body: string | null; link: string | null }): string {

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { logger } from "@/lib/logger";
 import { sendPush } from "@/lib/push";
-import { logOps } from "@/lib/ops";
+import { logOpsSafe } from "@/lib/ops";
 
 export const runtime = "nodejs";
 
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
             });
             // Keyed on the gateway payment id, which is unique per capture, so a
             // Razorpay retry of the same webhook produces one alert, not several.
-            void logOps({
+            logOpsSafe(() => ({
               type: "payment.captured",
               title: `[GG] Payment captured — ₹${Math.round(existing.amount / 100).toLocaleString("en-IN")}`,
               body: `${existing.entityType} · payment ${razorpayPaymentId}`,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
               entityType: existing.entityType, entityId: existing.entityId, userId: existing.userId,
               dedupeKey: `payment.captured:${razorpayPaymentId}`,
               meta: { amount: existing.amount, razorpayOrderId },
-            });
+            }));
           }
         } else {
           // No Payment row yet: the client /verify hasn't run or was abandoned. The
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
           });
           // "action", not "info": a failed payment often means a user who thinks
           // they have a seat and does not.
-          void logOps({
+          logOpsSafe(() => ({
             type: "payment.failed",
             severity: "action",
             title: `[GG] Payment FAILED — ₹${Math.round(existing.amount / 100).toLocaleString("en-IN")}`,
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
             link: "/admin/revenue",
             entityType: existing.entityType, entityId: existing.entityId, userId: existing.userId,
             dedupeKey: `payment.failed:${razorpayOrderId}`,
-          });
+          }));
         }
         return NextResponse.json({ ok: true, event: body.event });
       }

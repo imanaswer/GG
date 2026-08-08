@@ -1,26 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { prismaMock, notifyAdminMock } = vi.hoisted(() => {
+const { prismaMock, notifyAdminMock, sendEmailMock } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
     opsEvent: { create: vi.fn(), findMany: vi.fn(), updateMany: vi.fn(), update: vi.fn() },
   };
-  return { prismaMock, notifyAdminMock: vi.fn() };
+  prismaMock.user = { findUnique: vi.fn() };
+  return { prismaMock, notifyAdminMock: vi.fn(), sendEmailMock: vi.fn() };
 });
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/notifyAdmin", () => ({ notifyAdmin: notifyAdminMock }));
+vi.mock("@/lib/email", () => ({
+  sendEmail: sendEmailMock,
+  emails: { bookingMade: () => ({ subject: "s", html: "h" }) },
+}));
 
-import { logOps, dispatchPending, MAX_ATTEMPTS } from "./ops";
+import { logOps, logOpsSafe, dispatchPending, MAX_ATTEMPTS } from "./ops";
 
 const P2002 = Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
+// Admin-only by default: coach.pending_approval has no customer template.
 const row = (over: Record<string, unknown> = {}) => ({
-  id: "e1", type: "booking.created", title: "New booking", body: "x", link: "/admin", channels: [], ...over,
+  id: "e1", type: "coach.pending_approval", title: "New coach", body: "x", link: "/admin",
+  channels: [], userId: null, meta: null, ...over,
 });
+// Two-channel: booking.created maps to emails.bookingMade for the customer.
+const dualRow = (over: Record<string, unknown> = {}) =>
+  row({ type: "booking.created", userId: "u1", meta: { playerName: "P", coachName: "C", batch: "Mon 6pm" }, ...over });
 
 beforeEach(() => {
   vi.clearAllMocks();
   notifyAdminMock.mockResolvedValue(true);
+  sendEmailMock.mockResolvedValue(true);
+  prismaMock.user.findUnique.mockResolvedValue({ email: "player@x.com" });
   prismaMock.opsEvent.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.opsEvent.create.mockResolvedValue({ id: "e1" });
 });
@@ -114,5 +126,73 @@ describe("dispatchPending", () => {
   it("never throws when the sweep itself fails", async () => {
     prismaMock.opsEvent.findMany.mockRejectedValue(new Error("db down"));
     await expect(dispatchPending()).resolves.toEqual({ sent: 0, failed: 0 });
+  });
+});
+
+
+// ── Phase 3: the customer channel ────────────────────────────────────────────
+describe("dispatchPending — customer email", () => {
+  it("sends both channels for an event that has a customer template", async () => {
+    prismaMock.opsEvent.findMany.mockResolvedValue([dualRow()]);
+
+    const res = await dispatchPending();
+
+    expect(notifyAdminMock).toHaveBeenCalledTimes(1);
+    expect(sendEmailMock).toHaveBeenCalledWith(expect.objectContaining({ to: "player@x.com" }));
+    expect(res).toEqual({ sent: 1, failed: 0 });
+    expect(prismaMock.opsEvent.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ channels: { push: ["admin-email", "customer-email"] } }),
+    }));
+  });
+
+  it("retries ONLY the failed channel — the bug this shape exists to prevent", async () => {
+    // Admin mail already went out; the customer mail did not. A whole-row skip
+    // would strand the customer send forever and report the row as delivered.
+    prismaMock.opsEvent.findMany.mockResolvedValue([dualRow({ channels: ["admin-email"] })]);
+
+    await dispatchPending();
+
+    expect(notifyAdminMock).not.toHaveBeenCalled();       // not re-sent
+    expect(sendEmailMock).toHaveBeenCalledTimes(1);       // only the missing one
+  });
+
+  it("does not mark delivered while a channel is still outstanding", async () => {
+    prismaMock.opsEvent.findMany.mockResolvedValue([dualRow()]);
+    sendEmailMock.mockResolvedValue(false); // customer mail fails
+
+    const res = await dispatchPending();
+
+    expect(res).toEqual({ sent: 0, failed: 1 });
+    // admin-email is banked so it is never re-sent, but the row stays in the sweep.
+    expect(prismaMock.opsEvent.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: { channels: { push: ["admin-email"] } },
+    }));
+  });
+
+  it("settles rather than retrying when there is no resolvable recipient", async () => {
+    // Five retries against an address that will never exist is just noise.
+    prismaMock.opsEvent.findMany.mockResolvedValue([dualRow({ userId: null })]);
+    const res = await dispatchPending();
+    expect(sendEmailMock).not.toHaveBeenCalled();
+    expect(res).toEqual({ sent: 1, failed: 0 });
+  });
+
+  it("prefers meta.to, for a coach who may not be a User at all", async () => {
+    prismaMock.opsEvent.findMany.mockResolvedValue([
+      dualRow({ meta: { to: "coach@x.com", playerName: "P", coachName: "C", batch: "Mon" } }),
+    ]);
+    await dispatchPending();
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
+    expect(sendEmailMock).toHaveBeenCalledWith(expect.objectContaining({ to: "coach@x.com" }));
+  });
+});
+
+describe("logOpsSafe", () => {
+  it("swallows a throw in the BUILDER, not just the write", async () => {
+    // `void logOps({ ...expr })` evaluates the literal in the request path, so one
+    // unexpected null while assembling an alert would fail an action that already
+    // committed. That inversion is the thing this module exists to prevent.
+    expect(() => logOpsSafe(() => { throw new Error("null field"); })).not.toThrow();
+    expect(prismaMock.opsEvent.create).not.toHaveBeenCalled();
   });
 });

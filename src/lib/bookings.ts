@@ -10,6 +10,7 @@ import {
 } from "@/lib/bookingStatus";
 import { flagBookingRefundDue } from "@/lib/refunds";
 import type { PaymentStatus } from "@/lib/paymentStatus";
+import { logOpsSafe } from "@/lib/ops";
 
 // Re-export the pure state machine so callers import everything from "@/lib/bookings".
 export * from "@/lib/bookingStatus";
@@ -76,8 +77,56 @@ export async function transitionBooking(
   });
 }
 
-export const approveBooking = (id: string) => transitionBooking(id, "approved");
-export const rejectBooking = (id: string, reason?: string | null) =>
-  transitionBooking(id, "rejected", { reason });
+/**
+ * Tell the player what was decided. Called only AFTER transitionBooking's
+ * transaction has committed — an email must never be able to roll back the
+ * decision it is announcing (see lib/ops.ts).
+ *
+ * The player learned the outcome by opening the app and checking, if they thought
+ * to. bookingApproved and bookingRejected were written for exactly this and sent
+ * by nothing.
+ */
+async function announceDecision(bookingId: string, to: "approved" | "rejected", reason?: string | null) {
+  const b = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      userId: true, coachId: true,
+      user:  { select: { name: true } },
+      coach: { select: { name: true, address: true, phone: true } },
+      batch: { select: { day: true, time: true } },
+    },
+  });
+  if (!b) return;
+  const batch = b.batch ? `${b.batch.day} ${b.batch.time}` : "1:1 session";
+  logOpsSafe(() => ({
+    type: to === "approved" ? "booking.approved" : "booking.rejected",
+    title: to === "approved"
+      ? `[GG] Booking approved — ${b.coach?.name ?? "coach"}`
+      : `[GG] Booking rejected — ${b.coach?.name ?? "coach"}`,
+    body: `${b.user?.name ?? "A player"} · ${batch}`,
+    link: "/admin/bookings/coaches",
+    entityType: "coach", entityId: b.coachId, userId: b.userId,
+    dedupeKey: `booking.${to}:${bookingId}`,
+    meta: {
+      playerName: b.user?.name ?? "there",
+      coachName: b.coach?.name ?? "your coach",
+      batch,
+      address: b.coach?.address ?? "",
+      phone: b.coach?.phone ?? "",
+      ...(reason ? { reason } : {}),
+    },
+  }));
+}
+
+export const approveBooking = async (id: string) => {
+  const booking = await transitionBooking(id, "approved");
+  await announceDecision(id, "approved");
+  return booking;
+};
+export const rejectBooking = async (id: string, reason?: string | null) => {
+  const booking = await transitionBooking(id, "rejected", { reason });
+  await announceDecision(id, "rejected", reason);
+  return booking;
+};
 export const completeBooking = (id: string) => transitionBooking(id, "completed");
 export const cancelBooking = (id: string) => transitionBooking(id, "cancelled");

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
+import { logOpsSafe } from "@/lib/ops";
+import { logger } from "@/lib/logger";
 import {
   campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, assertOrderBinding, NotPayableError,
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
       const { batchId, phone, note } = registration ?? {};
       const coach = await prisma.coach.findUnique({
         where: { id: entityId },
-        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true, status: true },
+        select: { id: true, priceMin: true, priceMax: true, seatsLeft: true, status: true, name: true, address: true, phone: true },
       });
       if (!coach) return fail("Coach not found", 404);
       const coachRefusal = coachAdmission(coach);
@@ -127,6 +129,30 @@ export async function POST(req: NextRequest) {
           });
           return created;
         });
+        // A paid coach booking skips "pending" entirely — it is approved the moment
+        // the money lands, so the player never sees an approval email. bookingConfirmed
+        // was written for exactly this and sent by nothing. Emitted after commit.
+        try {
+          const batchRow = batchId
+            ? await prisma.batch.findUnique({ where: { id: batchId }, select: { day: true, time: true } })
+            : null;
+          logOpsSafe(() => ({
+            type: "booking.confirmed",
+            title: `[GG] Coach session paid & confirmed — ${coach.name}`,
+            body: `${session.name ?? "A player"} paid for ${coach.name}.`,
+            link: "/admin/bookings/coaches",
+            entityType: "coach", entityId, userId: session.id,
+            dedupeKey: `booking.confirmed:${booking.id}`,
+            meta: {
+              playerName: session.name ?? "there",
+              coachName: coach.name,
+              batch: batchRow ? `${batchRow.day} ${batchRow.time}` : "1:1 session",
+              address: coach.address ?? "",
+              phone: coach.phone ?? "",
+            },
+          }));
+        } catch (err) { logger.error("booking.confirmed alert failed", { err }); }
+
         return ok({ verified: true, bookingId: booking.id });
       } catch (e) { return txError(e); }
     }

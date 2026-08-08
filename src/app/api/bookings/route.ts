@@ -5,7 +5,8 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
 import { coachAdmission } from "@/lib/checkout";
-import { logOps } from "@/lib/ops";
+import { logOpsSafe } from "@/lib/ops";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const { coachId, batchId, note, phone } = await req.json();
 
-    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true, status: true } });
+    const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true, status: true, name: true, email: true } });
     if (!coach) return fail("Coach not found", 404);
     // Seats AND approval — a self-registered coach sits at "pending_approval"
     // until an admin activates them, and was bookable in the meantime.
@@ -100,17 +101,42 @@ export async function POST(req: NextRequest) {
       throw e;
     }
 
+    // Everything from here to the return is notification only. The booking has
+    // already committed, so this whole block is wrapped: neither the label lookup
+    // nor the alerts may turn a successful booking into a 500.
+    try {
+    const batchRow = batchId
+      ? await prisma.batch.findUnique({ where: { id: batchId }, select: { day: true, time: true } })
+      : null;
+    const batchLabel = batchRow ? `${batchRow.day} ${batchRow.time}` : "1:1 session";
+    const playerName = session.name ?? "A player";
+
     // A free coach booking lands at "pending" and waits for a human. Nothing told
     // anyone it was waiting, so it sat until someone happened to look.
-    void logOps({
+    logOpsSafe(() => ({
       type: "booking.created",
       severity: "action",
       title: "[GG] New coach booking — needs approval",
-      body: `${session.name ?? "A player"} requested a session. It holds a seat until approved or rejected.`,
+      body: `${playerName} requested a session with ${coach.name}. It holds a seat until approved or rejected.`,
       link: "/admin/bookings/coaches?status=pending",
       entityType: "coach", entityId: coachId, userId: session.id,
       dedupeKey: `booking.created:${booking.id}`,
-    });
+      meta: { playerName, coachName: coach.name, batch: batchLabel },
+    }));
+
+    // A second event, because it goes to a different person: the coach, who is not
+    // necessarily a User at all, so the address travels in meta.to.
+    logOpsSafe(() => ({
+      type: "booking.created.coach",
+      severity: "info",
+      title: `[GG] ${coach.name} has a new booking request`,
+      body: `${playerName} requested ${batchLabel}.`,
+      link: "/admin/bookings/coaches?status=pending",
+      entityType: "coach", entityId: coachId,
+      dedupeKey: `booking.created.coach:${booking.id}`,
+      meta: { to: coach.email, coachName: coach.name, playerName, batch: batchLabel, note: typeof note === "string" ? note : "" },
+    }));
+    } catch (err) { logger.error("booking alerts failed", { err }); }
 
     return ok(booking);
   } catch (e) { return handleErr(e); }
