@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { BILLABLE_STATUSES } from "@/lib/bookings";
+import { logOpsSafe } from "@/lib/ops";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,6 +54,23 @@ export async function GET(req: NextRequest) {
     if (hoursOld > 48) alerts.push({ type: "booking", message: `Pending booking for ${coachById.get(b.coachId) ?? "coach"} is ${Math.round(hoursOld)}hrs old`, severity: "warning" });
   });
   lowSeatCoaches.forEach(c => alerts.push({ type: "coach", message: `${c.name} has 0 seats — may need new batches`, severity: "info" }));
+
+  // The alerts above are recomputed on every request and vanish with it: they could
+  // not be dismissed, assigned, or acted on, and nothing recorded that anyone had
+  // seen one. The urgent ones are now also written to the inbox, where they can be
+  // claimed and resolved. dedupeKey makes repeated detection one row, not one per
+  // poll — the overview is polled every 30 seconds.
+  for (const a of alerts) {
+    if (a.severity === "info") continue; // not worth a work item
+    logOpsSafe(() => ({
+      type: `alert.${a.type}`,
+      severity: "action" as const,
+      title: `[GG] ${a.message}`,
+      link: "/admin/inbox",
+      entityType: a.type,
+      dedupeKey: `alert:${a.type}:${a.message}`,
+    }));
+  }
 
   const tierGroups = await prisma.user.groupBy({
     by: ["tier"],

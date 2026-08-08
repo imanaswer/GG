@@ -158,6 +158,22 @@ async function syncRegistrationStatus(
     await prisma.eventRegistration.updateMany({
       where: { eventId: entityId, userId }, data: { paymentStatus: status },
     });
+  } else if (entityType === "workshop") {
+    // Was missing: a late capture updated the Payment row and left the
+    // registration at "pending" forever, so it read as unpaid everywhere the
+    // registration is the source — admin buckets, counts and reputation.
+    await prisma.workshopRegistration.updateMany({
+      where: { workshopId: entityId, userId }, data: { paymentStatus: status },
+    });
+  } else if (entityType === "coach") {
+    // Also missing. Booking carries its own axis ("unpaid" | "paid" |
+    // refund_pending), so a late capture left it "unpaid" against a paid Payment.
+    // Only the rows this purchase could have created, and never one already
+    // refunded — a capture arriving after a refund must not resurrect it.
+    await prisma.booking.updateMany({
+      where: { coachId: entityId, userId, paymentStatus: { notIn: ["refund_pending", "refunded"] } },
+      data: { paymentStatus: status === "paid" ? "paid" : "unpaid" },
+    });
   }
   // game: GamePlayer has no paymentStatus column; Payment row is source of truth.
 }

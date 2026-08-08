@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CalendarCheck, Gamepad2, MapPin, Tent, Wrench, Trophy, Users, Star, FileText, DollarSign, LogOut, Menu, ChevronDown, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Gamepad2, MapPin, Tent, Wrench, Trophy, Users, Star, FileText, DollarSign, LogOut, Menu, ChevronDown, Inbox, type LucideIcon } from "lucide-react";
 
 const BOOKING_CHILDREN = [
   { href: "/admin/bookings/coaches",       label: "Coaches" },
@@ -14,6 +14,9 @@ const BOOKING_CHILDREN = [
 
 const NAV = [
   { href: "/admin",          label: "Overview",  icon: LayoutDashboard },
+  // Second, deliberately: the day's work should be one click from landing, not
+  // scattered across six screens the way it used to be.
+  { href: "/admin/inbox",    label: "Inbox",     icon: Inbox },
   { href: "/admin/bookings", label: "Bookings",  icon: CalendarCheck, children: BOOKING_CHILDREN },
   { href: "/admin/games",    label: "Games",     icon: Gamepad2 },
   { href: "/admin/venues",   label: "Venues",    icon: MapPin },
