@@ -2,16 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 
+// Rows returned to the client, and the per-source read cap.
+const FEED_SIZE = 25;
+
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Only the newest FEED_SIZE of each source can survive the merge below, so there
+  // is no reason to read more. This used to be six unbounded findMany calls whose
+  // entire result set was loaded, sorted in JS, and then sliced to 25 — cost grew
+  // with the size of the business for a fixed-size feed.
+  const take = FEED_SIZE;
   const [bookings, gamePlayers, campRegs, eventRegs, workshopRegs, users] = await Promise.all([
-    prisma.booking.findMany({ include: { user: { select: { name: true } }, coach: { select: { name: true } } } }),
-    prisma.gamePlayer.findMany({ where: { game: { status: { not: "cancelled" } } }, include: { user: { select: { name: true } }, game: { select: { title: true } } } }),
-    prisma.campRegistration.findMany({ include: { user: { select: { name: true } }, camp: { select: { title: true } } } }),
-    prisma.eventRegistration.findMany({ include: { user: { select: { name: true } }, event: { select: { title: true } } } }),
-    prisma.workshopRegistration.findMany({ include: { user: { select: { name: true } }, workshop: { select: { title: true } } } }),
-    prisma.user.findMany({ where: { role: { not: "admin" }, deletedAt: null }, select: { name: true, createdAt: true } }),
+    prisma.booking.findMany({ take, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } }, coach: { select: { name: true } } } }),
+    prisma.gamePlayer.findMany({ take, orderBy: { joinedAt: "desc" }, where: { game: { status: { not: "cancelled" } } }, include: { user: { select: { name: true } }, game: { select: { title: true } } } }),
+    prisma.campRegistration.findMany({ take, orderBy: { registeredAt: "desc" }, include: { user: { select: { name: true } }, camp: { select: { title: true } } } }),
+    prisma.eventRegistration.findMany({ take, orderBy: { registeredAt: "desc" }, include: { user: { select: { name: true } }, event: { select: { title: true } } } }),
+    prisma.workshopRegistration.findMany({ take, orderBy: { registeredAt: "desc" }, include: { user: { select: { name: true } }, workshop: { select: { title: true } } } }),
+    prisma.user.findMany({ take, orderBy: { createdAt: "desc" }, where: { role: { not: "admin" }, deletedAt: null }, select: { name: true, createdAt: true } }),
   ]);
 
   const feed: { icon: string; actor: string; action: string; ts: Date }[] = [];
@@ -32,5 +40,5 @@ export async function GET(req: NextRequest) {
     return `${Math.round(diff / 86400)}d ago`;
   };
 
-  return NextResponse.json({ feed: feed.slice(0, 25).map(f => ({ icon: f.icon, actor: f.actor, action: f.action, when: timeAgo(f.ts), ts: f.ts.toISOString() })) });
+  return NextResponse.json({ feed: feed.slice(0, FEED_SIZE).map(f => ({ icon: f.icon, actor: f.actor, action: f.action, when: timeAgo(f.ts), ts: f.ts.toISOString() })) });
 }

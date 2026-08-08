@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import { REGISTRATION_REVENUE_WHERE } from "@/lib/paymentStatus";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,8 +14,10 @@ export async function GET(req: NextRequest) {
       where: { paymentStatus: "paid" },
       select: { id: true, amountPaid: true, approvedAt: true, createdAt: true, coach: { select: { name: true } }, user: { select: { name: true } } },
     }),
-    prisma.campRegistration.findMany({ include: { camp: { select: { title: true, price: true } }, user: { select: { name: true } } } }),
-    prisma.eventRegistration.findMany({ include: { event: { select: { title: true, entryFeeAmount: true } }, user: { select: { name: true } } } }),
+    // Only paid rows are revenue. Without this filter a pending or refunded
+    // registration was still counted at full price.
+    prisma.campRegistration.findMany({ where: REGISTRATION_REVENUE_WHERE, include: { camp: { select: { title: true, price: true } }, user: { select: { name: true } } } }),
+    prisma.eventRegistration.findMany({ where: REGISTRATION_REVENUE_WHERE, include: { event: { select: { title: true, entryFeeAmount: true } }, user: { select: { name: true } } } }),
     prisma.gamePlayer.findMany({ where: { game: { status: { not: "cancelled" } } }, include: { game: { select: { title: true, costAmount: true } }, user: { select: { name: true } } } }),
   ]);
 

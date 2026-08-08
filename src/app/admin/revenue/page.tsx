@@ -39,7 +39,7 @@ export default function AdminRevenue() {
           {/* Top summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14, marginBottom: 24 }}>
             <StatCard value={`₹${(s?.total ?? 0).toLocaleString("en-IN")}`}          label="Total Revenue"   sub="All time"    icon={IndianRupee} accent />
-            <StatCard value={`₹${(s?.thisMonth ?? 0).toLocaleString("en-IN")}`}       label="This Month"      sub="April 2026"  />
+            <StatCard value={`₹${(s?.thisMonth ?? 0).toLocaleString("en-IN")}`}       label="Last 30 Days"    sub="Rolling window"  />
             <StatCard value={`₹${(s?.thisWeek ?? 0).toLocaleString("en-IN")}`}        label="This Week"                         />
             <StatCard value={`₹${(s?.avgPerTransaction ?? 0).toLocaleString("en-IN")}`} label="Avg per Booking" sub="Paid only"  />
           </div>
@@ -70,7 +70,7 @@ export default function AdminRevenue() {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Transaction Log</h2>
             <div style={{ display: "flex", gap: 6 }}>
-              {["all","Camp","Event","Game"].map(f => (
+              {["all","Camp","Event","Game","Coach"].map(f => (
                 <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", borderRadius: 100, fontSize: 12, fontWeight: filter === f ? 700 : 500, border: "1px solid", cursor: "pointer", fontFamily: "inherit", background: filter === f ? "#e63946" : "transparent", color: filter === f ? "#fff" : "#9ca3af", borderColor: filter === f ? "#e63946" : "rgba(255,255,255,0.1)" }}>
                   {f === "all" ? "All" : f}
                 </button>

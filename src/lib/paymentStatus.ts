@@ -26,3 +26,12 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, { bg: string; color: s
   refund_pending: { bg: "rgba(249,115,22,0.15)", color: "#fb923c" },
   refunded: { bg: "rgba(168,85,247,0.15)",  color: "#c084fc" },
 };
+
+// ─── Recognised revenue ───────────────────────────────────────────────────────
+// Only "paid" is revenue. The admin revenue page counted every registration row
+// regardless of payment state, so pending, failed and refunded money all showed up
+// as income — and disagreed with the overview card, which sums the Payment ledger.
+// One source, two shapes, because a registration carries `paymentStatus` while a
+// Payment row carries `status`.
+export const REGISTRATION_REVENUE_WHERE = { paymentStatus: "paid" satisfies PaymentStatus } as const;
+export const PAYMENT_REVENUE_WHERE = { status: "paid" satisfies PaymentStatus } as const;
