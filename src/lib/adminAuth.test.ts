@@ -1,35 +1,56 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { SignJWT } from "jose";
+import { signAdminToken, verifyAdminToken, getAdminActor, SHARED_ACTOR } from "./adminAuth";
 
-// Must be set before importing adminAuth so the module-load secret resolves in prod-like envs.
-beforeAll(() => {
-  process.env.AUTH_SECRET ??= "user-secret-minimum-32-chars-long!!";
-  process.env.ADMIN_JWT_SECRET ??= process.env.AUTH_SECRET; // shared-secret worst case
+const SECRET = "test-admin-secret-at-least-32-chars!!";
+beforeEach(() => {
+  process.env.ADMIN_JWT_SECRET = SECRET;
 });
 
-describe("verifyAdminToken — vertical privilege escalation guard (C-1)", () => {
-  it("rejects a normal user JWT even when signed with the same secret", async () => {
-    const { verifyAdminToken } = await import("./adminAuth");
-    const secret = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET!);
-    // A user token as issued by lib/auth.ts — role "player", no admin scope.
-    const userToken = await new SignJWT({ id: "u1", role: "player" })
-      .setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("7d").sign(secret);
-    expect(await verifyAdminToken(userToken)).toBeNull();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const reqWith = (token?: string): any => ({ cookies: { get: () => (token ? { value: token } : undefined) } });
+
+describe("signAdminToken / verifyAdminToken", () => {
+  it("carries the actor identity", async () => {
+    const payload = await verifyAdminToken(await signAdminToken({ id: "u1", name: "Anas" }));
+    expect(payload?.sub).toBe("u1");
+    expect(payload?.name).toBe("Anas");
   });
 
-  it("rejects a forged token that claims role:admin but lacks scope", async () => {
-    const { verifyAdminToken } = await import("./adminAuth");
-    const secret = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET!);
-    const forged = await new SignJWT({ role: "admin" }) // no scope:"admin"
-      .setProtectedHeader({ alg: "HS256" }).setIssuedAt().sign(secret);
-    expect(await verifyAdminToken(forged)).toBeNull();
+  it("still accepts a token minted before named accounts existed", async () => {
+    // The claims that matter are unchanged, so a cookie issued before this deploy
+    // must keep working for the rest of its 60 minutes rather than 401 mid-session.
+    const legacy = await new SignJWT({ role: "admin", scope: "admin" })
+      .setProtectedHeader({ alg: "HS256" }).setExpirationTime("60m").setIssuedAt()
+      .sign(new TextEncoder().encode(SECRET));
+    expect(await verifyAdminToken(legacy)).not.toBeNull();
   });
 
-  it("accepts a genuine admin token from signAdminToken", async () => {
-    const { signAdminToken, verifyAdminToken } = await import("./adminAuth");
-    const token = await signAdminToken();
-    const payload = await verifyAdminToken(token);
-    expect(payload?.role).toBe("admin");
-    expect(payload?.scope).toBe("admin");
+  it("rejects a player token even when signed with the same secret", async () => {
+    const player = await new SignJWT({ role: "player", scope: "user" })
+      .setProtectedHeader({ alg: "HS256" }).setExpirationTime("60m").setIssuedAt()
+      .sign(new TextEncoder().encode(SECRET));
+    expect(await verifyAdminToken(player)).toBeNull();
+  });
+});
+
+describe("getAdminActor", () => {
+  it("returns the named admin", async () => {
+    const t = await signAdminToken({ id: "u1", name: "Anas" });
+    expect(await getAdminActor(reqWith(t))).toEqual({ id: "u1", name: "Anas" });
+  });
+
+  it("falls back to the shared login for a token with no identity", async () => {
+    // An old cookie must degrade to an attributable-but-shared actor, never to a
+    // null that would leave the action unrecorded.
+    const legacy = await new SignJWT({ role: "admin", scope: "admin" })
+      .setProtectedHeader({ alg: "HS256" }).setExpirationTime("60m").setIssuedAt()
+      .sign(new TextEncoder().encode(SECRET));
+    expect(await getAdminActor(reqWith(legacy))).toEqual(SHARED_ACTOR);
+  });
+
+  it("is null with no cookie or an invalid one", async () => {
+    expect(await getAdminActor(reqWith())).toBeNull();
+    expect(await getAdminActor(reqWith("garbage"))).toBeNull();
   });
 });

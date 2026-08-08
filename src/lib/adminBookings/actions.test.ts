@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { prismaMock } = vi.hoisted(() => {
+const { prismaMock, logOpsSafeMock } = vi.hoisted(() => {
   const model = () => ({ update: vi.fn(), updateMany: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn(), findFirst: vi.fn() });
   // Loose by design: a hand-rolled Prisma stand-in indexed by model name.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,10 +21,11 @@ const { prismaMock } = vi.hoisted(() => {
     // assertions on prismaMock.<model>.<method> cover transactional calls too.
     $transaction: vi.fn(async (fn: (p: unknown) => unknown) => fn(prismaMock)),
   };
-  return { prismaMock };
+  return { prismaMock, logOpsSafeMock: vi.fn() };
 });
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/ops", () => ({ logOpsSafe: (build: () => unknown) => { logOpsSafeMock(build()); } }));
 vi.mock("@/lib/bookings", () => ({
   approveBooking: vi.fn(async () => ({})),
   rejectBooking: vi.fn(async () => ({})),
@@ -273,5 +274,56 @@ describe("applyBulk", () => {
     );
     const bad = results.find((r) => r.id === "bad");
     expect(bad?.error).toBe("Not found");
+  });
+});
+
+
+// ── Phase 4: the audit trail ─────────────────────────────────────────────────
+// Fills the placeholder that sat at the top of applyAction for months. It could
+// not be written before, because the admin token carried no identity at all.
+describe("admin action audit", () => {
+  beforeEach(() => {
+    prismaMock.campRegistration.findUnique.mockResolvedValue({ paymentStatus: "refund_pending", userId: "u1", campId: "c1" });
+    prismaMock.payment.findFirst.mockResolvedValue({ id: "p1" });
+  });
+
+  it("records who did what, on success", async () => {
+    await applyAction("camps", "r1", "mark-refunded", undefined, { id: "u9", name: "Anas" });
+    expect(logOpsSafeMock).toHaveBeenCalledWith(expect.objectContaining({
+      type: "admin.action",
+      severity: "audit",          // recorded and queryable, never emailed to anyone
+      actorId: "u9",
+      actorName: "Anas",
+      entityType: "camps",
+      entityId: "r1",
+      meta: expect.objectContaining({ action: "mark-refunded" }),
+    }));
+  });
+
+  it("attributes an actorless call to the shared login rather than leaving it blank", async () => {
+    await applyAction("camps", "r1", "mark-refunded");
+    expect(logOpsSafeMock).toHaveBeenCalledWith(expect.objectContaining({
+      actorId: "shared", actorName: "Shared login",
+    }));
+  });
+
+  it("writes NOTHING when the action is refused", async () => {
+    // A row claiming an action that never happened is worse than no row at all.
+    await expect(applyAction("camps", "r1", "approve" as never)).rejects.toThrow();
+    expect(logOpsSafeMock).not.toHaveBeenCalled();
+  });
+
+  it("audits only the ids that actually succeeded in a bulk run", async () => {
+    // applyBulk swallows per-id errors, so the audit must follow the successes,
+    // not the input list.
+    prismaMock.campRegistration.findUnique
+      .mockResolvedValueOnce({ paymentStatus: "refund_pending", userId: "u1", campId: "c1" })
+      .mockResolvedValueOnce(null); // second id does not exist -> throws
+
+    const results = await applyBulk("camps", ["ok1", "bad2"], "mark-refunded", undefined, { id: "u9", name: "Anas" });
+
+    expect(results.map(r => r.ok)).toEqual([true, false]);
+    expect(logOpsSafeMock).toHaveBeenCalledTimes(1);
+    expect(logOpsSafeMock).toHaveBeenCalledWith(expect.objectContaining({ entityId: "ok1" }));
   });
 });

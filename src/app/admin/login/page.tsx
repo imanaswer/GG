@@ -5,6 +5,7 @@ import { Eye, EyeOff, Shield } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
+  const [email,   setEmail]   = useState("");
   const [pw,      setPw]      = useState("");
   const [show,    setShow]    = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,10 +14,11 @@ export default function AdminLogin() {
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError("");
-    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, // email omitted entirely = the legacy shared-password branch, kept for one release
+      body: JSON.stringify(email.trim() ? { email: email.trim(), password: pw } : { password: pw }) });
     setLoading(false);
     if (r.ok) router.push("/admin");
-    else setError("Invalid password. Contact the platform admin.");
+    else setError("Invalid credentials. Contact the platform admin.");
   };
 
   return (
@@ -37,11 +39,24 @@ export default function AdminLogin() {
         <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "28px" }}>
           <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Admin Password</label>
+              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Email</label>
+              <input
+                type="email"
+                placeholder="you@gameground.net"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="username"
+                style={{ width: "100%", height: 44, padding: "0 14px", borderRadius: 9, border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`, background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+              />
+              <span style={{ fontSize: 11, color: "#4b5563" }}>Leave blank to use the shared password.</span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Password</label>
               <div style={{ position: "relative" }}>
                 <input
                   type={show ? "text" : "password"}
-                  placeholder="Enter admin password"
+                  placeholder="Enter your password"
                   value={pw}
                   onChange={e => setPw(e.target.value)}
                   required

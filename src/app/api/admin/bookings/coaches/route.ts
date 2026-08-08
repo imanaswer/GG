@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSessionFromRequest } from "@/lib/adminAuth";
+import { getAdminSessionFromRequest, getAdminActor } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { parsePagination, parseSort, orderByFor, coachDateWhere } from "@/lib/adminBookings/query";
@@ -93,6 +93,6 @@ export async function PATCH(req: NextRequest) {
   const list: string[] = Array.isArray(ids) ? ids : id ? [id] : [];
   if (!list.length || !action) return NextResponse.json({ error: "Missing ids/action" }, { status: 400 });
   if (!isActionAllowed("coaches", action as BookingAction)) return NextResponse.json({ error: "Action not allowed" }, { status: 400 });
-  const results = await applyBulk("coaches", list, action as BookingAction, { rejectionReason });
+  const results = await applyBulk("coaches", list, action as BookingAction, { rejectionReason }, await getAdminActor(req));
   return NextResponse.json({ results });
 }

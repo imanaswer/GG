@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { approveBooking, rejectBooking, completeBooking, cancelBooking } from "@/lib/bookings";
 import { promoteFromWaitlist } from "@/lib/waitlist";
 import { markRefunded, markBookingRefunded } from "@/lib/refunds";
+import { logOpsSafe } from "@/lib/ops";
+import { SHARED_ACTOR, type AdminActor } from "@/lib/adminAuth";
 import { sendPush } from "@/lib/push";
 import type { CategoryKey } from "./types";
 import type { PaymentStatus } from "@/lib/paymentStatus";
@@ -48,11 +50,22 @@ export async function applyAction(
   id: string,
   action: BookingAction,
   meta?: { rejectionReason?: string },
+  actor?: AdminActor | null,
 ): Promise<void> {
   if (!isActionAllowed(category, action)) throw new Error(`Action ${action} not allowed for ${category}`);
+  await applyActionInner(category, id, action, meta);
+  // Written only after it actually succeeded. applyActionInner throws on every
+  // refusal, and its many early `return`s all funnel through this single point,
+  // so no row can ever claim an action that did not happen.
+  auditAdminAction(category, id, action, actor, meta);
+}
 
-  // NOTE: future audit log goes here — record (category, id, action, actor, ts).
-
+async function applyActionInner(
+  category: CategoryKey,
+  id: string,
+  action: BookingAction,
+  meta?: { rejectionReason?: string },
+): Promise<void> {
   // "mark-refunded" means one thing everywhere: a human has sent the money back,
   // now close the books. Handled once, ahead of the category branches, because
   // four copies is how the ledger drifted in the first place — camps and workshops
@@ -210,13 +223,45 @@ export async function applyAction(
   throw new Error("Unsupported registration action");
 }
 
-/** Apply an action across many ids, never throwing; returns per-id results. */
+/**
+ * The audit row. This fills the placeholder that sat at the top of applyAction for
+ * months — "future audit log goes here — record (category, id, action, actor, ts)."
+ * It could not be written before, because the admin token carried no identity at all.
+ *
+ * severity "audit" means it is recorded and queryable but never notified: nobody
+ * needs an email saying an admin clicked approve.
+ */
+function auditAdminAction(category: CategoryKey, id: string, action: BookingAction, actor: AdminActor | null | undefined, meta?: { rejectionReason?: string }) {
+  logOpsSafe(() => ({
+    type: "admin.action",
+    severity: "audit" as const,
+    title: `${actor?.name ?? SHARED_ACTOR.name} ${action} ${category}`,
+    body: meta?.rejectionReason ? `Reason: ${meta.rejectionReason}` : undefined,
+    entityType: category,
+    entityId: id,
+    actorId: actor?.id ?? SHARED_ACTOR.id,
+    actorName: actor?.name ?? SHARED_ACTOR.name,
+    meta: { action, category, ...(meta?.rejectionReason ? { rejectionReason: meta.rejectionReason } : {}) },
+  }));
+}
+
+/**
+ * Apply an action across many ids, never throwing; returns per-id results.
+ *
+ * `actor` is an optional trailing parameter so every existing caller and test keeps
+ * compiling. When absent the audit row still lands, attributed to the shared login —
+ * an unattributed action is worse than one attributed to "Shared login".
+ */
 export async function applyBulk(
   category: CategoryKey, ids: string[], action: BookingAction, meta?: { rejectionReason?: string },
+  actor?: AdminActor | null,
 ): Promise<ActionResult[]> {
   const results: ActionResult[] = [];
   for (const id of ids) {
-    try { await applyAction(category, id, action, meta); results.push({ id, ok: true }); }
+    try {
+      await applyAction(category, id, action, meta, actor);
+      results.push({ id, ok: true });
+    }
     catch (e) { results.push({ id, ok: false, error: e instanceof Error ? e.message : "failed" }); }
   }
   return results;

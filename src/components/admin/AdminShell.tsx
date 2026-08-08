@@ -30,10 +30,12 @@ function Sidebar({
   activeHref,
   onNavigate,
   onLogout,
+  adminName,
 }: {
   activeHref: (href: string) => boolean;
   onNavigate: () => void;
   onLogout: () => void;
+  adminName?: string;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0d0d0d", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
@@ -79,6 +81,13 @@ function Sidebar({
         })}
       </nav>
       <div style={{ padding: "12px 10px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+        {/* Who is signed in — with a shared login there was nothing to show, and no
+            way to tell whose hands an action came from. */}
+        {adminName && (
+          <div style={{ padding: "4px 12px 8px", fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            Signed in as <span style={{ color: "#9ca3af", fontWeight: 600 }}>{adminName}</span>
+          </div>
+        )}
         <button onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "9px 12px", borderRadius: 9, background: "none", border: "none", color: "#6b7280", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
           <LogOut size={15} />Sign Out
         </button>
@@ -107,18 +116,29 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     router.push("/admin/login");
   };
 
+  // The same endpoint AdminGuard already polls; it now also returns who you are.
+  const [adminName, setAdminName] = useState<string | undefined>();
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/auth")
+      .then(r => r.json())
+      .then(d => { if (!cancelled && d?.admin && typeof d.name === "string") setAdminName(d.name); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div style={{ display: "flex", height: "100vh", background: "#080808", overflow: "hidden" }}>
       {!isMobile && (
         <div style={{ width: 220, flexShrink: 0 }}>
-          <Sidebar activeHref={isActive} onNavigate={() => setSidebarOpen(false)} onLogout={logout} />
+          <Sidebar activeHref={isActive} onNavigate={() => setSidebarOpen(false)} onLogout={logout} adminName={adminName} />
         </div>
       )}
 
       {isMobile && sidebarOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex" }}>
           <div style={{ width: 220, flexShrink: 0 }}>
-            <Sidebar activeHref={isActive} onNavigate={() => setSidebarOpen(false)} onLogout={logout} />
+            <Sidebar activeHref={isActive} onNavigate={() => setSidebarOpen(false)} onLogout={logout} adminName={adminName} />
           </div>
           <div style={{ flex: 1, background: "rgba(0,0,0,0.6)" }} onClick={() => setSidebarOpen(false)} />
         </div>

@@ -14,8 +14,19 @@ const secret = () => new TextEncoder().encode(
   })()
 );
 
-export async function signAdminToken(): Promise<string> {
-  return new SignJWT({ role: "admin", scope: "admin" })
+/** Who performed an admin action. `id` is a User id, or SHARED_ACTOR_ID. */
+export type AdminActor = { id: string; name: string };
+
+/** The legacy shared ADMIN_PASSWORD login. Audit rows say so, in plain sight. */
+export const SHARED_ACTOR: AdminActor = { id: "shared", name: "Shared login" };
+
+/**
+ * `actor` is optional so a token can still be minted without one during the
+ * shared-password transition. The role/scope claims are unchanged, so a cookie
+ * issued before this deploy keeps verifying for the rest of its 60 minutes.
+ */
+export async function signAdminToken(actor: AdminActor = SHARED_ACTOR): Promise<string> {
+  return new SignJWT({ role: "admin", scope: "admin", sub: actor.id, name: actor.name })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("60m") // 60 min session timeout per spec
     .setIssuedAt()
@@ -42,6 +53,25 @@ export async function getAdminSessionFromRequest(req: NextRequest): Promise<bool
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return false;
   return !!(await verifyAdminToken(token));
+}
+
+/**
+ * The admin behind this request, for audit rows and work-item claiming.
+ *
+ * Deliberately separate from getAdminSession*, which returns a boolean and has ~26
+ * consumers — widening those would touch every admin route for no benefit. A token
+ * minted before named accounts existed carries no `sub`, so it reports as the shared
+ * login rather than failing: an old cookie must not start 401-ing mid-session.
+ */
+export async function getAdminActor(req: NextRequest): Promise<AdminActor | null> {
+  const token = req.cookies.get(ADMIN_COOKIE)?.value;
+  if (!token) return null;
+  const payload = await verifyAdminToken(token);
+  if (!payload) return null;
+  return {
+    id: typeof payload.sub === "string" ? payload.sub : SHARED_ACTOR.id,
+    name: typeof payload.name === "string" ? payload.name : SHARED_ACTOR.name,
+  };
 }
 
 // path:"/" — the admin cookie must reach BOTH /admin/* pages (middleware gate) and
