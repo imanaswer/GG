@@ -8,6 +8,7 @@ import { refundPolicy } from "@/lib/refundPolicy";
 import type { PaymentStatus } from "@/lib/paymentStatus";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
+import { logOps } from "@/lib/ops";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -90,6 +91,17 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     await recordActivityAndRecompute(session.id);
 
     const after = await prisma.camp.findUnique({ where: { id }, select: { participants: true } });
+    // Only FREE registrations reach this route — paid ones go through
+    // payments/verify and are announced by payment.captured instead.
+    void logOps({
+      type: "registration.created",
+      title: "[GG] New camp registration (free)",
+      body: `${session.name ?? "A player"} registered.`,
+      link: "/admin/bookings/camps",
+      entityType: "camp", entityId: id, userId: session.id,
+      dedupeKey: `registration.created:camp:${id}:${session.id}`,
+    });
+
     return ok({ registered: true, slotsLeft: Math.max(0, camp.maxParticipants - (after?.participants ?? camp.maxParticipants)) });
   } catch (e) { return handleErr(e); }
 }
@@ -133,6 +145,19 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
         data: { participants: { decrement: 1 }, status: camp.status === "full" ? "open" : undefined },
       });
       return owed;
+    });
+
+    // Logged AFTER the transaction commits — a duplicate dedupeKey raises P2002,
+    // and a P2002 inside a live transaction would poison it and roll back the
+    // cancellation. dedupeKey makes a double-cancel a single alert.
+    if (refundDue) void logOps({
+      type: "refund.due",
+      severity: "action",
+      title: `[GG] Refund due — camp cancellation`,
+      body: `A paid camp registration was cancelled. The seat is back on sale; the money is not.`,
+      link: "/admin/bookings/camps?status=refund_pending",
+      entityType: "camp", entityId: id, userId: session.id,
+      dedupeKey: `refund.due:camp:${id}:${session.id}`,
     });
 
     return ok({ cancelled: true, refundDue });

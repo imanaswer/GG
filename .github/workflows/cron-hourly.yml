@@ -24,3 +24,14 @@ jobs:
           curl -fsS --max-time 90 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/complete-games"
+
+      # The ops outbox. Anything whose alert failed to send — or was logged by a
+      # request that ended before delivery — goes out here. Also -f: a silently
+      # failing drain means nobody hears about bookings or refunds at all.
+      # Runs even if the sweep above fails; the two are independent.
+      - name: Deliver pending ops alerts
+        if: always()
+        run: |
+          curl -fsS --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/dispatch-ops"

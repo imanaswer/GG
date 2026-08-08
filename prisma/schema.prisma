@@ -13,49 +13,49 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
-  email                String    @unique
-  name                 String
-  username             String    @unique
-  passwordHash         String?
-  googleId             String?   @unique
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String
+  username            String    @unique
+  passwordHash        String?
+  googleId            String?   @unique
   // Apple's `sub` — stable per developer team, and the only durable key Apple gives us: the email
   // may be a per-app private relay address and the name arrives exactly once.
-  appleId              String?   @unique
-  role                 String    @default("player")
-  location             String?
-  bio                  String?
-  avatarUrl            String?
-  phone                String?
-  sports               String[]  @default([])
-  reliabilityScore     Float     @default(5.0)
-  gamesPlayed          Int       @default(0)
-  gamesOrganized       Int       @default(0)
-  attendanceRate       Float     @default(100)
-  reputationScore      Int       @default(0)
-  reputationOverride   Int?
-  lookingFor           String?
-  tier                 String    @default("bronze")
-  tierUpdatedAt        DateTime  @default(now())
-  lastActivityAt       DateTime?
-  passwordResetToken   String?
-  passwordResetExpiry  DateTime?
-  deletedAt            DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  appleId             String?   @unique
+  role                String    @default("player")
+  location            String?
+  bio                 String?
+  avatarUrl           String?
+  phone               String?
+  sports              String[]  @default([])
+  reliabilityScore    Float     @default(5.0)
+  gamesPlayed         Int       @default(0)
+  gamesOrganized      Int       @default(0)
+  attendanceRate      Float     @default(100)
+  reputationScore     Int       @default(0)
+  reputationOverride  Int?
+  lookingFor          String?
+  tier                String    @default("bronze")
+  tierUpdatedAt       DateTime  @default(now())
+  lastActivityAt      DateTime?
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  bookings           Booking[]
-  reviews            Review[]
-  organizedGames     Game[]
-  gamePlayers        GamePlayer[]
-  campRegistrations  CampRegistration[]
+  bookings              Booking[]
+  reviews               Review[]
+  organizedGames        Game[]
+  gamePlayers           GamePlayer[]
+  campRegistrations     CampRegistration[]
   eventRegistrations    EventRegistration[]
   workshopRegistrations WorkshopRegistration[]
   payments              Payment[]
   refreshTokens         RefreshToken[]
   deviceTokens          DeviceToken[]
-  coachProfile       Coach?
-  mobileAuthCodes    MobileAuthCode[]
+  coachProfile          Coach?
+  mobileAuthCodes       MobileAuthCode[]
 
   @@index([reputationScore(sort: Desc)])
   @@index([tier])
@@ -64,7 +64,6 @@ model User {
 /**
  * One-time authorization code for the mobile Google handoff (GameGround Mobile Developer PRD §5.2,
  * scope change: the app reuses the WEB OAuth client via the browser instead of a native client).
- *
  * The code travels to the app over a custom URL scheme, which any installed app can claim — so the
  * code alone must be worthless. `challenge` is the SHA-256 of a verifier only the requesting app
  * instance holds (PKCE): without it the exchange is refused. Raw codes are never stored.
@@ -84,8 +83,8 @@ model MobileAuthCode {
 }
 
 model Coach {
-  id             String   @id @default(cuid())
-  userId         String?  @unique
+  id             String              @id @default(cuid())
+  userId         String?             @unique
   name           String
   sport          String
   type           String
@@ -100,35 +99,35 @@ model Coach {
   email          String
   description    String
   features       String[]
-  certifications String[] @default([])
+  certifications String[]            @default([])
   imageUrl       String
-  coverImageUrl  String   @default("")
-  photos         String[] @default([])
-  rating         Float    @default(0)
-  reviewCount    Int      @default(0)
+  coverImageUrl  String              @default("")
+  photos         String[]            @default([])
+  rating         Float               @default(0)
+  reviewCount    Int                 @default(0)
   totalSeats     Int
   seatsLeft      Int
-  status         String   @default("active")
+  status         String              @default("active")
   lat            Float?
   lng            Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user     User?     @relation(fields: [userId], references: [id])
-  batches  Batch[]
-  bookings Booking[]
-  reviews  Review[]
-  agreements    CoachAgreement[]
-  signingTokens CoachSigningToken[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User?               @relation(fields: [userId], references: [id])
+  batches        Batch[]
+  bookings       Booking[]
+  reviews        Review[]
+  agreements     CoachAgreement[]
+  signingTokens  CoachSigningToken[]
 }
 
 model Batch {
-  id      String @id @default(cuid())
-  coachId String
-  day     String
-  time    String
-  level   String
-  seats   Int
-  coach   Coach    @relation(fields: [coachId], references: [id])
+  id       String    @id @default(cuid())
+  coachId  String
+  day      String
+  time     String
+  level    String
+  seats    Int
+  coach    Coach     @relation(fields: [coachId], references: [id])
   bookings Booking[]
 }
 
@@ -160,15 +159,15 @@ model Venue {
 // and endTime are real DateTimes, so "expired" (startTime past) and "booked"
 // (a Game references it) are unambiguous. One slot maps to at most one Game.
 model VenueSlot {
-  id         String   @id @default(cuid())
-  venueId    String
+  id          String   @id @default(cuid())
+  venueId     String
   // courtId String?  // future: Venue → Court → Slot. Nullable add, no redesign.
-  startTime  DateTime
-  endTime    DateTime
-  isBlocked  Boolean  @default(false)
+  startTime   DateTime
+  endTime     DateTime
+  isBlocked   Boolean  @default(false)
   blockReason String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   game  Game?
@@ -179,51 +178,51 @@ model VenueSlot {
 }
 
 model Game {
-  id            String   @id @default(cuid())
-  sport         String
-  title         String
-  location      String
-  address       String
-  scheduledAt   DateTime
-  duration      Int
-  slots         Int
-  slotsLeft     Int
-  skillLevel    String
-  organizerId   String
-  cost          String
+  id                 String          @id @default(cuid())
+  sport              String
+  title              String
+  location           String
+  address            String
+  scheduledAt        DateTime
+  duration           Int
+  slots              Int
+  slotsLeft          Int
+  skillLevel         String
+  organizerId        String
+  cost               String
   // Player-hosted games are NOT sold by Game Ground. costAmount is the entry fee
   // the host collects directly (UPI/cash), shown to players as information only —
   // no Razorpay order is ever created for a game and no Payment row is written.
   // The field is kept so an online payment layer can plug in later without a
   // schema change. currency is stored alongside for the same reason.
-  costAmount    Int      @default(0)
-  currency      String   @default("INR")
-  paymentMethod String?  // HostPaymentMethod: "upi" | "cash" | "upi_cash"
-  hostUpiId     String?
-  hostQrUrl     String?
-  paymentNote   String?  // host's instructions, e.g. "pay after joining, send screenshot"
-  venueNote     String?  // optional "host pays the venue" note
-  description   String   @default("")
-  rules         String[] @default([])
-  imageUrl      String
-  status        String   @default("open")
-  lat           Float?
-  lng           Float?
+  costAmount         Int             @default(0)
+  currency           String          @default("INR")
+  paymentMethod      String? // HostPaymentMethod: "upi" | "cash" | "upi_cash"
+  hostUpiId          String?
+  hostQrUrl          String?
+  paymentNote        String? // host's instructions, e.g. "pay after joining, send screenshot"
+  venueNote          String? // optional "host pays the venue" note
+  description        String          @default("")
+  rules              String[]        @default([])
+  imageUrl           String
+  status             String          @default("open")
+  lat                Float?
+  lng                Float?
   // Structured venue booking. Nullable so legacy free-text games stay valid;
   // location/address remain as denormalized snapshots that survive venue archival.
-  venueId       String?
-  slotId        String?  @unique
-  attendanceRecorded Boolean @default(false)
-  completedAt   DateTime?
-  cancelledAt   DateTime?
-  adminVerified Boolean  @default(false)
-  pointsAwarded Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  organizer   User            @relation(fields: [organizerId], references: [id])
-  venue       Venue?          @relation(fields: [venueId], references: [id])
-  slot        VenueSlot?      @relation(fields: [slotId], references: [id])
-  players     GamePlayer[]
-  waitlist    WaitlistEntry[]
+  venueId            String?
+  slotId             String?         @unique
+  attendanceRecorded Boolean         @default(false)
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  adminVerified      Boolean         @default(false)
+  pointsAwarded      Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  organizer          User            @relation(fields: [organizerId], references: [id])
+  venue              Venue?          @relation(fields: [venueId], references: [id])
+  slot               VenueSlot?      @relation(fields: [slotId], references: [id])
+  players            GamePlayer[]
+  waitlist           WaitlistEntry[]
 
   @@index([organizerId, createdAt(sort: Desc)])
   @@index([scheduledAt, status])
@@ -231,21 +230,22 @@ model Game {
 }
 
 model GamePlayer {
-  id        String   @id @default(cuid())
-  gameId    String
-  userId    String
-  attended  Boolean?
-  status    String   @default("joined")
+  id            String    @id @default(cuid())
+  gameId        String
+  userId        String
+  attended      Boolean?
+  status        String    @default("joined")
   // Host-collected entry fee tracking. "pending" | "paid". Advisory only — the
   // money moves outside Game Ground, so this records what the host confirms,
   // not anything GG has processed. Meaningless on free games; the UI hides it.
-  paymentStatus String @default("pending")
+  paymentStatus String    @default("pending")
   paidAt        DateTime?
-  cancelledAt DateTime?
-  joinedAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  game Game @relation(fields: [gameId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  cancelledAt   DateTime?
+  joinedAt      DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  game          Game      @relation(fields: [gameId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+
   @@unique([gameId, userId])
   @@index([userId, joinedAt(sort: Desc)])
   @@index([gameId, status, joinedAt(sort: Desc)])
@@ -257,32 +257,34 @@ model WaitlistEntry {
   userId    String
   position  Int
   createdAt DateTime @default(now())
-  game Game @relation(fields: [gameId], references: [id])
+  game      Game     @relation(fields: [gameId], references: [id])
+
   @@unique([gameId, userId]) // one waitlist entry per user per game (the route's findFirst check raced)
   @@index([gameId, position]) // promotion picks the lowest position first
 }
 
 model Booking {
-  id        String   @id @default(cuid())
-  userId    String
-  coachId   String
-  batchId   String?
-  status    String   @default("pending")
-  note      String?
-  coachNote String?
+  id              String    @id @default(cuid())
+  userId          String
+  coachId         String
+  batchId         String?
+  status          String    @default("pending")
+  note            String?
+  coachNote       String?
   rejectionReason String?
-  approvedAt  DateTime?
-  rejectedAt  DateTime?
-  completedAt DateTime?
-  cancelledAt DateTime?
-  paymentStatus String  @default("unpaid") // "unpaid" | "paid"
-  amountPaid    Int     @default(0)         // paise; matches Payment.amount units
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user  User   @relation(fields: [userId], references: [id])
-  coach Coach  @relation(fields: [coachId], references: [id])
-  batch Batch? @relation(fields: [batchId], references: [id])
-  @@index([userId])  // "my bookings" list
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  paymentStatus   String    @default("unpaid") // "unpaid" | "paid"
+  amountPaid      Int       @default(0) // paise; matches Payment.amount units
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+  coach           Coach     @relation(fields: [coachId], references: [id])
+  batch           Batch?    @relation(fields: [batchId], references: [id])
+
+  @@index([userId]) // "my bookings" list
   @@index([coachId]) // coach's bookings (admin + review-eligibility check)
 }
 
@@ -294,14 +296,15 @@ model Review {
   text         String
   reviewerName String
   createdAt    DateTime @default(now())
-  user  User  @relation(fields: [userId], references: [id])
-  coach Coach @relation(fields: [coachId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+  coach        Coach    @relation(fields: [coachId], references: [id])
+
   @@unique([userId, coachId])
   @@index([coachId, createdAt(sort: Desc)]) // coach detail review list + aggregate (unique index leads with userId, can't serve this)
 }
 
 model Camp {
-  id                   String   @id @default(cuid())
+  id                   String             @id @default(cuid())
   title                String
   sport                String
   duration             String
@@ -311,52 +314,53 @@ model Camp {
   registrationDeadline DateTime
   location             String
   address              String
-  distance             String   @default("")
+  distance             String             @default("")
   price                Int
   priceDisplay         String
   ageGroup             String
   skillLevel           String
-  rating               Float    @default(0)
-  reviewCount          Int      @default(0)
-  participants         Int      @default(0)
+  rating               Float              @default(0)
+  reviewCount          Int                @default(0)
+  participants         Int                @default(0)
   maxParticipants      Int
   description          String
-  highlights           String[] @default([])
-  included             String[] @default([])
-  whatToBring          String[] @default([])
+  highlights           String[]           @default([])
+  included             String[]           @default([])
+  whatToBring          String[]           @default([])
   imageUrl             String
-  featured             Boolean  @default(false)
-  status               String   @default("open")
-  tags                 String[] @default([])
+  featured             Boolean            @default(false)
+  status               String             @default("open")
+  tags                 String[]           @default([])
   organizer            String
   organizerContact     String
-  coaches              Json     @default("[]")
-  dailySchedule        Json     @default("[]")
-  testimonials         Json     @default("[]")
-  createdAt            DateTime @default(now())
-  registrations CampRegistration[]
+  coaches              Json               @default("[]")
+  dailySchedule        Json               @default("[]")
+  testimonials         Json               @default("[]")
+  createdAt            DateTime           @default(now())
+  registrations        CampRegistration[]
 }
 
 model CampRegistration {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   campId        String
   userId        String
   childName     String
   childAge      Int
-  status        String   @default("registered")
-  paymentStatus String   @default("pending")
+  status        String    @default("registered")
+  paymentStatus String    @default("pending")
   cancelledAt   DateTime?
-  registeredAt  DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  camp Camp @relation(fields: [campId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  registeredAt  DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  camp          Camp      @relation(fields: [campId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+
   @@unique([campId, userId]) // one registration per user per camp (concurrency-safe dedupe)
   @@index([campId, status, registeredAt(sort: Desc)])
   @@index([userId, registeredAt(sort: Desc)]) // "my camps" list + reputation counts (unique index leads with campId)
 }
 
 model SportEvent {
-  id                   String   @id @default(cuid())
+  id                   String              @id @default(cuid())
   title                String
   sport                String
   type                 String
@@ -366,137 +370,140 @@ model SportEvent {
   registrationDeadline DateTime
   location             String
   address              String
-  distance             String   @default("")
-  participants         Int      @default(0)
+  distance             String              @default("")
+  participants         Int                 @default(0)
   maxParticipants      Int
   prizePool            String
   entryFee             String
-  entryFeeAmount       Int      @default(0)
+  entryFeeAmount       Int                 @default(0)
   difficulty           String
   imageUrl             String
-  featured             Boolean  @default(false)
-  status               String   @default("Registration Open")
+  featured             Boolean             @default(false)
+  status               String              @default("Registration Open")
   description          String
-  format               String[] @default([])
-  prizes               String[] @default([])
-  requirements         String[] @default([])
+  format               String[]            @default([])
+  prizes               String[]            @default([])
+  requirements         String[]            @default([])
   organizer            String
   organizerContact     String
-  tags                 String[] @default([])
+  tags                 String[]            @default([])
   // ── Slice 1: authoring + content model (all optional, additive) ──
-  published         Boolean  @default(true)
-  thumbnailUrl      String   @default("")
-  aboutLong         String   @default("")
-  whatYouGet        String[] @default([])
-  venueInfo         String   @default("")
-  matchFormat       String   @default("")
-  teamSize          String   @default("")
-  numRounds         String   @default("")
-  structure         String   @default("")
-  eligibility       String   @default("")
-  rules             String[] @default([])
-  additionalRewards String[] @default([])
-  city              String   @default("")
-  state             String   @default("")
-  country           String   @default("India")
-  pincode           String   @default("")
-  mapsLink          String   @default("")
-  lat               Float?
-  lng               Float?
-  approvalMode      String   @default("auto")
-  currency          String   @default("INR")
-  gstPercent        Int      @default(0)
-  convenienceFeePct Int      @default(0)
-  schedule             Json     @default("[]")
-  createdAt            DateTime @default(now())
-  registrations EventRegistration[]
-  updates       EventUpdate[]
+  published            Boolean             @default(true)
+  thumbnailUrl         String              @default("")
+  aboutLong            String              @default("")
+  whatYouGet           String[]            @default([])
+  venueInfo            String              @default("")
+  matchFormat          String              @default("")
+  teamSize             String              @default("")
+  numRounds            String              @default("")
+  structure            String              @default("")
+  eligibility          String              @default("")
+  rules                String[]            @default([])
+  additionalRewards    String[]            @default([])
+  city                 String              @default("")
+  state                String              @default("")
+  country              String              @default("India")
+  pincode              String              @default("")
+  mapsLink             String              @default("")
+  lat                  Float?
+  lng                  Float?
+  approvalMode         String              @default("auto")
+  currency             String              @default("INR")
+  gstPercent           Int                 @default(0)
+  convenienceFeePct    Int                 @default(0)
+  schedule             Json                @default("[]")
+  createdAt            DateTime            @default(now())
+  registrations        EventRegistration[]
+  updates              EventUpdate[]
 }
 
 model EventUpdate {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   eventId   String
-  title     String   @default("")
+  title     String     @default("")
   body      String
-  pinned    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  event SportEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  pinned    Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  event     SportEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
   @@index([eventId, pinned, createdAt(sort: Desc)])
 }
 
 model EventRegistration {
-  id            String   @id @default(cuid())
-  eventId       String
-  userId        String
-  teamName      String?
-  status        String   @default("pending")
-  paymentStatus String   @default("pending")
-  cancelledAt   DateTime?
-  approvedAt    DateTime?
-  rejectedAt    DateTime?
+  id              String     @id @default(cuid())
+  eventId         String
+  userId          String
+  teamName        String?
+  status          String     @default("pending")
+  paymentStatus   String     @default("pending")
+  cancelledAt     DateTime?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
   rejectionReason String?
-  registeredAt  DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  event SportEvent @relation(fields: [eventId], references: [id])
-  user  User       @relation(fields: [userId], references: [id])
+  registeredAt    DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  event           SportEvent @relation(fields: [eventId], references: [id])
+  user            User       @relation(fields: [userId], references: [id])
+
   @@unique([eventId, userId]) // one registration per user per event (concurrency-safe dedupe)
   @@index([eventId, status, registeredAt(sort: Desc)])
   @@index([userId, registeredAt(sort: Desc)]) // "my events" list + reputation counts (unique index leads with eventId)
 }
 
 model Workshop {
-  id                   String   @id @default(cuid())
+  id                   String                 @id @default(cuid())
   title                String
   sport                String
   description          String
-  sessionType          String   @default("single")
-  sessionCount         Int      @default(1)
-  sessionDuration      String   @default("")
-  sessions             Json     @default("[]")
+  sessionType          String                 @default("single")
+  sessionCount         Int                    @default(1)
+  sessionDuration      String                 @default("")
+  sessions             Json                   @default("[]")
   startDate            DateTime
   endDate              DateTime
   registrationDeadline DateTime
   location             String
   address              String
-  distance             String   @default("")
+  distance             String                 @default("")
   price                Int
   priceDisplay         String
   ageGroup             String
-  audienceType         String   @default("all")
-  skillLevel           String   @default("All Levels")
-  rating               Float    @default(0)
-  reviewCount          Int      @default(0)
-  participants         Int      @default(0)
+  audienceType         String                 @default("all")
+  skillLevel           String                 @default("All Levels")
+  rating               Float                  @default(0)
+  reviewCount          Int                    @default(0)
+  participants         Int                    @default(0)
   maxParticipants      Int
-  instructor           Json     @default("{}")
-  testimonials         Json     @default("[]")
+  instructor           Json                   @default("{}")
+  testimonials         Json                   @default("[]")
   imageUrl             String
-  featured             Boolean  @default(false)
-  status               String   @default("open")
-  tags                 String[] @default([])
-  highlights           String[] @default([])
-  requirements         String[] @default([])
+  featured             Boolean                @default(false)
+  status               String                 @default("open")
+  tags                 String[]               @default([])
+  highlights           String[]               @default([])
+  requirements         String[]               @default([])
   organizer            String
   organizerContact     String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  registrations WorkshopRegistration[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  registrations        WorkshopRegistration[]
 }
 
 model WorkshopRegistration {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   workshopId       String
   userId           String
   participantName  String
   participantAge   Int?
-  registrationType String   @default("adult")
-  status           String   @default("registered")
-  paymentStatus    String   @default("pending")
+  registrationType String    @default("adult")
+  status           String    @default("registered")
+  paymentStatus    String    @default("pending")
   cancelledAt      DateTime?
-  registeredAt     DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  workshop Workshop @relation(fields: [workshopId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  registeredAt     DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  workshop         Workshop  @relation(fields: [workshopId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+
   @@unique([workshopId, userId]) // one registration per user per workshop (concurrency-safe dedupe)
   @@index([workshopId, status, registeredAt(sort: Desc)])
   @@index([userId, registeredAt(sort: Desc)]) // "my workshops" list + reputation counts (unique index leads with workshopId)
@@ -507,13 +514,13 @@ model WorkshopRegistration {
 // closing cross-entity replay — a signed order/payment for a cheap game can't be
 // resubmitted as an expensive coach because entityType/entityId won't match.
 model PaymentOrder {
-  razorpayOrderId   String   @id
+  razorpayOrderId   String    @id
   userId            String
   entityType        String
-  entityId          String   // the PURCHASED entity id (coachId, campId, gameId, …)
-  amount            Int      // paise — server-authoritative, matches the gateway order
-  currency          String   @default("INR")
-  createdAt         DateTime @default(now())
+  entityId          String // the PURCHASED entity id (coachId, campId, gameId, …)
+  amount            Int // paise — server-authoritative, matches the gateway order
+  currency          String    @default("INR")
+  createdAt         DateTime  @default(now())
   // Set by the webhook when Razorpay reports the money captured. Recorded here (NOT
   // as a Payment row — that would trip verify's replay guard and still leave no seat)
   // so a capture that never reaches the client /verify path is durably visible.
@@ -535,38 +542,38 @@ model PaymentOrder {
 // token that was already rotated is presented again, the token was copied, and
 // the whole family is revoked rather than trusting either holder.
 model RefreshToken {
-  id         String    @id @default(cuid())
-  tokenHash  String    @unique
-  userId     String
-  familyId   String
-  deviceId   String?
-  expiresAt  DateTime
-  revokedAt  DateTime?
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  familyId  String
+  deviceId  String?
+  expiresAt DateTime
+  revokedAt DateTime?
   // Set when this token is exchanged for its successor. A token with this set
   // that is presented again is a replay, not a valid use.
-  rotatedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  user User @relation(fields: [userId], references: [id])
+  rotatedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
 
   @@index([userId, deviceId]) // revoke this device
-  @@index([familyId])         // revoke the whole family on replay
-  @@index([expiresAt])        // cleanup sweep
+  @@index([familyId]) // revoke the whole family on replay
+  @@index([expiresAt]) // cleanup sweep
 }
 
 // Push targets. One row per install, not per user — a user with a phone and a
 // tablet must get both. Preferences live per device for the same reason.
 model DeviceToken {
-  id         String   @id @default(cuid())
-  token      String   @unique // FCM/APNs/Expo push token
-  userId     String
-  deviceId   String?
-  platform   String   @default("unknown") // "ios" | "android" | "web"
+  id              String   @id @default(cuid())
+  token           String   @unique // FCM/APNs/Expo push token
+  userId          String
+  deviceId        String?
+  platform        String   @default("unknown") // "ios" | "android" | "web"
   // Categories this device does NOT want. Absent = wants everything, so a new
   // device is opted in by default and an unknown new category is delivered.
   mutedCategories String[] @default([])
-  lastSeenAt DateTime @default(now())
-  createdAt  DateTime @default(now())
-  user User @relation(fields: [userId], references: [id])
+  lastSeenAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -575,7 +582,7 @@ model Payment {
   id                String    @id @default(cuid())
   userId            String
   entityType        String
-  entityId          String    // the PURCHASED entity id — matches PaymentOrder.entityId
+  entityId          String // the PURCHASED entity id — matches PaymentOrder.entityId
   // Coach purchases create a Booking, and a user can book the same coach more than
   // once, so (entityType, entityId, userId) is not enough to find it. Kept as its
   // own column rather than overloading entityId, which broke the coach revenue
@@ -588,7 +595,7 @@ model Payment {
   status            String    @default("created")
   createdAt         DateTime  @default(now())
   paidAt            DateTime?
-  user User @relation(fields: [userId], references: [id])
+  user              User      @relation(fields: [userId], references: [id])
 
   @@index([razorpayOrderId])
   @@index([entityType, entityId])
@@ -619,7 +626,7 @@ model CoachAgreement {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  coach    Coach                    @relation(fields: [coachId], references: [id])
+  coach     Coach                    @relation(fields: [coachId], references: [id])
   auditLogs CoachAgreementAuditLog[]
 
   // One agreement row per coach per version — fails a concurrent double-submit
@@ -649,13 +656,65 @@ model CoachSigningToken {
 model CoachAgreementAuditLog {
   id          String   @id @default(cuid())
   agreementId String
-  action      String   // VIEW | DOWNLOAD
+  action      String // VIEW | DOWNLOAD
   actorId     String
-  actorRole   String   // coach | admin
+  actorRole   String // coach | admin
   ipAddress   String?
   createdAt   DateTime @default(now())
 
   agreement CoachAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
 
   @@index([agreementId])
+}
+
+/**
+ * Append-only record of things worth telling someone about, and of what admins did.
+ * It exists because Vercel has no background worker: a sendEmail that fails inside a
+ * request is gone forever, and a lost alert is precisely the failure this is meant to
+ * fix. Writing the row first makes retry possible at all — the hourly cron drains
+ * whatever has not been delivered.
+ * One table rather than three: `severity` separates the feed ("info"), the work queue
+ * ("action") and the admin audit trail ("audit"), and the last of those is what fills
+ * the long-standing placeholder in adminBookings/actions.ts.
+ * NOTE: userId/actorId are deliberately plain strings with NO foreign key. Nothing
+ * cascades, no lock is taken on User while a booking commits, and the rollback is a
+ * clean DROP TABLE. Columns for later phases are present from the start so this stays
+ * the only migration the ops work needs against the production database.
+ */
+model OpsEvent {
+  id       String  @id @default(cuid())
+  type     String // "booking.created" | "payment.captured" | "refund.due" | "admin.action" | …
+  severity String  @default("info") // "info" = feed | "action" = inbox | "audit" = never notified
+  title    String
+  body     String?
+  link     String? // deep link into admin, e.g. /admin/bookings/camps?q=<id>
+
+  entityType String?
+  entityId   String?
+  userId     String? // the customer, for customer-channel dispatch
+  actorId    String? // the admin who did it
+  actorName  String?
+
+  // Natural key for "this already happened" (e.g. "refund.due:<paymentId>"). A second
+  // insert raises P2002, which the caller swallows — that IS the dedupe.
+  dedupeKey String? @unique
+  meta      Json?
+
+  // Channels already delivered. A retry sends only what is missing, so a partial
+  // failure never re-sends a channel that already went out.
+  channels    String[]  @default([])
+  attempts    Int       @default(0)
+  attemptedAt DateTime?
+  deliveredAt DateTime?
+
+  claimedById   String?
+  claimedByName String?
+  claimedAt     DateTime?
+  resolvedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([deliveredAt, attempts]) // the dispatch sweep
+  @@index([severity, resolvedAt, createdAt(sort: Desc)]) // the inbox
 }

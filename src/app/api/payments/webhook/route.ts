@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { logger } from "@/lib/logger";
 import { sendPush } from "@/lib/push";
+import { logOps } from "@/lib/ops";
 
 export const runtime = "nodejs";
 
@@ -83,6 +84,17 @@ export async function POST(req: NextRequest) {
               body: `Your ${existing.entityType} booking is confirmed.`,
               data: { url: `/profile`, entityType: existing.entityType, entityId: existing.entityId },
             });
+            // Keyed on the gateway payment id, which is unique per capture, so a
+            // Razorpay retry of the same webhook produces one alert, not several.
+            void logOps({
+              type: "payment.captured",
+              title: `[GG] Payment captured — ₹${Math.round(existing.amount / 100).toLocaleString("en-IN")}`,
+              body: `${existing.entityType} · payment ${razorpayPaymentId}`,
+              link: "/admin/revenue",
+              entityType: existing.entityType, entityId: existing.entityId, userId: existing.userId,
+              dedupeKey: `payment.captured:${razorpayPaymentId}`,
+              meta: { amount: existing.amount, razorpayOrderId },
+            });
           }
         } else {
           // No Payment row yet: the client /verify hasn't run or was abandoned. The
@@ -106,6 +118,17 @@ export async function POST(req: NextRequest) {
             title: "Payment failed",
             body: "Your payment didn't go through. No seat was reserved.",
             data: { url: `/profile`, entityType: existing.entityType, entityId: existing.entityId },
+          });
+          // "action", not "info": a failed payment often means a user who thinks
+          // they have a seat and does not.
+          void logOps({
+            type: "payment.failed",
+            severity: "action",
+            title: `[GG] Payment FAILED — ₹${Math.round(existing.amount / 100).toLocaleString("en-IN")}`,
+            body: `${existing.entityType} · order ${razorpayOrderId}. No seat was reserved.`,
+            link: "/admin/revenue",
+            entityType: existing.entityType, entityId: existing.entityId, userId: existing.userId,
+            dedupeKey: `payment.failed:${razorpayOrderId}`,
           });
         }
         return NextResponse.json({ ok: true, event: body.event });

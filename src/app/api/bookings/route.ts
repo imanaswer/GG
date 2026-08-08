@@ -5,6 +5,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
 import { coachAdmission } from "@/lib/checkout";
+import { logOps } from "@/lib/ops";
 
 export async function GET(req: NextRequest) {
   try {
@@ -98,6 +99,18 @@ export async function POST(req: NextRequest) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return fail("You already have a booking with this coach", 409);
       throw e;
     }
+
+    // A free coach booking lands at "pending" and waits for a human. Nothing told
+    // anyone it was waiting, so it sat until someone happened to look.
+    void logOps({
+      type: "booking.created",
+      severity: "action",
+      title: "[GG] New coach booking — needs approval",
+      body: `${session.name ?? "A player"} requested a session. It holds a seat until approved or rejected.`,
+      link: "/admin/bookings/coaches?status=pending",
+      entityType: "coach", entityId: coachId, userId: session.id,
+      dedupeKey: `booking.created:${booking.id}`,
+    });
 
     return ok(booking);
   } catch (e) { return handleErr(e); }
