@@ -42,6 +42,14 @@ describe("POST /api/admin/auth", () => {
     expect(signMock).toHaveBeenCalledWith({ id: "shared", name: "Shared login" });
   });
 
+  it("400s on an empty or malformed body instead of throwing a 500", async () => {
+    // Public unauthenticated route — every stray internet probe was a 500.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bad: any = { json: async () => { throw new Error("no body"); }, cookies: { get: () => undefined } };
+    expect((await POST(bad)).status).toBe(400);
+    expect((await POST(req(null))).status).toBe(400);
+  });
+
   it("rejects a wrong password whether or not an email is given", async () => {
     expect((await POST(req({ password: "nope" }))).status).toBe(401);
     expect((await POST(req({ email: "a@b.com", password: "nope" }))).status).toBe(401);

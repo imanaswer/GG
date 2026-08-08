@@ -5,7 +5,13 @@ import bcrypt from "bcryptjs";
 import { authLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
-  const { email, password, action } = await req.json();
+  // A malformed or empty body must be a 400, not an unhandled throw. This route
+  // is public and unauthenticated, so anything on the internet can hit it — an
+  // uncaught req.json() turned every stray probe into a 500 and log noise.
+  // Matches the .catch(() => ...) already used by the other routes.
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  const { email, password, action } = body as { email?: string; password?: string; action?: string };
 
   if (action === "logout") {
     const res = NextResponse.json({ ok: true });
