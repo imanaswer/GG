@@ -7,7 +7,6 @@ Production-readiness, release, and on-call documentation. (Docs reference each o
 - [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — gate-by-gate how-to, followable with no prior context
 - [LAUNCH_PLAYBOOK.md](LAUNCH_PLAYBOOK.md) — minute-by-minute launch timeline, roles, rollback triggers
 - [POST_LAUNCH_CHECKLIST.md](POST_LAUNCH_CHECKLIST.md) — 24h / 7d / 30d + on-call + support
-- [RELEASE_READINESS.md](RELEASE_READINESS.md) — earlier readiness snapshot
 
 ## On-call & runbooks
 - [RUNBOOK.md](RUNBOOK.md) — operate/observe/diagnose the live system
