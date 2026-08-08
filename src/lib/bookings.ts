@@ -11,6 +11,7 @@ import {
 import { flagBookingRefundDue } from "@/lib/refunds";
 import type { PaymentStatus } from "@/lib/paymentStatus";
 import { logOpsSafe } from "@/lib/ops";
+import { logger } from "@/lib/logger";
 
 // Re-export the pure state machine so callers import everything from "@/lib/bookings".
 export * from "@/lib/bookingStatus";
@@ -87,6 +88,7 @@ export async function transitionBooking(
  * by nothing.
  */
 async function announceDecision(bookingId: string, to: "approved" | "rejected", reason?: string | null) {
+  try {
   const b = await prisma.booking.findUnique({
     where: { id: bookingId },
     select: {
@@ -116,6 +118,13 @@ async function announceDecision(bookingId: string, to: "approved" | "rejected", 
       ...(reason ? { reason } : {}),
     },
   }));
+  } catch (err) {
+    // The decision is already committed. logOpsSafe guards the builder, but this
+    // lookup sits outside it — and a read hiccup here would throw out of
+    // approveBooking, so applyBulk would report a FAILED id for an action that
+    // actually succeeded, and an operator would retry it.
+    logger.error("booking decision announcement failed", { bookingId, to, err });
+  }
 }
 
 export const approveBooking = async (id: string) => {
