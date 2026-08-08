@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authLimit, mutationLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { COOKIE as AUTH_COOKIE, verifyToken } from "@/lib/auth";
 import { verifyAdminToken } from "@/lib/adminAuth";
+import { APP_VERSION_HEADER, isBelowMinimum } from "@/lib/appVersion";
 
 const ADMIN_COOKIE = "gg_admin";
 
@@ -60,6 +61,19 @@ export async function proxy(req: NextRequest) {
 
   // API rate limiting below.
   if (!pathname.startsWith("/api/")) return NextResponse.next();
+
+  // Mobile kill switch. Set MIN_MOBILE_VERSION in Vercel and redeploy to stop a
+  // bad app release: builds below it get 426 and show a no-dismiss upgrade wall.
+  // Exempt the probes — a 426 on /api/health reads as an outage to uptime
+  // monitors and to Vercel, and would hide the very incident this is stopping.
+  // Unset env var and version-less callers both pass; see lib/appVersion.ts.
+  if (pathname !== "/api/health" && pathname !== "/api/ready"
+      && isBelowMinimum(req.headers.get(APP_VERSION_HEADER), process.env.MIN_MOBILE_VERSION)) {
+    return NextResponse.json(
+      { ok: false, error: "Please update Game Ground to continue." },
+      { status: 426 },
+    );
+  }
 
   // Correlation id: reuse an inbound one (from an upstream proxy) or mint one.
   // Injected into the request headers so any handler can read it via
