@@ -1,0 +1,25 @@
+name: daily ops digest
+
+# Deliberately NOT a vercel.json cron. Two Hobby-plan limits bite there: a
+# sub-daily schedule makes Vercel create no deployment at all (which froze
+# production once already), and the plan also caps how many cron entries a
+# project may have. This project already sits at four. Rather than discover the
+# ceiling through a deploy that silently never happens, ops scheduling lives
+# here alongside the hourly sweep, where the cost of being wrong is a red run.
+
+on:
+  schedule:
+    - cron: "30 3 * * *" # 09:00 IST
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      # -f so a 401/500 fails loudly: a digest that silently stops arriving is
+      # indistinguishable from a quiet day, which is the whole failure mode.
+      - name: Send the daily ops digest
+        run: |
+          curl -fsS --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/ops-digest"

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ok } from "@/lib/api";
 import { notifyAdmin, adminAlertHtml } from "@/lib/notifyAdmin";
 import { PAYMENT_REVENUE_WHERE } from "@/lib/paymentStatus";
+import { MAX_ATTEMPTS } from "@/lib/ops";
 
 export const maxDuration = 60;
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     prisma.booking.count({ where: { status: "pending" } }),
     prisma.eventRegistration.count({ where: { status: "pending" } }),
     // Alerts that exhausted their retries — the digest is how you find out at all.
-    prisma.opsEvent.count({ where: { deliveredAt: null, attempts: { gte: 5 } } }),
+    prisma.opsEvent.count({ where: { deliveredAt: null, attempts: { gte: MAX_ATTEMPTS } } }),
   ]);
 
   const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;

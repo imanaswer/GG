@@ -51,7 +51,7 @@ describe("dispatchPending", () => {
     expect(notifyAdminMock).toHaveBeenCalledTimes(1);
     expect(res).toEqual({ sent: 1, failed: 0 });
     expect(prismaMock.opsEvent.update).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ channels: { push: "admin-email" } }),
+      data: expect.objectContaining({ channels: { push: ["admin-email"] } }),
     }));
   });
 
@@ -73,6 +73,15 @@ describe("dispatchPending", () => {
 
     expect(res).toEqual({ sent: 0, failed: 1 });
     expect(prismaMock.opsEvent.update).not.toHaveBeenCalled(); // nothing marked delivered
+  });
+
+  it("marks deliveredAt only when nothing is still owed", async () => {
+    prismaMock.opsEvent.findMany.mockResolvedValue([row()]);
+    await dispatchPending();
+    // Every intended channel went out, so the row leaves the sweep.
+    expect(prismaMock.opsEvent.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ deliveredAt: expect.any(Date) }),
+    }));
   });
 
   it("does not re-send a channel already delivered", async () => {

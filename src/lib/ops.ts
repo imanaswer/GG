@@ -41,6 +41,8 @@ export type OpsInput = {
 };
 
 const ADMIN_CHANNEL = "admin-email";
+/** Every channel an event is expected to reach. Phase 3 appends the customer one. */
+const INTENDED_CHANNELS = [ADMIN_CHANNEL];
 /** Give up after this many tries; the row stays visible as a failed alert. */
 export const MAX_ATTEMPTS = 5;
 /** A claim older than this is assumed dead (function timed out) and may be retaken. */
@@ -122,19 +124,32 @@ export async function dispatchPending(limit = 25): Promise<{ sent: number; faile
       });
       if (claim.count !== 1) continue;
 
-      // Only channels not already delivered, so a partial failure never re-sends.
-      if (row.channels.includes(ADMIN_CHANNEL)) { sent++; continue; }
+      // Send only the channels this row still owes. Skipping the whole row when ANY
+      // channel had succeeded would strand the rest: once a customer channel is
+      // added, a row whose admin mail sent and whose customer mail failed would
+      // never retry the customer send, and would be counted as delivered.
+      const missing = INTENDED_CHANNELS.filter(c => !row.channels.includes(c));
+      if (missing.length === 0) { sent++; continue; }
 
-      const ok = await notifyAdmin(row.title, adminBody(row));
-      if (ok) {
+      const delivered: string[] = [];
+      for (const channel of missing) {
+        if (channel === ADMIN_CHANNEL && await notifyAdmin(row.title, adminBody(row))) {
+          delivered.push(channel);
+        }
+      }
+
+      if (delivered.length > 0) {
         await prisma.opsEvent.update({
           where: { id: row.id },
-          data: { channels: { push: ADMIN_CHANNEL }, deliveredAt: new Date() },
+          data: {
+            channels: { push: delivered },
+            // Done only once nothing is outstanding, so a partial success stays in
+            // the sweep for the channels that still failed.
+            ...(delivered.length === missing.length ? { deliveredAt: new Date() } : {}),
+          },
         });
-        sent++;
-      } else {
-        failed++; // attemptedAt/attempts already stamped; the next sweep retries
       }
+      if (delivered.length === missing.length) sent++; else failed++;
     }
   } catch (err) {
     logger.error("dispatchPending failed", { err });
