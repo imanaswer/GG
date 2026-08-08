@@ -5,6 +5,7 @@ import { ok, fail, handleErr } from "@/lib/api";
 import { refundPolicy } from "@/lib/refundPolicy";
 import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
+import { flagRefundDue } from "@/lib/refunds";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -95,7 +96,10 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const reg = await prisma.workshopRegistration.findFirst({ where: { workshopId: id, userId: session.id }, select: { id: true } });
+    const reg = await prisma.workshopRegistration.findFirst({
+      where: { workshopId: id, userId: session.id, status: { not: "cancelled" } },
+      select: { id: true, paymentStatus: true },
+    });
     if (!reg) return fail("Not registered for this workshop", 400);
 
     const workshop = await prisma.workshop.findUnique({ where: { id }, select: { startDate: true, status: true } });
@@ -107,14 +111,30 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       return fail("Cancellation is not allowed within 90 minutes of the start time", 403);
     }
 
-    await prisma.$transaction([
-      prisma.workshopRegistration.delete({ where: { id: reg.id } }),
-      prisma.workshop.update({
+    const refundDue = await prisma.$transaction(async (tx) => {
+      // A paid registration is marked cancelled, not deleted — same rule camps and
+      // events already follow. Deleting released the seat AND erased the only
+      // record that the money was still ours, so the seat could be resold while
+      // the first registrant's payment sat unreturned and invisible.
+      const owed = reg.paymentStatus === "paid"
+        && await flagRefundDue(tx, { entityType: "workshop", entityId: id, userId: session.id });
+
+      if (owed) {
+        await tx.workshopRegistration.update({
+          where: { id: reg.id },
+          data: { status: "cancelled", cancelledAt: new Date(), paymentStatus: "refund_pending" satisfies PaymentStatus },
+        });
+      } else {
+        await tx.workshopRegistration.delete({ where: { id: reg.id } });
+      }
+
+      await tx.workshop.update({
         where: { id },
         data: { participants: { decrement: 1 }, status: workshop.status === "full" ? "open" : undefined },
-      }),
-    ]);
+      });
+      return owed;
+    });
 
-    return ok({ cancelled: true });
+    return ok({ cancelled: true, refundDue });
   } catch (e) { return handleErr(e); }
 }

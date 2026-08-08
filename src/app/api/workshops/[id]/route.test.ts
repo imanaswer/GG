@@ -14,7 +14,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => ({ getSessionFromRequest: sessionMock }));
 vi.mock("@/lib/reputationService", () => ({ recordActivityAndRecompute: vi.fn() }));
 
-import { POST } from "./route";
+import { POST, DELETE } from "./route";
 
 const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
 const req = (body: unknown) => ({ json: async () => body }) as unknown as Request;
@@ -45,5 +45,61 @@ describe("POST /workshops/[id] — paid-registration bypass guard", () => {
     const j = (await res.json()) as { ok: boolean; data?: { registered?: boolean } };
     expect(res.status).toBe(200);
     expect(j.data?.registered).toBe(true);
+  });
+});
+
+// ── Cancellation of a PAID registration ───────────────────────────────────────
+// The bug this locks down: DELETE used to remove the registration row outright,
+// which handed the seat back for resale AND destroyed the only record that the
+// money was still ours. Camps and events were fixed; workshops was missed.
+describe("DELETE /workshops/[id] — paid cancellation leaves a refund trail", () => {
+  const tx = () => ({
+    workshopRegistration: { update: vi.fn(), delete: vi.fn() },
+    workshop: { update: vi.fn() },
+    payment: { findFirst: vi.fn(), update: vi.fn() },
+  });
+
+  it("marks a PAID registration refund_pending instead of deleting it", async () => {
+    prismaMock.workshopRegistration.findFirst.mockResolvedValue({ id: "r1", paymentStatus: "paid" });
+    prismaMock.workshop.findUnique.mockResolvedValue({ startDate: future, status: "full" });
+    const t = tx();
+    t.payment.findFirst.mockResolvedValue({ id: "p1" });          // real money was taken
+    prismaMock.$transaction.mockImplementation(async (fn: (c: unknown) => unknown) => fn(t));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await DELETE({} as any, ctx("w1"));
+    const j = (await res.json()) as { ok: boolean; data: { refundDue?: boolean } };
+
+    expect(j.data.refundDue).toBe(true);
+    expect(t.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "refund_pending" } }),
+    );
+    expect(t.workshopRegistration.delete).not.toHaveBeenCalled();  // the row survives
+    expect(t.workshopRegistration.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "cancelled", paymentStatus: "refund_pending" }) }),
+    );
+  });
+
+  it("still deletes an UNPAID registration — there is nothing to refund", async () => {
+    prismaMock.workshopRegistration.findFirst.mockResolvedValue({ id: "r2", paymentStatus: "pending" });
+    prismaMock.workshop.findUnique.mockResolvedValue({ startDate: future, status: "open" });
+    const t = tx();
+    prismaMock.$transaction.mockImplementation(async (fn: (c: unknown) => unknown) => fn(t));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await DELETE({} as any, ctx("w2"));
+    const j = (await res.json()) as { data: { refundDue?: boolean } };
+
+    expect(j.data.refundDue).toBe(false);
+    expect(t.workshopRegistration.delete).toHaveBeenCalled();
+    expect(t.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("does not re-cancel an already-cancelled registration", async () => {
+    prismaMock.workshopRegistration.findFirst.mockResolvedValue(null);   // status:{not:"cancelled"} filtered it out
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await DELETE({} as any, ctx("w3"));
+    expect(res.status).toBe(400);
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });
