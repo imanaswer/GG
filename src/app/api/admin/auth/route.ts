@@ -33,11 +33,18 @@ export async function POST(req: NextRequest) {
     if (user?.passwordHash && await bcrypt.compare(String(password ?? ""), user.passwordHash)) {
       actor = { id: user.id, name: user.name };
     }
-  } else {
-    // Legacy shared password, kept for ONE release so nobody is locked out while
-    // named accounts are created. Audit rows then read "Shared login" in plain
-    // sight, which is its own pressure to finish the migration. Remove this branch
-    // and ADMIN_PASSWORD in the release after.
+  }
+
+  // Fall back to the shared password even when an email WAS supplied. Making the
+  // email field route exclusively to the named branch locked people out: with no
+  // admin accounts created yet that branch can never succeed, so anyone who filled
+  // the field in — the natural thing to do on a form that shows it — was refused
+  // no matter which password they typed.
+  //
+  // Legacy branch, kept for ONE release while named accounts are created. Audit
+  // rows read "Shared login" in plain sight, which is its own pressure to finish
+  // the migration. Remove this and ADMIN_PASSWORD in the release after.
+  if (!actor) {
     const adminPw = process.env.ADMIN_PASSWORD ?? (() => {
       if (process.env.NODE_ENV === "production") throw new Error("ADMIN_PASSWORD env var is required in production");
       return "admin123";

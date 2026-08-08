@@ -15,7 +15,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true); setError("");
     const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, // email omitted entirely = the legacy shared-password branch, kept for one release
-      body: JSON.stringify(email.trim() ? { email: email.trim(), password: pw } : { password: pw }) });
+      body: JSON.stringify({ email: email.trim() || undefined, password: pw }) });
     setLoading(false);
     if (r.ok) router.push("/admin");
     else setError("Invalid credentials. Contact the platform admin.");
@@ -48,7 +48,7 @@ export default function AdminLogin() {
                 autoComplete="username"
                 style={{ width: "100%", height: 44, padding: "0 14px", borderRadius: 9, border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`, background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
               />
-              <span style={{ fontSize: 11, color: "#4b5563" }}>Leave blank to use the shared password.</span>
+              <span style={{ fontSize: 11, color: "#4b5563" }}>Optional — leave blank to use the shared password.</span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
