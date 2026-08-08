@@ -47,15 +47,12 @@ function buildWhere(p: URLSearchParams, now: Date) {
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
   const base = { ...countWhere }; delete base.status; delete base.paymentStatus;
-  const [cancelled, pending, paid, failed, refunded] = await Promise.all([
-    prisma.campRegistration.count({ where: { ...base, status: "cancelled" } }),
-    prisma.campRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "pending" } }),
-    prisma.campRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "paid" } }),
-    prisma.campRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "failed" } }),
-    prisma.campRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "refunded" } }),
-  ]);
-  const m: Record<string, number> = { cancelled, pending, paid, failed, refunded };
-  return CATEGORY_STATUSES.camps.map(s => ({ status: s, count: m[s] ?? 0 }));
+  // Counted through the SAME where-fragment the filter uses, so a card can never
+  // show a number the tab behind it can't fill.
+  const statuses = CATEGORY_STATUSES.camps;
+  const counts = await Promise.all(statuses.map(s =>
+    prisma.campRegistration.count({ where: { ...base, ...registrationWhereForStatus(s) } })));
+  return statuses.map((s, i) => ({ status: s, count: counts[i] }));
 }
 
 export async function GET(req: NextRequest) {

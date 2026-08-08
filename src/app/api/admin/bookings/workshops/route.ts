@@ -50,15 +50,10 @@ function buildWhere(p: URLSearchParams, now: Date) {
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
   const base = { ...countWhere }; delete base.status; delete base.paymentStatus;
-  const [cancelled, pending, paid, failed, refunded] = await Promise.all([
-    prisma.workshopRegistration.count({ where: { ...base, status: "cancelled" } }),
-    prisma.workshopRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "pending" } }),
-    prisma.workshopRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "paid" } }),
-    prisma.workshopRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "failed" } }),
-    prisma.workshopRegistration.count({ where: { ...base, status: { not: "cancelled" }, paymentStatus: "refunded" } }),
-  ]);
-  const m: Record<string, number> = { cancelled, pending, paid, failed, refunded };
-  return CATEGORY_STATUSES.workshops.map(s => ({ status: s, count: m[s] ?? 0 }));
+  const statuses = CATEGORY_STATUSES.workshops;
+  const counts = await Promise.all(statuses.map(s =>
+    prisma.workshopRegistration.count({ where: { ...base, ...registrationWhereForStatus(s) } })));
+  return statuses.map((s, i) => ({ status: s, count: counts[i] }));
 }
 
 export async function GET(req: NextRequest) {

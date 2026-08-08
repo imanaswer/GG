@@ -22,7 +22,7 @@ function toRow(r: Prisma.EventRegistrationGetPayload<{ include: typeof INCLUDE }
   return {
     id: r.id, userId: r.userId, userName: r.user?.name ?? "—", userEmail: r.user?.email ?? "—",
     userPhone: r.user?.phone ?? null, entityName: r.event?.title ?? "—",
-    status: deriveEventRegistrationStatus(r.status),
+    status: deriveEventRegistrationStatus(r.status, r.paymentStatus),
     createdAt: r.registeredAt.toISOString(), updatedAt: r.updatedAt?.toISOString() ?? null,
     sessionDate: r.event?.startDate?.toISOString() ?? null,
     extra: { team: r.teamName ?? "—" }, payment,
@@ -47,14 +47,10 @@ function buildWhere(p: URLSearchParams, now: Date) {
 
 async function statusCounts(countWhere: Record<string, unknown>): Promise<StatusCount[]> {
   const base = { ...countWhere }; delete base.status; delete base.paymentStatus;
-  const [pending, approved, rejected, cancelled] = await Promise.all([
-    prisma.eventRegistration.count({ where: { ...base, status: "pending" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: "approved" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: "rejected" } }),
-    prisma.eventRegistration.count({ where: { ...base, status: "cancelled" } }),
-  ]);
-  const m: Record<string, number> = { pending, approved, rejected, cancelled };
-  return CATEGORY_STATUSES.events.map(s => ({ status: s, count: m[s] ?? 0 }));
+  const statuses = CATEGORY_STATUSES.events;
+  const counts = await Promise.all(statuses.map(s =>
+    prisma.eventRegistration.count({ where: { ...base, ...eventWhereForStatus(s) } })));
+  return statuses.map((s, i) => ({ status: s, count: counts[i] }));
 }
 
 export async function GET(req: NextRequest) {

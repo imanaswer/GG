@@ -3,7 +3,7 @@ import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { parsePagination, parseSort, orderByFor, coachDateWhere } from "@/lib/adminBookings/query";
-import { coachWhereForStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
+import { coachWhereForStatus, deriveCoachBookingStatus, CATEGORY_STATUSES } from "@/lib/adminBookings/status";
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
 import type { BookingRow, ListResponse, StatusCount } from "@/lib/adminBookings/types";
@@ -30,7 +30,7 @@ const INCLUDE = {
 function toRow(b: Prisma.BookingGetPayload<{ include: typeof INCLUDE }>): BookingRow {
   return {
     id: b.id, userId: b.userId, userName: b.user?.name ?? "—", userEmail: b.user?.email ?? "—",
-    userPhone: b.user?.phone ?? null, entityName: b.coach?.name ?? "—", status: b.status,
+    userPhone: b.user?.phone ?? null, entityName: b.coach?.name ?? "—", status: deriveCoachBookingStatus(b.status, b.paymentStatus),
     createdAt: b.createdAt.toISOString(), updatedAt: b.updatedAt?.toISOString() ?? null,
     sessionDate: null,
     extra: {
@@ -41,9 +41,12 @@ function toRow(b: Prisma.BookingGetPayload<{ include: typeof INCLUDE }>): Bookin
       coachNote: b.coachNote ?? "",
       note: b.note ?? "",
     },
-    payment: b.paymentStatus === "paid"
-      ? { amount: b.amountPaid, currency: "INR", status: "paid", razorpayPaymentId: null, paidAt: b.approvedAt?.toISOString() ?? null }
-      : null,
+    // Attached for any booking that carries money, not just "paid" — gating this on
+    // "paid" meant a refund-due booking showed no payment section at all, hiding the
+    // one number the operator needs to send back.
+    payment: b.paymentStatus === "unpaid"
+      ? null
+      : { amount: b.amountPaid, currency: "INR", status: b.paymentStatus, razorpayPaymentId: null, paidAt: b.approvedAt?.toISOString() ?? null },
   };
 }
 
@@ -68,11 +71,12 @@ export async function GET(req: NextRequest) {
   const [rows, total, grouped] = await Promise.all([
     prisma.booking.findMany({ where, include: INCLUDE, orderBy, skip, take }),
     prisma.booking.count({ where }),
-    prisma.booking.groupBy({ by: ["status"], where: countWhere, _count: true }),
+    // Counted per bucket through the same where-fragment the filter uses. A groupBy
+    // on `status` alone cannot express refund-due, which lives on the payment axis.
+    Promise.all(CATEGORY_STATUSES.coaches.map(s =>
+      prisma.booking.count({ where: { ...countWhere, ...coachWhereForStatus(s) } }))),
   ]);
-  const counts: StatusCount[] = CATEGORY_STATUSES.coaches.map(s => ({
-    status: s, count: grouped.find(g => g.status === s)?._count ?? 0,
-  }));
+  const counts: StatusCount[] = CATEGORY_STATUSES.coaches.map((s, i) => ({ status: s, count: grouped[i] }));
 
   const body: ListResponse = { rows: rows.map(toRow), total, page, pageSize, counts };
   return NextResponse.json(body);
