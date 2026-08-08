@@ -42,18 +42,22 @@ export async function GET(req: NextRequest) {
   const avgReliability = users.length > 0
     ? (users.reduce((a, u) => a + u.reliabilityScore, 0) / users.length).toFixed(1) : "5.0";
 
-  const alerts: { type: string; message: string; severity: string }[] = [];
-  camps.forEach(c => { if (c.participants >= c.maxParticipants && c.status !== "full") alerts.push({ type: "camp", message: `${c.title} is full but status not updated`, severity: "warning" }); });
+  // `id` is the entity the alert is ABOUT. The dedupeKey must key on it, never on
+  // the message: messages embed ticking values ("starts in 2hr", "is 49hrs old"),
+  // so keying on text would mint a brand-new work item every hour for the same
+  // problem, and resolved rows would not stay resolved.
+  const alerts: { type: string; id: string; message: string; severity: string }[] = [];
+  camps.forEach(c => { if (c.participants >= c.maxParticipants && c.status !== "full") alerts.push({ type: "camp", id: c.id, message: `${c.title} is full but status not updated`, severity: "warning" }); });
   upcomingGames.forEach(g => {
     const hoursUntil = (g.scheduledAt.getTime() - now.getTime()) / 3600000;
-    if (hoursUntil > 0 && hoursUntil < 2 && g.slots - g.slotsLeft < 3) alerts.push({ type: "game", message: `${g.title} starts in ${Math.round(hoursUntil)}hr with only ${g.slots - g.slotsLeft} players`, severity: "urgent" });
+    if (hoursUntil > 0 && hoursUntil < 2 && g.slots - g.slotsLeft < 3) alerts.push({ type: "game", id: g.id, message: `${g.title} starts in ${Math.round(hoursUntil)}hr with only ${g.slots - g.slotsLeft} players`, severity: "urgent" });
   });
   const coachById = new Map((await prisma.coach.findMany({ select: { id: true, name: true } })).map(c => [c.id, c.name]));
   pendingBookings.forEach(b => {
     const hoursOld = (now.getTime() - b.createdAt.getTime()) / 3600000;
-    if (hoursOld > 48) alerts.push({ type: "booking", message: `Pending booking for ${coachById.get(b.coachId) ?? "coach"} is ${Math.round(hoursOld)}hrs old`, severity: "warning" });
+    if (hoursOld > 48) alerts.push({ type: "booking", id: b.id, message: `Pending booking for ${coachById.get(b.coachId) ?? "coach"} is ${Math.round(hoursOld)}hrs old`, severity: "warning" });
   });
-  lowSeatCoaches.forEach(c => alerts.push({ type: "coach", message: `${c.name} has 0 seats — may need new batches`, severity: "info" }));
+  lowSeatCoaches.forEach(c => alerts.push({ type: "coach", id: c.id, message: `${c.name} has 0 seats — may need new batches`, severity: "info" }));
 
   // The alerts above are recomputed on every request and vanish with it: they could
   // not be dismissed, assigned, or acted on, and nothing recorded that anyone had
@@ -68,7 +72,9 @@ export async function GET(req: NextRequest) {
       title: `[GG] ${a.message}`,
       link: "/admin/inbox",
       entityType: a.type,
-      dedupeKey: `alert:${a.type}:${a.message}`,
+      entityId: a.id,
+      // rule + entity, NOT the message — see the note on the alerts array above.
+      dedupeKey: `alert:${a.type}:${a.id}`,
     }));
   }
 

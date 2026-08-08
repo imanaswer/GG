@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.paymentOrder.findMany({
-        where: { capturedAt: { not: null, lt: new Date(now - ORPHAN_GRACE_MS) } },
+        // `lt` already excludes NULL, so no separate not-null test is needed. The grace
+        // window matches docs/ops/RUNBOOK.md: verify may still be in flight.
+        where: { capturedAt: { lt: new Date(now - ORPHAN_GRACE_MS) } },
         orderBy: { capturedAt: "asc" },
         take: 200,
         select: {

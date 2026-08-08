@@ -64,6 +64,21 @@ describe("GET /api/admin/inbox", () => {
     expect(body.data.orphanedCharges[0]).toMatchObject({ id: "order_2", entityName: "Summer Camp", ageDays: 2 });
   });
 
+  it("asks for orphans by the captured orders it found, not by a blanket scan", async () => {
+    prismaMock.paymentOrder.findMany.mockResolvedValue([
+      { razorpayOrderId: "order_3", razorpayPaymentId: null, userId: "u1", entityType: "camp", entityId: "c1", amount: 100, capturedAt: new Date(Date.now() - day) },
+    ]);
+    prismaMock.payment.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+    await GET(req());
+
+    // Pins the second query's shape so a reorder can't leave the tests asserting
+    // the wrong call while still passing.
+    expect(prismaMock.payment.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: { razorpayOrderId: { in: ["order_3"] } },
+    }));
+  });
+
   it("sums what we owe and ages the oldest debt", async () => {
     prismaMock.payment.findMany
       .mockResolvedValueOnce([
