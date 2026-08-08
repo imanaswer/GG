@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => {
-  const model = () => ({ update: vi.fn(), updateMany: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn() });
+  const model = () => ({ update: vi.fn(), updateMany: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn(), findFirst: vi.fn() });
   // Loose by design: a hand-rolled Prisma stand-in indexed by model name.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prismaMock: any = {
@@ -15,6 +15,8 @@ const { prismaMock } = vi.hoisted(() => {
     sportEvent: model(),
     workshopRegistration: model(),
     workshop: model(),
+    booking: model(),
+    payment: model(),
     // $transaction invokes the callback with the same mock object so that
     // assertions on prismaMock.<model>.<method> cover transactional calls too.
     $transaction: vi.fn(async (fn: (p: unknown) => unknown) => fn(prismaMock)),
@@ -125,11 +127,70 @@ describe("applyAction — registration payment status (camps)", () => {
       expect.objectContaining({ where: { id: "r1" }, data: { paymentStatus: "paid" } }),
     );
   });
-  it("mark-refunded sets paymentStatus to refunded", async () => {
+  it("mark-refunded sets paymentStatus to refunded AND clears the Payment ledger", async () => {
+    prismaMock.campRegistration.findUnique.mockResolvedValue({ paymentStatus: "refund_pending", userId: "u1", campId: "c1" });
+    prismaMock.payment.findFirst.mockResolvedValue({ id: "p1" });
+
     await applyAction("camps", "r1", "mark-refunded");
+
     expect(prismaMock.campRegistration.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "r1" }, data: { paymentStatus: "refunded" } }),
     );
+    // The half that was missing: the ledger row stayed refund_pending forever, so
+    // the money still read as owed no matter what the admin clicked.
+    expect(prismaMock.payment.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: "refund_pending" }) }),
+    );
+    expect(prismaMock.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "refunded" } }),
+    );
+  });
+
+  it("mark-refunded is idempotent once the row is already refunded", async () => {
+    prismaMock.campRegistration.findUnique.mockResolvedValue({ paymentStatus: "refunded", userId: "u1", campId: "c1" });
+    await applyAction("camps", "r1", "mark-refunded");
+    expect(prismaMock.campRegistration.update).not.toHaveBeenCalled();
+    expect(prismaMock.payment.update).not.toHaveBeenCalled();
+  });
+});
+
+// The two paths that had NO route to "refunded" at all before this change.
+describe("applyAction — mark-refunded closes the dead ends", () => {
+  it("a user-cancelled paid EVENT registration can now reach refunded", async () => {
+    // Previously unreachable: the events branch early-returned on status "cancelled",
+    // and "refund" demanded status "approved". Money stuck at refund_pending forever.
+    prismaMock.eventRegistration.findUnique.mockResolvedValue({ paymentStatus: "refund_pending", userId: "u1", eventId: "e1" });
+    prismaMock.payment.findFirst.mockResolvedValue({ id: "p9" });
+
+    await applyAction("events", "reg1", "mark-refunded");
+
+    expect(prismaMock.eventRegistration.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "reg1" }, data: { paymentStatus: "refunded" } }),
+    );
+    expect(prismaMock.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "refunded" } }),
+    );
+    // Bookkeeping only — the seat went back when the registration was cancelled.
+    expect(prismaMock.sportEvent.update).not.toHaveBeenCalled();
+  });
+
+  it("a refund-due COACH booking can now reach refunded", async () => {
+    prismaMock.booking.findUnique.mockResolvedValue({ paymentStatus: "refund_pending" });
+    prismaMock.payment.findFirst.mockResolvedValue({ id: "p8" });
+
+    await applyAction("coaches", "b1", "mark-refunded");
+
+    expect(prismaMock.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "b1" }, data: { paymentStatus: "refunded" } }),
+    );
+    expect(prismaMock.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "refunded" } }),
+    );
+  });
+
+  it("is now an allowed action for coaches and events", () => {
+    expect(isActionAllowed("coaches", "mark-refunded")).toBe(true);
+    expect(isActionAllowed("events", "mark-refunded")).toBe(true);
   });
 });
 

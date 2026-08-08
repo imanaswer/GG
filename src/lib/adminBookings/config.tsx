@@ -34,11 +34,15 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
       { action: "reject", label: "Reject", danger: true, needsReason: true },
       { action: "complete", label: "Mark Completed" },
       { action: "cancel", label: "Cancel", danger: true },
+      // Coach bookings could be flagged refund-due but never closed out — the
+      // status was terminal by omission. This is the exit.
+      { action: "mark-refunded", label: "Mark Refunded" },
     ],
     bulkActions: [
       { action: "approve", label: "Approve" },
       { action: "reject", label: "Reject", danger: true },
       { action: "cancel", label: "Cancel", danger: true },
+      { action: "mark-refunded", label: "Mark Refunded" },
     ],
   },
   "play-sessions": {
@@ -120,11 +124,13 @@ export const CATEGORY_CONFIGS: Record<CategoryKey, CategoryConfig> = {
       { action: "reject", label: "Reject", danger: true, needsReason: true },
       { action: "refund", label: "Refund", danger: true },
       { action: "cancel", label: "Cancel", danger: true },
+      { action: "mark-refunded", label: "Mark Refunded" },
     ],
     bulkActions: [
       { action: "approve", label: "Approve" },
       { action: "reject", label: "Reject", danger: true },
       { action: "cancel", label: "Cancel", danger: true },
+      { action: "mark-refunded", label: "Mark Refunded" },
     ],
   },
 };

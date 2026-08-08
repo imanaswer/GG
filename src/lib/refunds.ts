@@ -51,3 +51,46 @@ export async function flagBookingRefundDue(tx: Tx, bookingId: string): Promise<b
   });
   return true;
 }
+
+// ─── Closing the loop ─────────────────────────────────────────────────────────
+// The other half of flagRefundDue. Money moves by hand in the Razorpay dashboard;
+// these mark the books once it has.
+//
+// The matcher is `refund_pending`, NOT `paid` — and that distinction is the whole
+// bug this fixes. The old event-refund path looked for a `paid` Payment, which can
+// never match a row already flagged `refund_pending`, so the ledger never cleared
+// and a refunded registration stayed "money we owe" forever.
+
+/**
+ * Clear a flagged Payment for (entityType, entityId, user). Returns true when a
+ * ledger row was actually closed, so the caller knows whether this was real money.
+ */
+export async function markRefunded(
+  tx: Tx,
+  where: { entityType: string; entityId: string; userId: string },
+): Promise<boolean> {
+  const due = await tx.payment.findFirst({
+    where: { ...where, status: "refund_pending" satisfies PaymentStatus },
+    select: { id: true },
+  });
+  if (!due) return false;
+  await tx.payment.update({
+    where: { id: due.id },
+    data: { status: "refunded" satisfies PaymentStatus },
+  });
+  return true;
+}
+
+/** Same, for a coach purchase — found by bookingId, as flagBookingRefundDue is. */
+export async function markBookingRefunded(tx: Tx, bookingId: string): Promise<boolean> {
+  const due = await tx.payment.findFirst({
+    where: { bookingId, status: "refund_pending" satisfies PaymentStatus },
+    select: { id: true },
+  });
+  if (!due) return false;
+  await tx.payment.update({
+    where: { id: due.id },
+    data: { status: "refunded" satisfies PaymentStatus },
+  });
+  return true;
+}

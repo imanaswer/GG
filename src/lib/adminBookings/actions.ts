@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { approveBooking, rejectBooking, completeBooking, cancelBooking } from "@/lib/bookings";
 import { promoteFromWaitlist } from "@/lib/waitlist";
+import { markRefunded, markBookingRefunded } from "@/lib/refunds";
 import { sendPush } from "@/lib/push";
 import type { CategoryKey } from "./types";
 import type { PaymentStatus } from "@/lib/paymentStatus";
@@ -10,11 +11,11 @@ export type BookingAction =
   | "mark-paid" | "mark-refunded" | "mark-attended" | "mark-no-show";
 
 export const ALLOWED_ACTIONS: Record<CategoryKey, BookingAction[]> = {
-  coaches:         ["approve", "reject", "complete", "cancel"],
+  coaches:         ["approve", "reject", "complete", "cancel", "mark-refunded"],
   "play-sessions": ["mark-attended", "mark-no-show", "cancel"],
   workshops:       ["cancel", "mark-paid", "mark-refunded"],
   camps:           ["cancel", "mark-paid", "mark-refunded"],
-  events:          ["approve", "reject", "refund", "cancel"],
+  events:          ["approve", "reject", "refund", "cancel", "mark-refunded"],
 };
 
 export function isActionAllowed(category: CategoryKey, action: BookingAction): boolean {
@@ -33,9 +34,9 @@ type Delegate = {
 type DynamicClient = Record<string, Delegate>;
 
 const REG = {
-  camps:     { model: "campRegistration",     parent: "camp",       parentId: "campId",     counter: "participants", fullStatus: "full",  openStatus: "open" },
-  events:    { model: "eventRegistration",    parent: "sportEvent", parentId: "eventId",    counter: "participants", fullStatus: "Full",  openStatus: "Registration Open" },
-  workshops: { model: "workshopRegistration", parent: "workshop",   parentId: "workshopId", counter: "participants", fullStatus: "full",  openStatus: "open" },
+  camps:     { model: "campRegistration",     parent: "camp",       parentId: "campId",     counter: "participants", fullStatus: "full",  openStatus: "open",              entityType: "camp" },
+  events:    { model: "eventRegistration",    parent: "sportEvent", parentId: "eventId",    counter: "participants", fullStatus: "Full",  openStatus: "Registration Open", entityType: "event" },
+  workshops: { model: "workshopRegistration", parent: "workshop",   parentId: "workshopId", counter: "participants", fullStatus: "full",  openStatus: "open",              entityType: "workshop" },
 } as const;
 
 /**
@@ -51,6 +52,43 @@ export async function applyAction(
   if (!isActionAllowed(category, action)) throw new Error(`Action ${action} not allowed for ${category}`);
 
   // NOTE: future audit log goes here — record (category, id, action, actor, ts).
+
+  // "mark-refunded" means one thing everywhere: a human has sent the money back,
+  // now close the books. Handled once, ahead of the category branches, because
+  // four copies is how the ledger drifted in the first place — camps and workshops
+  // updated only the registration and left Payment flagged forever, events had no
+  // reachable path at all once the row was cancelled, and coaches had no action.
+  //
+  // It deliberately does NOT touch seat counts: the seat was released when the
+  // registration was cancelled. This is bookkeeping, not a state transition.
+  if (action === "mark-refunded") {
+    await prisma.$transaction(async (tx) => {
+      if (category === "coaches") {
+        const booking = await tx.booking.findUnique({ where: { id }, select: { paymentStatus: true } });
+        if (!booking) throw new Error("Not found");
+        if (booking.paymentStatus === "refunded") return; // idempotent
+        await markBookingRefunded(tx, id);
+        await tx.booking.update({ where: { id }, data: { paymentStatus: "refunded" satisfies PaymentStatus } });
+        return;
+      }
+      const cfg = REG[category as keyof typeof REG];
+      if (!cfg) throw new Error(`Cannot mark ${category} refunded`);
+      const txdb = tx as unknown as DynamicClient;
+      const reg = await txdb[cfg.model].findUnique({
+        where: { id },
+        select: { paymentStatus: true, userId: true, [cfg.parentId]: true },
+      });
+      if (!reg) throw new Error("Not found");
+      if (reg.paymentStatus === "refunded") return; // idempotent
+      await markRefunded(tx, {
+        entityType: cfg.entityType,
+        entityId: String(reg[cfg.parentId]),
+        userId: String(reg.userId),
+      });
+      await txdb[cfg.model].update({ where: { id }, data: { paymentStatus: "refunded" satisfies PaymentStatus } });
+    });
+    return;
+  }
 
   if (category === "events" && (action === "approve" || action === "reject" || action === "refund" || action === "cancel")) {
     await prisma.$transaction(async (tx) => {
@@ -151,10 +189,6 @@ export async function applyAction(
   const db = prisma as unknown as DynamicClient;
   if (action === "mark-paid") {
     await db[cfg.model].update({ where: { id }, data: { paymentStatus: "paid" satisfies PaymentStatus } });
-    return;
-  }
-  if (action === "mark-refunded") {
-    await db[cfg.model].update({ where: { id }, data: { paymentStatus: "refunded" satisfies PaymentStatus } });
     return;
   }
   if (action === "cancel") {
