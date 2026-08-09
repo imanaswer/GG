@@ -2,14 +2,13 @@ import { NextRequest } from "next/server";
 import { ok } from "@/lib/api";
 import { recomputeAll } from "@/lib/reputationService";
 import { logger } from "@/lib/logger";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const start = Date.now();
   try {

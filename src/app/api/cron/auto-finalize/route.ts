@@ -6,6 +6,7 @@ import { completeBooking } from "@/lib/bookings";
 import { sendPush } from "@/lib/push";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 60;
 
@@ -22,10 +23,8 @@ export const maxDuration = 60;
  * A failed run can simply be re-run, and one bad row never aborts the batch.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const now = new Date();
 

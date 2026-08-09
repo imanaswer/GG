@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { ok } from "@/lib/api";
 import { dispatchPending } from "@/lib/ops";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 60;
 
@@ -14,10 +15,8 @@ export const maxDuration = 60;
  * all, so production silently freezes on the last good build.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const { sent, failed } = await dispatchPending();
   return ok({ sent, failed });

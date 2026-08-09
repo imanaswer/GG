@@ -4,6 +4,7 @@ import { ok } from "@/lib/api";
 import { notifyAdmin, adminAlertHtml } from "@/lib/notifyAdmin";
 import { PAYMENT_REVENUE_WHERE } from "@/lib/paymentStatus";
 import { MAX_ATTEMPTS } from "@/lib/ops";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 60;
 
@@ -16,10 +17,8 @@ export const maxDuration = 60;
  * to deliver — which is exactly the day it matters.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const since = new Date(Date.now() - 24 * 60 * 60_000);
 

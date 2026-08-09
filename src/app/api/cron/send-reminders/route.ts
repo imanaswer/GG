@@ -3,14 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, emails } from "@/lib/email";
 import { ok } from "@/lib/api";
 import { sendPush } from "@/lib/push";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const now     = new Date();
   const tmrwMin = new Date(now.getTime() + 20 * 3600_000);

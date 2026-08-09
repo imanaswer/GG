@@ -1,14 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ok } from "@/lib/api";
+import { cronUnauthorized } from "@/lib/cron";
 
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production" && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const denied = cronUnauthorized(req);
+  if (denied) return denied;
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60_000);
