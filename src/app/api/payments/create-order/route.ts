@@ -68,6 +68,30 @@ async function chargePaiseFor(entityType: string, entityId: string, now: Date): 
   }
 }
 
+/**
+ * The one admission rule verify had and this route did not: you already hold a seat.
+ * It lives here rather than in checkout.ts because it is the only rule that needs IO
+ * and a userId. Without it, re-registering minted a live order, Razorpay captured, and
+ * verify then hit @@unique([entityId, userId]) and returned 409 — money taken, no seat.
+ *
+ * A `cancelled` row is deliberately NOT a blocker: it is kept only to carry a pending
+ * refund (src/lib/refunds.ts), and verify revives it. Coach is absent — Booking carries
+ * no unique on (userId, coachId), so repeat purchases from one coach are legal.
+ */
+async function alreadyRegistered(entityType: string, entityId: string, userId: string): Promise<boolean> {
+  const live = { status: { not: "cancelled" } } as const;
+  switch (entityType) {
+    case "camp":
+      return !!(await prisma.campRegistration.findFirst({ where: { campId: entityId, userId, ...live }, select: { id: true } }));
+    case "workshop":
+      return !!(await prisma.workshopRegistration.findFirst({ where: { workshopId: entityId, userId, ...live }, select: { id: true } }));
+    case "event":
+      return !!(await prisma.eventRegistration.findFirst({ where: { eventId: entityId, userId, ...live }, select: { id: true } }));
+    default:
+      return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
@@ -76,6 +100,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { entityType, entityId } = body;
     if (!entityType || !entityId) return fail("entityType, entityId required", 400);
+
+    // Before the gateway, never after the capture.
+    if (await alreadyRegistered(entityType, entityId, session.id)) {
+      return fail("You are already registered for this", 409);
+    }
 
     let amountPaise: number, currency: string;
     try {

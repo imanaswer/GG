@@ -186,9 +186,20 @@ export async function POST(req: NextRequest) {
               status: "paid" satisfies PaymentStatus, paidAt: new Date(),
             },
           });
-          await tx.campRegistration.create({
-            data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
+          // Cancelling a PAID registration keeps the row (it carries the refund
+          // owed — src/lib/refunds.ts) and with it @@unique([campId, userId]).
+          // Creating over it raised P2002 and this route answered 409 — AFTER
+          // Razorpay captured. Revive instead. The old Payment keeps its
+          // refund_pending status, so the earlier debt is not erased.
+          const revived = await tx.campRegistration.updateMany({
+            where: { campId: entityId, userId: session.id, status: "cancelled" },
+            data: { status: "registered", cancelledAt: null, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
           });
+          if (!revived.count) {
+            await tx.campRegistration.create({
+              data: { campId: entityId, userId: session.id, childName, childAge: parseInt(String(childAge)), paymentStatus: "paid" satisfies PaymentStatus },
+            });
+          }
         });
       } catch (e) { return txError(e); }
       return ok({ verified: true });
@@ -222,7 +233,16 @@ export async function POST(req: NextRequest) {
               status: "paid" satisfies PaymentStatus, paidAt: new Date(),
             },
           });
-          await tx.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus, status: regStatus } });
+          // Same revive as camps — see the camp branch above. rejectedAt /
+          // rejectionReason are cleared too, or a re-registration would show the
+          // previous run's rejection on the user's profile.
+          const revived = await tx.eventRegistration.updateMany({
+            where: { eventId: entityId, userId: session.id, status: "cancelled" },
+            data: { status: regStatus, cancelledAt: null, approvedAt: null, rejectedAt: null, rejectionReason: null, teamName, paymentStatus: "paid" satisfies PaymentStatus },
+          });
+          if (!revived.count) {
+            await tx.eventRegistration.create({ data: { eventId: entityId, userId: session.id, teamName, paymentStatus: "paid" satisfies PaymentStatus, status: regStatus } });
+          }
         });
       } catch (e) { return txError(e); }
       return ok({ verified: true });
@@ -263,13 +283,24 @@ export async function POST(req: NextRequest) {
               status: "paid" satisfies PaymentStatus, paidAt: new Date(),
             },
           });
-          await tx.workshopRegistration.create({
+          // Same revive as camps — see the camp branch above.
+          const revived = await tx.workshopRegistration.updateMany({
+            where: { workshopId: entityId, userId: session.id, status: "cancelled" },
             data: {
-              workshopId: entityId, userId: session.id,
+              status: "registered", cancelledAt: null,
               participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
               registrationType, paymentStatus: "paid" satisfies PaymentStatus,
             },
           });
+          if (!revived.count) {
+            await tx.workshopRegistration.create({
+              data: {
+                workshopId: entityId, userId: session.id,
+                participantName, participantAge: participantAge ? parseInt(String(participantAge)) : null,
+                registrationType, paymentStatus: "paid" satisfies PaymentStatus,
+              },
+            });
+          }
         });
       } catch (e) { return txError(e); }
       return ok({ verified: true });
