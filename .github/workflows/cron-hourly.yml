@@ -16,22 +16,39 @@ on:
 jobs:
   sweep:
     runs-on: ubuntu-latest
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      APP_URL: ${{ vars.APP_URL || 'https://www.gameground.net' }}
     steps:
+      # An unset secret expands to an empty string, so the curls below send
+      # "Authorization: Bearer " and every one of them comes back 401 — which is
+      # indistinguishable from a wrong value, and reads as `exit 22` in the log.
+      # Name the cause here instead.
+      - name: Require CRON_SECRET
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's Actions secrets. Add it under Settings -> Secrets and variables -> Actions, with the SAME value as CRON_SECRET in the Vercel project. Until then every step below returns 401."
+            exit 1
+          fi
       # -f makes a 401/500 fail the job: a missing or wrong CRON_SECRET has to
-      # be loud, not a green run that never completed a single game.
+      # be loud, not a green run that never completed a single game. -L matters
+      # for the same reason in the other direction: the apex redirects to www,
+      # and without it a redirecting APP_URL returns 308 — which -f treats as
+      # SUCCESS, so the job would go green having called nothing. Following it
+      # cross-host makes curl drop the auth header, which fails loudly instead.
       - name: Complete and archive finished games, events, camps, workshops
         run: |
-          curl -fsS --max-time 90 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/complete-games"
+          curl -fsSL --max-time 90 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/complete-games"
 
       # The ops outbox. Anything whose alert failed to send — or was logged by a
       # request that ended before delivery — goes out here. Also -f: a silently
       # failing drain means nobody hears about bookings or refunds at all.
       # Runs even if the sweep above fails; the two are independent.
       - name: Deliver pending ops alerts
-        if: always()
+        if: always() && env.CRON_SECRET != ''
         run: |
-          curl -fsS --max-time 90 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ vars.APP_URL || 'https://www.gameground.net' }}/api/cron/dispatch-ops"
+          curl -fsSL --max-time 90 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/dispatch-ops"
