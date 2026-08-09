@@ -8,10 +8,9 @@ import { recordActivityAndRecompute } from "@/lib/reputationService";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { flagRefundDue } from "@/lib/refunds";
 import { logOpsSafe } from "@/lib/ops";
+import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE } from "@/lib/gameTime";
 
 type Ctx = { params: Promise<{ id: string }> };
-
-const CANCEL_CUTOFF_MS = 90 * 60_000;
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   try {
@@ -134,11 +133,9 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const workshop = await prisma.workshop.findUnique({ where: { id }, select: { startDate: true, status: true } });
     if (!workshop) return fail("Workshop not found", 404);
 
-    const now = Date.now();
-    const startTime = new Date(workshop.startDate).getTime();
-    if (startTime - now < CANCEL_CUTOFF_MS) {
-      return fail("Cancellation is not allowed within 90 minutes of the start time", 403);
-    }
+    // Was the last route holding its own copy of the 90-minute rule (and its own
+    // copy of the message). games, camps and events already read gameTime.
+    if (withinCancelCutoff(workshop.startDate, new Date())) return fail(CANCEL_CUTOFF_MESSAGE, 403);
 
     const refundDue = await prisma.$transaction(async (tx) => {
       // A paid registration is marked cancelled, not deleted — same rule camps and

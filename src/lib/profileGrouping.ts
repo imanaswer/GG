@@ -1,3 +1,5 @@
+import { withinCancelCutoff } from "@/lib/gameTime";
+
 export type GroupStatus = "upcoming" | "completed" | "cancelled";
 
 export function gameGroupStatus(g: { scheduledAt: string; status: string }, now: Date): GroupStatus {
@@ -19,7 +21,7 @@ export function registrationGroupStatus(status: string, parentEnd: string, now: 
 /**
  * Whether the user may cancel their own event registration — mirrors the server
  * rule in DELETE /api/events/[id]: only an active (pending/approved) registration,
- * and only ≥ 90 minutes before the event start.
+ * and only outside the cancellation cutoff (gameTime.CANCEL_CUTOFF_MIN).
  */
 export function canCancelEventRegistration(
   r: { status: string; startDate?: string },
@@ -27,7 +29,7 @@ export function canCancelEventRegistration(
 ): boolean {
   if (r.status !== "pending" && r.status !== "approved") return false;
   if (!r.startDate) return true;
-  return new Date(r.startDate).getTime() - now.getTime() >= 90 * 60_000;
+  return !withinCancelCutoff(r.startDate, now);
 }
 
 export type UpcomingType = "coach" | "game" | "workshop" | "camp" | "event";

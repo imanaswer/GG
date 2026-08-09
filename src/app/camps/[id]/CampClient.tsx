@@ -15,6 +15,7 @@ import { useCamp, useCancelCamp, type Camp } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { CAMP_IMAGE } from "@/lib/premium-images";
+import { withinCancelCutoff, CANCEL_CUTOFF_MESSAGE, CANCEL_CUTOFF_MIN } from "@/lib/gameTime";
 
 type Tab = "overview" | "schedule" | "coaches" | "reviews";
 
@@ -107,7 +108,7 @@ export default function CampDetail({ params, initialCamp }: { params: Promise<{ 
   const img          = camp.imageUrl || CAMP_IMAGE.src;
   const isRegistered = !!camp.userRegistration;
   const regPaid      = camp.userRegistration?.paymentStatus === "paid";
-  const canCancel    = new Date(camp.startDate).getTime() - Date.now() >= 90 * 60000;
+  const canCancel    = !withinCancelCutoff(camp.startDate, new Date());
 
   const handleRegister = () => {
     if (!user) { toast.error("Please sign in to register"); return; }
@@ -665,7 +666,7 @@ export default function CampDetail({ params, initialCamp }: { params: Promise<{ 
                             textAlign: "center",
                           }}>
                             <p style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>
-                              Cancellation is not allowed within 90 minutes of the start time
+                              {CANCEL_CUTOFF_MESSAGE}
                             </p>
                           </div>
                         )}
@@ -701,7 +702,7 @@ export default function CampDetail({ params, initialCamp }: { params: Promise<{ 
                               style={{ marginTop: 2, accentColor: "#e63946", width: 16, height: 16, flexShrink: 0 }}
                             />
                             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>
-                              I agree that cancellations are only allowed up to 90 minutes before the start time
+                              I agree that cancellations are only allowed up to {CANCEL_CUTOFF_MIN} minutes before the start time
                             </span>
                           </label>
                         )}
