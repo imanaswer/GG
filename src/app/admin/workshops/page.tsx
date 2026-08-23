@@ -7,6 +7,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { SPORTS, SKILL_LEVELS, WORKSHOP_SESSION_TYPES, WORKSHOP_AUDIENCE_TYPES, WORKSHOP_STATUSES } from "@/lib/taxonomy";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Pencil, Trash2 } from "lucide-react";
+import { bookingRef } from "@/lib/bookingRef";
 
 type Reg = {
   id: string; participantName: string; participantAge?: number;
@@ -60,11 +61,11 @@ function toDateInput(d: string | undefined) {
 
 function exportCSV(data: Reg[], filter = "all") {
   const rows = data.map(r => [
-    `"${r.id}"`, `"${r.participantName}"`, r.participantAge ?? "", `"${r.registrationType}"`,
+    `"${bookingRef(r.id)}"`, `"${r.participantName}"`, r.participantAge ?? "", `"${r.registrationType}"`,
     `"${r.userName}"`, `"${r.userEmail}"`, `"${r.workshopTitle}"`,
-    `"${new Date(r.registeredAt).toLocaleDateString("en-IN")}"`
+    `"${new Date(r.registeredAt).toLocaleDateString("en-IN")}"`, `"${r.id}"`
   ].join(","));
-  const csv = [`"ID","Participant","Age","Type","User","Email","Workshop","Date"`, ...rows].join("\n");
+  const csv = [`"ID","Participant","Age","Type","User","Email","Workshop","Date","Internal ID"`, ...rows].join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv])); a.download = `workshop-registrations-${filter}.csv`; a.click();
 }
 
@@ -203,7 +204,7 @@ export default function AdminWorkshops() {
                     <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No registrations found</td></tr>
                   ) : regs.map(r => (
                     <tr key={r.id}>
-                      <td style={{ ...td, fontFamily: "monospace", fontSize: 11, color: "#6b7280" }}>{r.id}</td>
+                      <td style={{ ...td, fontFamily: "monospace", fontSize: 11, color: "#6b7280" }} title={r.id}>{bookingRef(r.id)}</td>
                       <td style={td}><div style={{ fontWeight: 600, color: "#fff" }}>{r.participantName}</div><div style={{ fontSize: 11, color: "#6b7280" }}>{r.userEmail}</div></td>
                       <td style={{ ...td, color: "#9ca3af" }}>{r.participantAge ? `${r.participantAge} yrs` : "-"}</td>
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: r.registrationType === "youth" ? "rgba(96,165,250,0.12)" : "rgba(168,85,247,0.12)", color: r.registrationType === "youth" ? "#60a5fa" : "#a855f7" }}>{r.registrationType === "youth" ? "Youth" : "Adult"}</span></td>

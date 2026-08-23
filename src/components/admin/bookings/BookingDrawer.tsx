@@ -3,15 +3,17 @@ import { useState } from "react";
 import { Badge } from "@/components/admin/Badge";
 import type { BookingRow } from "@/lib/adminBookings/types";
 import type { BookingAction } from "@/lib/adminBookings/actions";
+import { bookingRef } from "@/lib/bookingRef";
 
 export interface RowActionDef { action: BookingAction; label: string; danger?: boolean; needsReason?: boolean; }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+function Field({ label, value, sub }: { label: string; value?: string | null; sub?: string | null }) {
   if (!value) return null;
   return (
     <div style={{ paddingBottom: 10, marginTop: 14, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
       <p style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</p>
       <p style={{ fontSize: 13, color: "#e5e7eb", wordBreak: "break-all" }}>{value}</p>
+      {sub && <p style={{ fontSize: 10, color: "#4b5563", fontFamily: "monospace", wordBreak: "break-all", marginTop: 2 }}>{sub}</p>}
     </div>
   );
 }
@@ -46,7 +48,7 @@ export function BookingDrawer({
         <Field label="Phone" value={row.userPhone} />
 
         <p style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", margin: "18px 0 6px" }}>Booking Information</p>
-        <Field label="Booking ID" value={row.id} />
+        <Field label="Booking ID" value={bookingRef(row.id)} sub={row.id} />
         <Field label="Entity" value={row.entityName} />
         {Object.entries(row.extra).map(([k, v]) => <Field key={k} label={k} value={v || null} />)}
 

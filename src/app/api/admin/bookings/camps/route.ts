@@ -7,6 +7,7 @@ import { registrationWhereForStatus, deriveRegistrationStatus, CATEGORY_STATUSES
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
 import type { BookingRow, ListResponse, StatusCount, PaymentInfo } from "@/lib/adminBookings/types";
+import { bookingRef, searchTerm } from "@/lib/bookingRef";
 
 const INCLUDE = {
   user: { select: { name: true, email: true, phone: true } },
@@ -37,7 +38,7 @@ function buildWhere(p: URLSearchParams, now: Date) {
   const { where: dateWhere } = buildDateQuery(p, now, AXIS);
   const where: Record<string, unknown> = { ...registrationWhereForStatus(status), ...dateWhere };
   if (q) where.OR = [
-    { id: { contains: q, mode: "insensitive" } },
+    { id: { contains: searchTerm(q), mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
     { user: { email: { contains: q, mode: "insensitive" } } },
     { camp: { title: { contains: q, mode: "insensitive" } } },
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
     const rows = await prisma.campRegistration.findMany({ where, include: INCLUDE, orderBy: { registeredAt: "desc" } });
     const mapped = rows.map(r => toRow(r, null));
     const headers = ["Booking ID", "User", "Email", "Phone", "Camp", "Child", "Date", "Status", "Created"];
-    const csv = toCsv(headers, mapped.map(r => [r.id, r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.child, r.sessionDate, r.status, r.createdAt]));
+    const csv = toCsv(headers, mapped.map(r => [bookingRef(r.id), r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.child, r.sessionDate, r.status, r.createdAt]));
     return new NextResponse(csv, { headers: { "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="camps-bookings.csv"` } });
   }
 

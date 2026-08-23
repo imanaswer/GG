@@ -7,13 +7,14 @@ import { coachWhereForStatus, deriveCoachBookingStatus, CATEGORY_STATUSES } from
 import { applyBulk, isActionAllowed, type BookingAction } from "@/lib/adminBookings/actions";
 import { toCsv } from "@/lib/adminBookings/csv";
 import type { BookingRow, ListResponse, StatusCount } from "@/lib/adminBookings/types";
+import { bookingRef, searchTerm } from "@/lib/bookingRef";
 
 function buildWhere(p: URLSearchParams, now: Date) {
   const status = p.get("status") ?? "all";
   const q = p.get("q")?.trim();
   const where: Record<string, unknown> = { ...coachWhereForStatus(status), ...coachDateWhere(p, now) };
   if (q) where.OR = [
-    { id: { contains: q, mode: "insensitive" } },
+    { id: { contains: searchTerm(q), mode: "insensitive" } },
     { user: { name: { contains: q, mode: "insensitive" } } },
     { user: { email: { contains: q, mode: "insensitive" } } },
     { coach: { name: { contains: q, mode: "insensitive" } } },
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
     const rows = await prisma.booking.findMany({ where, include: INCLUDE, orderBy: { createdAt: "desc" } });
     const mapped = rows.map(toRow);
     const headers = ["Booking ID", "User", "Email", "Phone", "Coach", "Sport", "Session", "Status", "Created"];
-    const csv = toCsv(headers, mapped.map(r => [r.id, r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.sport, r.extra.session, r.status, r.createdAt]));
+    const csv = toCsv(headers, mapped.map(r => [bookingRef(r.id), r.userName, r.userEmail, r.userPhone, r.entityName, r.extra.sport, r.extra.session, r.status, r.createdAt]));
     return new NextResponse(csv, { headers: { "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="coaches-bookings.csv"` } });
   }
 

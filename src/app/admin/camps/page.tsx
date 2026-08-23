@@ -6,6 +6,7 @@ import { AdminModal, FormInput, FormTextarea, FormSelect, FormRow, FormActions, 
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Pencil, Trash2 } from "lucide-react";
+import { bookingRef } from "@/lib/bookingRef";
 
 type Reg = { id: string; parentName?: string; parentEmail?: string; parentPhone?: string; childName: string; childAge: number; campTitle?: string; campSport?: string; registeredAt: string };
 type Camp = {
@@ -41,8 +42,8 @@ function toDateInput(d: string | undefined) {
 }
 
 function exportCSV(data: Reg[], campTitle = "all") {
-  const rows = data.map(r => [`"${r.id}"`,`"${r.parentName}"`,`"${r.parentEmail}"`,`"${r.parentPhone ?? ""}"`,`"${r.childName}"`,r.childAge,`"${r.campTitle}"`,`"${new Date(r.registeredAt).toLocaleDateString("en-IN")}"`].join(","));
-  const csv = [`"ID","Parent","Email","Phone","Child","Age","Camp","Date"`, ...rows].join("\n");
+  const rows = data.map(r => [`"${bookingRef(r.id)}"`,`"${r.parentName}"`,`"${r.parentEmail}"`,`"${r.parentPhone ?? ""}"`,`"${r.childName}"`,r.childAge,`"${r.campTitle}"`,`"${new Date(r.registeredAt).toLocaleDateString("en-IN")}"`,`"${r.id}"`].join(","));
+  const csv = [`"ID","Parent","Email","Phone","Child","Age","Camp","Date","Internal ID"`, ...rows].join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv])); a.download = `registrations-${campTitle}.csv`; a.click();
 }
 
@@ -163,7 +164,7 @@ export default function AdminCamps() {
                     <tr><td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No registrations found</td></tr>
                   ) : regs.map(r => (
                     <tr key={r.id}>
-                      <td style={{ ...td, fontFamily: "monospace", fontSize: 11, color: "#6b7280" }}>{r.id}</td>
+                      <td style={{ ...td, fontFamily: "monospace", fontSize: 11, color: "#6b7280" }} title={r.id}>{bookingRef(r.id)}</td>
                       <td style={td}><div style={{ fontWeight: 600, color: "#fff" }}>{r.parentName}</div><div style={{ fontSize: 11, color: "#6b7280" }}>{r.parentEmail}</div></td>
                       <td style={{ ...td, fontWeight: 600 }}>{r.childName}</td>
                       <td style={{ ...td, color: "#9ca3af" }}>{r.childAge} yrs</td>
