@@ -48,9 +48,9 @@ export async function POST(req: NextRequest) {
 
     const user = await resolveGoogleUser(profile);
     // Same flag, same rule as the browser-handoff exchange — see isNewAccount.
-    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true } });
+    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true, phone: true } });
     return ok({
-      user,
+      user: { ...user, phone: row?.phone ?? undefined },
       token: await signToken(user),
       isNew: row ? isNewAccount(row.createdAt) : false,
     });

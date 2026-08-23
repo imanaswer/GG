@@ -25,7 +25,7 @@ const AVATAR_SEEDS = ["ace", "rally", "striker", "dunk", "splash", "spike", "rac
 const AVATAR_OPTIONS = AVATAR_SEEDS.map(seed => `https://api.dicebear.com/9.x/avataaars/png?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`);
 
 export default function EditProfile() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<EditableProfile | null>(null);
   const [saving, setSaving] = useState(false);
@@ -95,7 +95,7 @@ export default function EditProfile() {
       body: JSON.stringify(profile),
     });
     setSaving(false);
-    if (r.ok) { toast.success("Profile updated"); router.push(`/profile/${user!.id}`); }
+    if (r.ok) { toast.success("Profile updated"); await refreshUser(); router.push(`/profile/${user!.id}`); }
     else      { const d = await r.json(); toast.error(d.error ?? "Failed to save"); }
   };
 

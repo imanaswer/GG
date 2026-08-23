@@ -52,7 +52,7 @@ export async function issueMobileSession(user: SessionUser, deviceId?: string | 
 }
 
 export type RefreshResult =
-  | { ok: true; user: SessionUser; session: IssuedSession }
+  | { ok: true; user: SessionUser & { phone?: string }; session: IssuedSession }
   | { ok: false; error: string };
 
 /**
@@ -114,7 +114,8 @@ export async function rotateRefreshToken(rawToken: string, deviceId?: string | n
 
   return {
     ok: true,
-    user,
+    // Phone travels with the payload, never inside the signed token.
+    user: { ...user, phone: dbUser.phone ?? undefined },
     session: { token: await signToken(user, MOBILE_ACCESS_TTL), refreshToken: raw, expiresIn: 30 * 60 },
   };
 }

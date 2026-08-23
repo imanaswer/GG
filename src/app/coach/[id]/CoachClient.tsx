@@ -17,6 +17,7 @@ import { COACH_FALLBACKS, HERO_BACKDROPS, pickFallback } from "@/lib/premium-ima
 import { mapsHref } from "@/lib/maps";
 import { createPaymentOrder, openRazorpayCheckout, verifyPayment } from "@/lib/razorpay";
 import { isInstantPayEligible } from "@/lib/coachPayment";
+import { resolvePhone } from "@/lib/phone";
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -65,15 +66,18 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
   const [submittingReview, setSubmittingReview] = useState(false);
   const [phone, setPhone] = useState("");
   const [paying, setPaying] = useState(false);
+  // A number already on the profile is used as-is — asking for it again on every
+  // booking is the thing this replaces. Only a missing/unusable one shows a field.
+  const contact = resolvePhone(phone, user?.phone);
   const qc = useQueryClient();
   const fixedPrice = coach ? isInstantPayEligible(coach) : false;
 
   const handleInstantPay = async (batchId?: string) => {
     if (!user) { toast.error("Please sign in to book a session"); return; }
     if (!coach) return;
-    const cleanedPhone = phone.trim();
+    const cleanedPhone = contact.value;
     if (!cleanedPhone) { toast.error("Please add a mobile number so the team can reach you"); return; }
-    if (!/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) { toast.error("Please enter a valid mobile number"); return; }
+    if (!contact.valid) { toast.error("Please enter a valid mobile number"); return; }
     setPaying(true);
     try {
       const order = await createPaymentOrder({ entityType: "coach", entityId: id });
@@ -115,9 +119,9 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
 
   const handleBook = (batchId?: string) => {
     if (!user) { toast.error("Please sign in to book a session"); return; }
-    const cleanedPhone = phone.trim();
+    const cleanedPhone = contact.value;
     if (!cleanedPhone) { toast.error("Please add a mobile number so the team can reach you"); return; }
-    if (!/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) { toast.error("Please enter a valid mobile number"); return; }
+    if (!contact.valid) { toast.error("Please enter a valid mobile number"); return; }
     book.mutate(
       { coachId: id, batchId: batchId ?? selectedBatch ?? undefined, phone: cleanedPhone },
       { onSuccess: () => setJustBooked(true) },
@@ -804,7 +808,14 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
                           </p>
                         </div>
                       )}
-                      {coach.seatsLeft > 0 && (
+                      {coach.seatsLeft > 0 && !contact.needsInput && (
+                        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>
+                          Booking with <span style={{ color: "rgba(255,255,255,0.75)" }}>{contact.value}</span>
+                          {" · "}
+                          <Link href="/profile/edit" style={{ color: "#ff6b74" }}>Change</Link>
+                        </p>
+                      )}
+                      {coach.seatsLeft > 0 && contact.needsInput && (
                         <div style={{ marginBottom: 4 }}>
                           <label style={{
                             display: "block", fontSize: 11, fontWeight: 600,

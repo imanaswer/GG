@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
       return fail("Invalid email or password", 401);
 
     const sessionUser = { id: user.id, email: user.email, name: user.name, username: user.username, role: user.role, avatarUrl: user.avatarUrl ?? undefined };
+    // The phone rides in the response but stays out of the token: it is profile
+    // data the app needs (so booking stops asking for a number it already has),
+    // not session identity, and a token copy would go stale on the next edit.
+    const clientUser = { ...sessionUser, phone: user.phone ?? undefined };
 
     // isNew tells a client whether to run new-member setup. Always false here —
     // login never creates an account. The create-or-find social routes are where
@@ -31,13 +35,13 @@ export async function POST(req: NextRequest) {
       // it keeps any webview inside the app signed in.
       const deviceId = typeof body?.deviceId === "string" ? body.deviceId : null;
       const session = await issueMobileSession(sessionUser, deviceId);
-      const res = ok({ user: sessionUser, ...session, isNew: false });
+      const res = ok({ user: clientUser, ...session, isNew: false });
       res.cookies.set(cookieOpts(session.token));
       return res;
     }
 
     const token = await signToken(sessionUser);
-    const res = ok({ user: sessionUser, token, isNew: false });
+    const res = ok({ user: clientUser, token, isNew: false });
     res.cookies.set(cookieOpts(token));
     return res;
   } catch (e) { return handleErr(e); }

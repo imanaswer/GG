@@ -10,6 +10,7 @@ import { requireSignedAgreement, AgreementGateError } from "@/lib/coachAgreement
 import { sendPush } from "@/lib/push";
 import { flagBookingRefundDue } from "@/lib/refunds";
 import type { PaymentStatus } from "@/lib/paymentStatus";
+import { isValidPhone } from "@/lib/phone";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -201,6 +202,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       nextLookingFor = trimmed.length === 0 ? null : trimmed;
     } else if (lookingFor === null) {
       nextLookingFor = null;
+    }
+
+    // A saved number that fails the booking check would be silently ignored there,
+    // so it never gets saved in the first place.
+    if (typeof phone === "string" && phone.trim() && !isValidPhone(phone)) {
+      return fail("Please enter a valid mobile number", 400);
     }
 
     if (username) {

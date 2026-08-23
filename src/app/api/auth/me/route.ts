@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const user = await prisma.user.findUnique({
     where: { id: session.id },
     select: {
-      id: true, email: true, name: true, username: true, role: true, avatarUrl: true,
+      id: true, email: true, name: true, username: true, role: true, avatarUrl: true, phone: true,
       deletedAt: true,
     },
   });
@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
       username: user.username,
       role: user.role,
       avatarUrl: user.avatarUrl ?? undefined,
+      // The booking form asks for a mobile number only when the profile has none.
+      phone: user.phone ?? undefined,
     },
   });
 }

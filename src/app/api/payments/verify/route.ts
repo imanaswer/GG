@@ -6,6 +6,7 @@ import { ok, fail, handleErr, ApiError } from "@/lib/api";
 import { PaymentStatus } from "@/lib/paymentStatus";
 import { logOpsSafe } from "@/lib/ops";
 import { logger } from "@/lib/logger";
+import { isValidPhone } from "@/lib/phone";
 import {
   campChargePaise, workshopChargePaise,
   eventChargePaise, coachChargePaise, assertOrderBinding, NotPayableError,
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
       if (orderRec && orderRec.amount !== chargePaise) return fail("Order amount changed, please retry", 409);
 
       const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
-      if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
+      if (cleanedPhone && !isValidPhone(cleanedPhone)) {
         return fail("Please enter a valid mobile number", 400);
       }
 

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: result.userId },
-      select: { ...USER_SELECT, deletedAt: true, createdAt: true },
+      select: { ...USER_SELECT, deletedAt: true, createdAt: true, phone: true },
     });
     // The code was valid but the account is gone — hard-deleted, or soft-deleted
     // between handoff and exchange, which leaves the row (and so a truthy `user`)
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // first-ever Google user who tapped Login lands on Home and is never
     // offered setup again.
     return ok({
-      user: sessionUser,
+      user: { ...sessionUser, phone: user.phone ?? undefined },
       token: await signToken(sessionUser),
       isNew: isNewAccount(user.createdAt),
     });

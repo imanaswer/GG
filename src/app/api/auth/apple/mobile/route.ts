@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
     // isNewAccount. One extra indexed read on a path that is never hot, in
     // exchange for not threading a second return value through the resolver
     // (and so through the web sign-in path, which has no use for it).
-    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true } });
+    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { createdAt: true, phone: true } });
     return ok({
-      user,
+      user: { ...user, phone: row?.phone ?? undefined },
       token: await signToken(user),
       isNew: row ? isNewAccount(row.createdAt) : false,
     });

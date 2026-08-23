@@ -7,6 +7,7 @@ import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/
 import { coachAdmission } from "@/lib/checkout";
 import { logOpsSafe } from "@/lib/ops";
 import { logger } from "@/lib/logger";
+import { isValidPhone } from "@/lib/phone";
 
 export async function GET(req: NextRequest) {
   try {
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     // Capture the player's mobile number so the team can reach them about the session.
     const cleanedPhone = typeof phone === "string" ? phone.trim() : "";
-    if (cleanedPhone && !/^\+?[\d\s-]{7,20}$/.test(cleanedPhone)) {
+    if (cleanedPhone && !isValidPhone(cleanedPhone)) {
       return fail("Please enter a valid mobile number", 400);
     }
 
