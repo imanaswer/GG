@@ -5,6 +5,12 @@
 // (next's bundled postcss/sharp, eslint's brace-expansion) now has a fix
 // reachable by lockfile bump alone, applied via `npm audit fix`.
 //
+// deepmerge-ts (GHSA-ggr8-5vv4-36mx, stack exhaustion) reaches us only through
+// prisma > @prisma/config, and prisma@latest still pins the vulnerable 7.1.5.
+// npm's only "fix" is a major downgrade of prisma, so package.json overrides
+// pins deepmerge-ts to ^8 instead — a real fix, not an accepted risk. Drop the
+// override once prisma ships one.
+//
 // If a new high/critical lands with no non-breaking fix, add its GHSA id below
 // WITH a comment naming the package, the reason no fix is adoptable, and a
 // review date. Adding an ID is accepting a known risk — never do it silently.
