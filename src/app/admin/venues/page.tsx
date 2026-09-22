@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X, Navigation } from "lucide-react";
+import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X, Navigation, ChevronDown, ChevronRight, Trash2, Clock } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard } from "@/components/admin/StatCard";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/admin/Badge";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { VenueLocationPicker } from "@/components/admin/VenueLocationPicker";
 import { mapsHref, hasMapTarget } from "@/lib/maps";
+import { generateSlots } from "@/lib/venues";
 
 const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball", "Other"];
 
@@ -210,8 +211,36 @@ function VenueFormModal({ venue, onClose, onSaved }: { venue: VenueRow | null; o
   );
 }
 
-// ─── Slot manager ────────────────────────────────────────────────────────────
+// ─── Slot manager (simplified) ───────────────────────────────────────────────
 type SlotRow = { id: string; startTime: string; endTime: string; isBlocked: boolean; blockReason: string | null; game: { id: string; title: string; status: string } | null };
+
+const TIME_PRESETS = [
+  { label: "Morning", start: "06:00", end: "12:00" },
+  { label: "Afternoon", start: "12:00", end: "18:00" },
+  { label: "Evening", start: "18:00", end: "22:00" },
+  { label: "Full Day", start: "06:00", end: "22:00" },
+] as const;
+
+const DURATION_OPTIONS = [30, 60, 90] as const;
+
+function fmtLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function slotStatus(s: SlotRow): "booked" | "blocked" | "available" {
+  if (s.game) return "booked";
+  if (s.isBlocked) return "blocked";
+  return "available";
+}
+
+const STATUS_DOT: Record<string, { color: string; label: string }> = {
+  available: { color: "#22c55e", label: "Available" },
+  booked: { color: "#eab308", label: "Booked" },
+  blocked: { color: "#ef4444", label: "Blocked" },
+};
 
 function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void }) {
   const qc = useQueryClient();
@@ -221,65 +250,410 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
   });
   const slots = detail?.slots ?? [];
   const [err, setErr] = useState<string | null>(null);
-  const [bulk, setBulk] = useState({ fromDate: "", toDate: "", dayStart: "18:00", dayEnd: "22:00", slotMinutes: "60" });
+  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+
+  // ─── Bulk generate state with smart defaults ───
+  const today = fmtLocalDate(new Date());
+  const weekOut = fmtLocalDate(new Date(Date.now() + 7 * 86400000));
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(weekOut);
+  const [activePreset, setActivePreset] = useState<string>("Evening");
+  const [customStart, setCustomStart] = useState("18:00");
+  const [customEnd, setCustomEnd] = useState("22:00");
+  const [slotMinutes, setSlotMinutes] = useState<number>(60);
+
+  // Derive actual dayStart/dayEnd from preset or custom
+  const dayTimes = useMemo(() => {
+    if (activePreset === "Custom") return { dayStart: customStart, dayEnd: customEnd };
+    const preset = TIME_PRESETS.find((p) => p.label === activePreset);
+    return preset ? { dayStart: preset.start, dayEnd: preset.end } : { dayStart: customStart, dayEnd: customEnd };
+  }, [activePreset, customStart, customEnd]);
+
+  // Preview count using the same pure function as the backend
+  const previewCount = useMemo(() => {
+    if (!fromDate || !toDate) return 0;
+    try {
+      return generateSlots({ fromDate, toDate, ...dayTimes, slotMinutes }).length;
+    } catch { return 0; }
+  }, [fromDate, toDate, dayTimes, slotMinutes]);
+
+  // ─── Collapsed date groups ───
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const toggleDateCollapse = (dateKey: string) => setCollapsedDates((prev) => {
+    const next = new Set(prev);
+    next.has(dateKey) ? next.delete(dateKey) : next.add(dateKey);
+    return next;
+  });
+
   const refresh = () => { qc.invalidateQueries({ queryKey: ["admin-venue", venue.id] }); qc.invalidateQueries({ queryKey: ["admin-venues"] }); };
 
-  const act = async (fn: () => Promise<Response>) => {
+  const act = async (fn: () => Promise<Response>, action: string = "action") => {
     setErr(null);
+    setBusyAction(action);
+    setBusy(true);
     try { await fn().then(jsonOrThrow); refresh(); }
     catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+    finally { setBusyAction(null); setBusy(false); }
   };
 
   const generate = () => {
-    if (!bulk.fromDate || !bulk.toDate) { setErr("Pick a date range."); return; }
-    act(() => fetch(`/api/admin/venues/${venue.id}/slots`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...bulk, slotMinutes: Number(bulk.slotMinutes) }) }));
+    if (!fromDate || !toDate) { setErr("Pick a date range."); return; }
+    if (previewCount === 0) { setErr("This range produces 0 slots. Check times and duration."); return; }
+    act(() => fetch(`/api/admin/venues/${venue.id}/slots`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromDate, toDate, ...dayTimes, slotMinutes }),
+    }), "generating");
   };
-  const block = (s: SlotRow) => {
-    if (s.isBlocked) { act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isBlocked: false }) })); return; }
+
+  const blockSlot = (s: SlotRow) => {
+    if (s.isBlocked) {
+      act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isBlocked: false }) }));
+      return;
+    }
     const reason = prompt("Block reason (e.g. Maintenance, Tournament, Private event, Holiday):", "Maintenance");
     if (reason === null) return;
     act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isBlocked: true, blockReason: reason }) }));
   };
-  const del = (s: SlotRow) => {
-    if (!confirm(`Delete this slot?\n\n${fmt(s.startTime)} – ${new Date(s.endTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${s.game ? `\n\nWarning: this slot is booked (${s.game.title}).` : ""}`)) return;
+
+  const deleteSlot = (s: SlotRow) => {
+    const timeStr = `${fmtTime(s.startTime)} – ${fmtTime(s.endTime)}`;
+    if (!confirm(`Delete this slot?\n\n${timeStr}${s.game ? `\n\nWarning: this slot is booked (${s.game.title}).` : ""}`)) return;
     act(() => fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "DELETE" }));
   };
 
-  const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  // ─── Cleanup past slots with inline confirmation ───
+  const [confirmCleanup, setConfirmCleanup] = useState(false);
+
+  const deletePastSlots = async () => {
+    const pastSlots = slots.filter((s) => new Date(s.endTime) < new Date() && !s.game);
+    if (pastSlots.length === 0) { setErr("No past unbooked slots to clean up."); return; }
+    if (!confirmCleanup) { setConfirmCleanup(true); return; }
+    setErr(null);
+    setBusyAction("deleting");
+    setBusy(true);
+    try {
+      for (const s of pastSlots) {
+        await fetch(`/api/admin/venues/${venue.id}/slots/${s.id}`, { method: "DELETE" }).then(jsonOrThrow);
+      }
+      refresh();
+    } catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+    finally { 
+      setConfirmCleanup(false);
+      setBusyAction(null); 
+      setBusy(false); 
+    }
+  };
+
+  const toggleSlotSelection = (slotId: string) => {
+    setSelectedSlots((prev) => {
+      const next = new Set(prev);
+      if (next.has(slotId)) next.delete(slotId);
+      else next.add(slotId);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (selectedSlots.size === 0) return;
+    const hasBooked = Array.from(selectedSlots).some((id) => slots.find((s) => s.id === id)?.game);
+    if (!confirm(`Delete ${selectedSlots.size} selected slots?${hasBooked ? '\n\nWarning: One or more selected slots are booked!' : ''}`)) return;
+
+    setErr(null);
+    setBusyAction("deleting_selected");
+    setBusy(true);
+    try {
+      for (const id of selectedSlots) {
+        await fetch(`/api/admin/venues/${venue.id}/slots/${id}`, { method: "DELETE" }).then(jsonOrThrow);
+      }
+      setSelectedSlots(new Set());
+      refresh();
+    } catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+    finally {
+      setBusyAction(null);
+      setBusy(false);
+    }
+  };
+
+  // ─── Group slots by date ───
+  const grouped = useMemo(() => {
+    const map = new Map<string, SlotRow[]>();
+    for (const s of slots) {
+      const d = new Date(s.startTime);
+      const key = fmtLocalDate(d);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
+    }
+    return Array.from(map.entries()).map(([dateKey, daySlots]) => {
+      const booked = daySlots.filter((s) => s.game).length;
+      const blocked = daySlots.filter((s) => s.isBlocked && !s.game).length;
+      const available = daySlots.length - booked - blocked;
+      return { dateKey, daySlots, booked, blocked, available };
+    });
+  }, [slots]);
+
+  const pastCount = useMemo(() => slots.filter((s) => new Date(s.endTime) < new Date() && !s.game).length, [slots]);
+
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  const fmtDateHeader = (dateKey: string) => {
+    const d = new Date(dateKey + "T00:00:00");
+    return d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+  };
 
   return (
     <Modal title={`Slots — ${venue.name}`} onClose={onClose} wide>
       {err && <div style={errBox}>{err}</div>}
 
-      {/* Bulk generate */}
-      <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Bulk generate slots</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
-          <Field label="From"><input type="date" style={input} value={bulk.fromDate} onChange={(e) => setBulk((p) => ({ ...p, fromDate: e.target.value }))} /></Field>
-          <Field label="To"><input type="date" style={input} value={bulk.toDate} onChange={(e) => setBulk((p) => ({ ...p, toDate: e.target.value }))} /></Field>
-          <Field label="Day start"><input type="time" style={input} value={bulk.dayStart} onChange={(e) => setBulk((p) => ({ ...p, dayStart: e.target.value }))} /></Field>
-          <Field label="Day end"><input type="time" style={input} value={bulk.dayEnd} onChange={(e) => setBulk((p) => ({ ...p, dayEnd: e.target.value }))} /></Field>
-          <Field label="Slot mins"><input type="number" style={input} value={bulk.slotMinutes} onChange={(e) => setBulk((p) => ({ ...p, slotMinutes: e.target.value }))} /></Field>
+      {/* ─── Simplified bulk generator ─── */}
+      <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <Plus size={14} color="#e63946" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Generate Slots</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
-          <button onClick={generate} style={{ ...primaryBtn, justifyContent: "center", height: 38, padding: "9px 22px" }}>Generate</button>
+
+        {/* Date range */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+          <Field label="From">
+            <input type="date" style={input} value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+          </Field>
+          <Field label="To">
+            <input type="date" style={input} value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </Field>
+        </div>
+
+        {/* Time presets */}
+        <Field label="Time window">
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {TIME_PRESETS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setActivePreset(p.label)}
+                style={activePreset === p.label ? pillOn : pillOff}
+              >
+                {p.label}
+                <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 4 }}>
+                  {p.start.replace(/:00$/, "")}–{p.end.replace(/:00$/, "")}
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setActivePreset("Custom")}
+              style={activePreset === "Custom" ? pillOn : pillOff}
+            >
+              Custom
+            </button>
+          </div>
+        </Field>
+
+        {/* Custom time inputs — only shown when "Custom" is selected */}
+        {activePreset === "Custom" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <Field label="Start time">
+              <input type="time" style={input} value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
+            </Field>
+            <Field label="End time">
+              <input type="time" style={input} value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
+            </Field>
+          </div>
+        )}
+
+        {/* Slot duration */}
+        <Field label="Slot duration">
+          <div style={{ display: "flex", gap: 6 }}>
+            {DURATION_OPTIONS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setSlotMinutes(d)}
+                style={slotMinutes === d ? pillOn : pillOff}
+              >
+                {d} min
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        {/* Preview + Generate */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+          <span style={{ fontSize: 12, color: previewCount > 0 ? "#a3e635" : "#6b7280" }}>
+            {previewCount > 0
+              ? <>Will generate <strong style={{ color: "#fff" }}>{previewCount}</strong> slot{previewCount !== 1 ? "s" : ""}</>
+              : "No slots for this range"}
+          </span>
+          <button
+            onClick={generate}
+            disabled={busy || previewCount === 0}
+            style={{
+              ...primaryBtn,
+              justifyContent: "center",
+              height: 38,
+              padding: "9px 22px",
+              opacity: busy || previewCount === 0 ? 0.5 : 1,
+            }}
+          >
+            {busyAction === "generating" ? "Generating…" : "Generate"}
+          </button>
         </div>
       </div>
 
-      {/* Slot list */}
-      <div style={{ maxHeight: 360, overflowY: "auto" }}>
-        {slots.length === 0 && <div style={{ padding: 24, textAlign: "center", color: "#6b7280", fontSize: 13 }}>No slots yet. Generate some above.</div>}
-        {slots.map((s) => (
-          <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 4px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ flex: 1, fontSize: 12.5, color: s.isBlocked ? "#6b7280" : "#e5e7eb" }}>
-              {fmt(s.startTime)} – {new Date(s.endTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-              {s.isBlocked && <span style={{ marginLeft: 8, color: "#f87171", fontSize: 11 }}>blocked{s.blockReason ? `: ${s.blockReason}` : ""}</span>}
-              {s.game && <span style={{ marginLeft: 8, color: "#eab308", fontSize: 11 }}>booked: {s.game.title} ({s.game.status})</span>}
-            </div>
-            <button onClick={() => block(s)} style={ghostBtn}>{s.isBlocked ? "Unblock" : "Block"}</button>
-            <button onClick={() => del(s)} style={dangerBtn}>Delete</button>
+      {/* ─── Quick actions ─── */}
+      {slots.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "0 2px" }}>
+          <div style={{ display: "flex", gap: 14, fontSize: 11.5, color: "#6b7280" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_DOT.available.color, display: "inline-block" }} />
+              Available
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_DOT.booked.color, display: "inline-block" }} />
+              Booked
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_DOT.blocked.color, display: "inline-block" }} />
+              Blocked
+            </span>
           </div>
-        ))}
+          {selectedSlots.size > 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11.5, color: "#e5e7eb", fontWeight: 500 }}>{selectedSlots.size} selected</span>
+              <button onClick={deleteSelected} disabled={busy} style={{
+                ...dangerBtn, fontSize: 11, padding: "4px 10px",
+                opacity: busy ? 0.5 : 1,
+              }}>
+                {busyAction === "deleting_selected" ? "Deleting..." : "Delete selected"}
+              </button>
+              {!busy && (
+                <button onClick={() => setSelectedSlots(new Set())} style={{ ...ghostBtnSm }}>Cancel</button>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {pastCount > 0 && !confirmCleanup && (
+                <button onClick={deletePastSlots} disabled={busy} style={{
+                  ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5,
+                  color: "#f87171", borderColor: "rgba(239,68,68,0.25)",
+                  opacity: busy ? 0.5 : 1,
+                }}>
+                  <Trash2 size={12} /> Clean up {pastCount} past slot{pastCount !== 1 ? "s" : ""}
+                </button>
+              )}
+              {confirmCleanup && (
+                <>
+                  <span style={{ fontSize: 11.5, color: "#f87171", fontWeight: 600 }}>Delete {pastCount} past slots?</span>
+                  <button onClick={deletePastSlots} disabled={busy} style={{
+                    ...dangerBtn, fontSize: 11, padding: "4px 10px",
+                    opacity: busy ? 0.5 : 1,
+                  }}>
+                    {busyAction === "deleting" ? "Deleting..." : "Yes, delete"}
+                  </button>
+                  {!busy && (
+                    <button onClick={() => setConfirmCleanup(false)} style={{ ...ghostBtnSm }}>Cancel</button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Date-grouped slot list ─── */}
+      <div style={{ maxHeight: 420, overflowY: "auto" }}>
+        {slots.length === 0 && (
+          <div style={{ padding: 32, textAlign: "center", color: "#6b7280", fontSize: 13 }}>
+            <Clock size={28} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
+            No slots yet. Use the generator above to create slots.
+          </div>
+        )}
+        {grouped.map(({ dateKey, daySlots, booked, blocked, available }) => {
+          const collapsed = collapsedDates.has(dateKey);
+          const isPast = new Date(dateKey + "T23:59:59") < new Date();
+          return (
+            <div key={dateKey} style={{ marginBottom: 2 }}>
+              {/* Date header */}
+              <button
+                onClick={() => toggleDateCollapse(dateKey)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, width: "100%",
+                  padding: "10px 8px", background: "rgba(255,255,255,0.03)", border: "none",
+                  borderRadius: 8, cursor: "pointer", textAlign: "left",
+                  opacity: isPast ? 0.5 : 1,
+                }}
+              >
+                {collapsed ? <ChevronRight size={14} color="#6b7280" /> : <ChevronDown size={14} color="#6b7280" />}
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e5e7eb", flex: 1 }}>
+                  {fmtDateHeader(dateKey)}
+                </span>
+                <span style={{ fontSize: 11, color: "#6b7280" }}>
+                  {daySlots.length} slot{daySlots.length !== 1 ? "s" : ""}
+                  {booked > 0 && <span style={{ color: STATUS_DOT.booked.color, marginLeft: 6 }}>{booked} booked</span>}
+                  {blocked > 0 && <span style={{ color: STATUS_DOT.blocked.color, marginLeft: 6 }}>{blocked} blocked</span>}
+                  {available > 0 && <span style={{ color: STATUS_DOT.available.color, marginLeft: 6 }}>{available} free</span>}
+                </span>
+              </button>
+
+              {/* Slot rows */}
+              {!collapsed && (
+                <div style={{ paddingLeft: 22 }}>
+                  {daySlots.map((s) => {
+                    const st = slotStatus(s);
+                    const dot = STATUS_DOT[st];
+                    return (
+                      <div key={s.id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "7px 6px",
+                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      }}>
+                        {/* Checkbox */}
+                        <input
+                          type="checkbox"
+                          checked={selectedSlots.has(s.id)}
+                          onChange={() => toggleSlotSelection(s.id)}
+                          style={{
+                            marginRight: 2,
+                            accentColor: "#ef4444",
+                            cursor: "pointer",
+                            width: 14, height: 14
+                          }}
+                        />
+                        {/* Status dot */}
+                        <span style={{
+                          width: 8, height: 8, borderRadius: "50%", background: dot.color,
+                          flexShrink: 0, boxShadow: `0 0 6px ${dot.color}40`,
+                        }} title={dot.label} />
+
+                        {/* Time */}
+                        <div style={{ flex: 1, fontSize: 12.5, color: st === "blocked" ? "#6b7280" : "#e5e7eb" }}>
+                          {fmtTime(s.startTime)} – {fmtTime(s.endTime)}
+                          {s.isBlocked && (
+                            <span style={{ marginLeft: 8, color: "#f87171", fontSize: 11, fontStyle: "italic" }}>
+                              {s.blockReason || "blocked"}
+                            </span>
+                          )}
+                          {s.game && (
+                            <span style={{ marginLeft: 8, color: "#eab308", fontSize: 11 }}>
+                              {s.game.title} ({s.game.status})
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <button onClick={() => blockSlot(s)} disabled={busy} style={{ ...ghostBtnSm }}>
+                          {s.isBlocked ? "Unblock" : "Block"}
+                        </button>
+                        <button onClick={() => deleteSlot(s)} disabled={busy} style={{ ...dangerBtnSm }}>
+                          Delete
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </Modal>
   );
@@ -312,8 +686,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const input: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark", boxSizing: "border-box" };
 const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9, border: "none", background: "#e63946", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const ghostBtnSm: React.CSSProperties = { padding: "4px 9px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.10)", background: "transparent", color: "#9ca3af", fontSize: 11, fontWeight: 600, cursor: "pointer" };
 const dangerBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#f87171", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const dangerBtnSm: React.CSSProperties = { padding: "4px 9px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.08)", color: "#f87171", fontSize: 11, fontWeight: 600, cursor: "pointer" };
 const sportTag: React.CSSProperties = { padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "#9ca3af", fontSize: 11, fontWeight: 600 };
 const pillOn: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid #e63946", background: "rgba(230,57,70,0.15)", color: "#fff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 const pillOff: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#9ca3af", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 const errBox: React.CSSProperties = { padding: "10px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: 13, marginBottom: 14 };
+
