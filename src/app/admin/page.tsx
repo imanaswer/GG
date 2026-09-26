@@ -165,7 +165,7 @@ export default function AdminOverview() {
                     <RechartsTooltip 
                       contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#fff" }}
                       itemStyle={{ color: "#4ade80" }}
-                      formatter={(value: number) => [`₹${value.toLocaleString("en-IN")}`, "Revenue"]}
+                      formatter={(value) => [`₹${Number(value).toLocaleString("en-IN")}`, "Revenue"]}
                     />
                     <Area type="monotone" dataKey="revenue" stroke="#4ade80" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                   </AreaChart>

@@ -29,12 +29,12 @@ export async function GET(req: NextRequest) {
         take: 5,
         select: { id: true, name: true, email: true, phone: true }
       }),
-      // Search coaches by name or specialities
+      // Search coaches by name or sport
       prisma.coach.findMany({
         where: {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
-            { specialities: { hasSome: [q] } },
+            { sport: { contains: q, mode: "insensitive" } },
           ],
         },
         take: 5,

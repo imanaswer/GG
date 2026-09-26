@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         Status: c.status,
         UserEmail: c.user?.email || "",
         SeatsLeft: c.seatsLeft,
-        Specialities: c.specialities.join(", ")
+        Sport: c.sport
       }));
       filename = "coaches_export.csv";
     } else if (type === "events") {
