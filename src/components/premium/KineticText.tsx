@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function KineticText({ text, as = "div", className, delay = 0, style }: Props) {
-  const Tag = as as any;
+  const Tag = as as "div"; // ponytail: typed as div so ref/style/className check; any intrinsic tag works at runtime
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

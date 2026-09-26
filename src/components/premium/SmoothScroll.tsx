@@ -23,23 +23,19 @@ export function SmoothScroll() {
       touchMultiplier: 1.4,
     });
 
-    let rafId = 0;
-    
     // Sync GSAP ScrollTrigger with Lenis
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
+    lenis.on("scroll", ScrollTrigger.update);
+    const tick = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
     // Expose for global use
-    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+    window.__lenis = lenis;
 
     return () => {
-      lenis.on('scroll', ScrollTrigger.update); // actually need to remove listener, but destroy handles it
-      gsap.ticker.remove((time) => lenis.raf(time * 1000));
+      gsap.ticker.remove(tick);
       lenis.destroy();
-      delete (window as unknown as { __lenis?: Lenis }).__lenis;
+      delete window.__lenis;
     };
   }, []);
 

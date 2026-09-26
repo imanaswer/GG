@@ -356,7 +356,7 @@ function Footer() {
               <img src="/logo2.png" alt="Game Ground" style={{ height: 48, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
             </Link>
             <p className="footer-desc" style={{ fontSize: 16, color: "#747574", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
+              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
             </p>
             <div className="footer-built-in" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 32, fontSize: 14, color: "#DCDDDA", fontWeight: 600 }}>
               <MapPin size={16} />
@@ -495,15 +495,15 @@ export default function LandingPage() {
   useEffect(() => {
     if (loaded) {
       if (typeof window !== "undefined") {
-        const lenis = (window as any).__lenis;
+        const lenis = window.__lenis;
         if (lenis) {
           lenis.scrollTo(0, { immediate: true });
         } else {
           window.scrollTo(0, 0);
         }
         
-        if ((window as any).ScrollTrigger) {
-          (window as any).ScrollTrigger.refresh();
+        if (window.ScrollTrigger) {
+          window.ScrollTrigger.refresh();
         }
       }
     }

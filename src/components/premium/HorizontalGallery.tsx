@@ -121,7 +121,7 @@ export function HorizontalGallery() {
              <span className="display-serif" style={{ color: "#DCDDDA" }}>entry.</span>
            </h2>
            <p style={{ marginTop: 24, fontSize: "clamp(16px, 1.5vw, 20px)", color: "#747574", lineHeight: 1.6 }}>
-             Whether you're here to train, drop in, compete, or level up — jump straight to what you need.
+             Whether you&apos;re here to train, drop in, compete, or level up — jump straight to what you need.
            </p>
         </div>
 

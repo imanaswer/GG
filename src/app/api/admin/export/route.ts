@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type");
 
   try {
-    let data: any[] = [];
+    let data: Record<string, unknown>[] = [];
     let filename = "export.csv";
 
     if (type === "users") {

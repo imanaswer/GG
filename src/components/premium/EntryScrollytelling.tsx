@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useScroll, useTransform, useInView, type MotionValue } from "framer-motion";
 import { KineticTextReveal, KineticTextRevealRef } from "@/components/ui/kinetic-text-reveal";
 
 function Asset01() {
@@ -434,7 +434,7 @@ export function EntryScrollytelling() {
     
     console.log(`scrollToIdx(${idx}) -> targetY: ${targetY}, startY: ${startY}, rect.top: ${rect.top}`);
 
-    const lenis = (window as any).__lenis;
+    const lenis = window.__lenis;
     if (lenis) {
       console.log("Using lenis.scrollTo");
       lenis.scrollTo(targetY, { duration: 1.2, force: true });
@@ -741,12 +741,12 @@ export function EntryScrollytelling() {
 
 import { useMotionValueEvent } from "framer-motion";
 
-function NavIndicator({ scrollYProgress, index, label, onClick }: { scrollYProgress: any, index: number, label: string, onClick: () => void }) {
+function NavIndicator({ scrollYProgress, index, label, onClick }: { scrollYProgress: MotionValue<number>, index: number, label: string, onClick: () => void }) {
   const [isActive, setIsActive] = useState(index === 0);
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     // 5 panels, so max index is 4. We round (latest * 4) to get the closest panel index.
-    const activeIdx = Math.round((latest as number) * 4);
+    const activeIdx = Math.round(latest * 4);
     setIsActive(activeIdx === index);
   });
 

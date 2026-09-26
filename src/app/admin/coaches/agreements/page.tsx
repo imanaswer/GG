@@ -13,9 +13,11 @@ const inputStyle: React.CSSProperties = { padding: "12px 20px", borderRadius: 10
 const selectStyle: React.CSSProperties = { ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 40, cursor: "pointer", backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>')`, backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center" };
 const optionStyle: React.CSSProperties = { background: "#111", color: "#fff" };
 
-function CustomSelect({ value, onChange, options, style }: any) {
+type Option = { value: string; label: string };
+
+function CustomSelect({ value, onChange, options, style }: { value: string; onChange: (value: string) => void; options: Option[]; style?: React.CSSProperties }) {
   const [open, setOpen] = useState(false);
-  const selectedOption = options.find((o: any) => o.value === value) || options[0];
+  const selectedOption = options.find((o) => o.value === value) || options[0];
   
   return (
     <div style={{ position: "relative" }} onBlur={() => setTimeout(() => setOpen(false), 150)} tabIndex={0}>
@@ -27,7 +29,7 @@ function CustomSelect({ value, onChange, options, style }: any) {
       </div>
       {open && (
         <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, width: "100%", background: "#111", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden", zIndex: 20, padding: 4 }}>
-          {options.map((o: any) => (
+          {options.map((o) => (
             <div 
               key={o.value} 
               onClick={(e) => { e.stopPropagation(); onChange(o.value); setOpen(false); }}

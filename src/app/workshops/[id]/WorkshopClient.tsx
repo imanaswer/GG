@@ -602,7 +602,7 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
                 {workshop.audienceType === "youth" ? (
                   <>
                     <div>
-                      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Child's Full Name</label>
+                      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Child&apos;s Full Name</label>
                       <input
                         required type="text"
                         value={participantName} onChange={e => setParticipantName(e.target.value)}
@@ -615,7 +615,7 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
                       />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Child's Age</label>
+                      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Child&apos;s Age</label>
                       <input
                         required type="number" min="5" max="18"
                         value={participantAge} onChange={e => setParticipantAge(e.target.value)}

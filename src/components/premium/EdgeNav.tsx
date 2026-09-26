@@ -55,7 +55,7 @@ export function EdgeNav() {
                 color: "#747574",
                 padding: "80px 0"
               }}>
-                Kozhikode's Sports Playbook
+                Kozhikode&apos;s Sports Playbook
               </div>
             ))}
           </motion.div>

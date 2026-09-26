@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-// @ts-ignore
+// @ts-expect-error vanta ships no types
 import HALO from "vanta/dist/vanta.halo.min";
 
 export function VantaBackground() {
-  const [vantaEffect, setVantaEffect] = useState<any>(null);
+  const [vantaEffect, setVantaEffect] = useState<{ destroy: () => void } | null>(null);
   const myRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -1,15 +1,18 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, User, Star, Gamepad2, CalendarCheck, ArrowRight } from "lucide-react";
 
+type SearchResult = {
+  type: "user" | "coach" | "game" | "booking";
+  id: string;
+  title: string;
+  subtitle?: string;
+  url: string;
+};
+
 export function AdminSearch() {
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -25,35 +28,9 @@ export function AdminSearch() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    } else {
-      setQuery("");
-      setResults([]);
-    }
-  }, [isOpen]);
+  if (isOpen) return <SearchPanel onClose={() => setIsOpen(false)} />;
 
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    const delayDebounceFn = setTimeout(() => {
-      fetch(`/api/admin/search?q=${encodeURIComponent(query)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setResults(data.results || []);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    }, 300);
-    return () => clearTimeout(delayDebounceFn);
-  }, [query]);
-
-  if (!isOpen) {
-    return (
+  return (
       <button 
         onClick={() => setIsOpen(true)}
         style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", padding: "8px 16px", borderRadius: 100, color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", transition: "all 0.2s ease" }}
@@ -64,25 +41,48 @@ export function AdminSearch() {
         <span>Search admin...</span>
         <span style={{ marginLeft: 20, fontSize: 10, border: "1px solid rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)" }}>⌘K</span>
       </button>
-    );
-  }
+  );
+}
+
+// ponytail: the panel unmounts on close, so its state resets for free instead of via a setState-in-effect.
+function SearchPanel({ onClose }: { onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const active = query.trim().length >= 2;
+
+  useEffect(() => {
+    if (!active) return;
+    const delayDebounceFn = setTimeout(() => {
+      fetch(`/api/admin/search?q=${encodeURIComponent(query)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setResults(data.results || []);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, active]);
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "10vh" }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }} onClick={() => setIsOpen(false)} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }} onClick={onClose} />
       
       <div style={{ position: "relative", width: "100%", maxWidth: 600, background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column" }}>
         
         <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <Search size={20} color="rgba(255,255,255,0.4)" />
-          <input 
-            ref={inputRef}
+          <input
+            autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setLoading(e.target.value.trim().length >= 2); }}
             placeholder="Search users, coaches, games, bookings..."
             style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: 16, padding: "0 16px", outline: "none", fontFamily: "var(--font-sans)" }}
           />
-          <button onClick={() => setIsOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex" }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex" }}>
             <X size={20} />
           </button>
         </div>
@@ -94,11 +94,11 @@ export function AdminSearch() {
           {loading && (
             <div style={{ padding: "24px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Searching...</div>
           )}
-          {!loading && query.trim().length >= 2 && results.length === 0 && (
-            <div style={{ padding: "24px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>No results found for "{query}"</div>
+          {!loading && active && results.length === 0 && (
+            <div style={{ padding: "24px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>No results found for &quot;{query}&quot;</div>
           )}
           
-          {!loading && results.map((item: any, i) => {
+          {!loading && active && results.map((item) => {
             let Icon = User;
             let badge = "";
             let color = "#fff";
@@ -112,7 +112,7 @@ export function AdminSearch() {
               <button 
                 key={`${item.type}-${item.id}`}
                 onClick={() => {
-                  setIsOpen(false);
+                  onClose();
                   router.push(item.url);
                 }}
                 style={{ 

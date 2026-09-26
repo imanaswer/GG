@@ -48,7 +48,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-export default function CoachDetail({ params, initialCoach }: { params: Promise<{ id: string }>; initialCoach?: any }) {
+export default function CoachDetail({ params, initialCoach }: { params: Promise<{ id: string }>; initialCoach?: Coach }) {
   const { id } = use(params);
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -76,7 +76,7 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
   const contact = resolvePhone(phone, user?.phone);
   const effectiveStatus = justBooked ? "pending" : coach?.userBooking?.status;
   const activeBooking = effectiveStatus === "pending" || effectiveStatus === "approved";
-  const themeColor = coach ? ((coach as any).themeColor || "#fff") : "#fff";
+  const themeColor = coach ? ((coach as { themeColor?: string }).themeColor || "#fff") : "#fff";
   const fixedPrice = coach ? isInstantPayEligible(coach) : false;
 
   const handleInstantPay = async (batchId?: string) => {
@@ -112,8 +112,8 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
       toast.success("Payment successful! Session booked.");
       setJustBooked(true);
       queryClient.invalidateQueries({ queryKey: ["coaches"] });
-    } catch (err: any) {
-      toast.error(err.message || "Payment failed or cancelled.");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Payment failed or cancelled.");
     } finally { setPaying(false); }
   };
 

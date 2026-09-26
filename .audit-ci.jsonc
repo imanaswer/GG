@@ -11,6 +11,10 @@
 // pins deepmerge-ts to ^8 instead — a real fix, not an accepted risk. Drop the
 // override once prisma ships one.
 //
+// mysql2 (GHSA-3f6p-5ww8-9rcr, GHSA-rgwj-5xj2-c3m3) reaches us the same way,
+// through prisma@7.9. We use Postgres, so the override to ^3.24 is inert at
+// runtime. Same rule: drop it once prisma bumps its own pin.
+//
 // If a new high/critical lands with no non-breaking fix, add its GHSA id below
 // WITH a comment naming the package, the reason no fix is adoptable, and a
 // review date. Adding an ID is accepting a known risk — never do it silently.
