@@ -73,8 +73,8 @@ export function BookingDrawer({
               height: 40, borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: "inherit",
               cursor: busy ? "wait" : "pointer",
               border: a.danger ? "1px solid rgba(239,68,68,0.3)" : "none",
-              background: a.danger ? "transparent" : "#4ade80",
-              color: a.danger ? "#f87171" : "#000",
+              background: a.danger ? "rgba(239,68,68,0.1)" : "#4ade80",
+              color: a.danger ? "#ef4444" : "#000",
             }}>{a.label}</button>
           ))}
         </div>

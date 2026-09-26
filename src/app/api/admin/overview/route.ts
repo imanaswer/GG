@@ -88,10 +88,33 @@ export async function GET(req: NextRequest) {
     if (g.tier in tierDistribution) tierDistribution[g.tier] = g._count._all;
   }
 
+  const trends = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.getTime() - (6 - i) * 86400000);
+    return { name: d.toLocaleDateString("en-US", { weekday: "short" }), dateStr: d.toISOString().split("T")[0], bookings: 0, revenue: 0 };
+  });
+
+  bookings.forEach(b => {
+    const dStr = b.createdAt.toISOString().split("T")[0];
+    const day = trends.find(t => t.dateStr === dStr);
+    if (day) day.bookings++;
+  });
+
+  const recentPayments = await prisma.payment.findMany({
+    where: { status: "paid", createdAt: { gte: weekAgo } },
+    select: { amount: true, createdAt: true }
+  });
+  
+  recentPayments.forEach(p => {
+    const dStr = p.createdAt.toISOString().split("T")[0];
+    const day = trends.find(t => t.dateStr === dStr);
+    if (day) day.revenue += p.amount;
+  });
+
   return NextResponse.json({
     metrics: { totalUsers, totalCoaches, activeBookings, gamesThisWeek, campRegistrations, workshopRegistrations, revenueMonth },
     health: { slotFillRate, confirmRate, avgReliability, cancelRate },
     tierDistribution,
     alerts: alerts.slice(0, 10),
+    trends: trends.map(({ name, bookings, revenue }) => ({ name, bookings, revenue }))
   });
 }

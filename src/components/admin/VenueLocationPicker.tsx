@@ -141,4 +141,4 @@ export function VenueLocationPicker({
 }
 
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit" };
-const hintStyle: React.CSSProperties = { fontSize: 11, color: "#6b7280", marginTop: 6 };
+const hintStyle: React.CSSProperties = { fontSize: 11, color: "#6b7280", marginTop: 6, marginBottom: 20 };

@@ -3,23 +3,22 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowUpRight, ArrowRight, ArrowDown, MapPin, Users, Trophy, GraduationCap, Target, Lightbulb, type LucideIcon } from "lucide-react";
+import { motion, useScroll, useSpring } from "framer-motion";
+import { ArrowUpRight, ArrowRight, ArrowDown, MapPin } from "lucide-react";
 
+import { EdgeNav } from "@/components/premium/EdgeNav";
 import { PremiumNav } from "@/components/premium/PremiumNav";
+import { ImmersiveHero } from "@/components/premium/ImmersiveHero";
+import { EntryScrollytelling } from "@/components/premium/EntryScrollytelling";
+import { CinematicDirectory } from "@/components/premium/CinematicDirectory";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
-import { SplitText } from "@/components/premium/SplitText";
-import { Reveal, Stagger } from "@/components/premium/Reveal";
-import { Parallax } from "@/components/premium/Parallax";
+import { Preloader } from "@/components/premium/Preloader";
+import { LiquidImage } from "@/components/premium/LiquidImage";
 import { Magnetic } from "@/components/premium/Magnetic";
-import { STORY, HERO_BACKDROPS, CAMP_IMAGE, EVENT_IMAGE, WORKSHOP_IMAGE } from "@/lib/premium-images";
-
-const HeroParticles = dynamic(() => import("@/components/premium/HeroParticles"), {
-  ssr: false,
-  loading: () => null,
-});
-
-const SPORTS = ["Basketball", "Football", "Cricket", "Badminton", "Tennis", "Volleyball", "Fitness"] as const;
+import { SplitText } from "@/components/premium/SplitText";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { TrueFocusList } from "@/components/premium/TrueFocusList";
+import { STORY } from "@/lib/premium-images";
 
 /* ──────────────────────────────────────────────────────── */
 
@@ -30,605 +29,17 @@ function ScrollProgress() {
     <motion.div
       style={{
         position: "fixed", top: 0, left: 0, right: 0,
-        height: 2, background: "linear-gradient(90deg, #e63946, #ff6b74)",
+        height: 2, background: "linear-gradient(90deg, #F5F5F3, #DCDDDA)",
         transformOrigin: "0%", scaleX, zIndex: 200,
       }}
     />
   );
 }
 
-/* ── Hero ───────────────────────────────────────────────── */
+/* Avant Hero and Hub injected below */
 
-const HERO_TRUST = [
-  { value: "147+", label: "players" },
-  { value: "12", label: "founding coaches" },
-  { value: "Kozhikode", label: "live now" },
-];
+/* ── Closing conversion section (Immersive + Stats + CTA merged) ── */
 
-function Hero() {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 600], [0, -120]);
-  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
-
-  return (
-    <section style={{
-      position: "relative",
-      height: "100vh",
-      minHeight: 720,
-      overflow: "hidden",
-      background: "#050505",
-    }}>
-      {/* Background image (atmospheric, dimmed) */}
-      <div style={{ position: "absolute", inset: 0, opacity: 0.28 }}>
-        <Image
-          src={HERO_BACKDROPS[0].src}
-          alt={HERO_BACKDROPS[0].alt}
-          fill
-          priority
-          quality={85}
-          sizes="100vw"
-          style={{ objectFit: "cover", filter: "saturate(0.6)" }}
-        />
-      </div>
-
-      {/* Gradient overlays for legibility */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.4) 0%, rgba(5,5,5,0.1) 40%, rgba(5,5,5,0.95) 100%)",
-      }} />
-      <div className="hero-halo" />
-
-      {/* WebGL particle field */}
-      <div style={{ position: "absolute", inset: 0 }}>
-        <HeroParticles />
-      </div>
-
-      {/* Subtle grid */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px)," +
-            "linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-          maskImage: "radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%)",
-          WebkitMaskImage: "radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%)",
-        }}
-      />
-
-      {/* Content */}
-      <motion.div
-        style={{
-          position: "relative", zIndex: 2,
-          height: "100%",
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          paddingTop: 72,
-          y, opacity,
-        }}
-      >
-        <div className="container-lg" style={{ textAlign: "center" }}>
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "8px 16px", borderRadius: 100,
-              background: "rgba(230,57,70,0.08)",
-              border: "1px solid rgba(230,57,70,0.25)",
-              marginBottom: 32,
-            }}
-          >
-            <span style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: "#e63946", boxShadow: "0 0 12px #e63946",
-              animation: "pulse 2s ease-in-out infinite",
-            }} />
-            <span style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-              textTransform: "uppercase", color: "#ff6b74",
-            }}>
-              Kozhikode&apos;s Sports Playbook
-            </span>
-          </motion.div>
-
-          {/* Display headline */}
-          <h1 className="display" style={{
-            fontSize: "clamp(52px, 11vw, 168px)",
-            color: "#fff",
-            maxWidth: 1200, margin: "0 auto",
-          }}>
-            <span style={{ display: "block" }}>
-              <SplitText text="Learn." as="span" />{" "}
-              <SplitText text="Play." delay={0.15} as="span" />
-            </span>
-            <span
-              className="display-serif gradient-red"
-              style={{
-                display: "block",
-                fontSize: "0.96em",
-                marginTop: "0.06em",
-                letterSpacing: "-0.015em",
-              }}
-            >
-              <SplitText text="Connect." delay={0.35} as="span" />
-            </span>
-          </h1>
-
-          {/* Subhead */}
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.75 }}
-            style={{
-              fontSize: "clamp(15px, 1.4vw, 19px)",
-              color: "rgba(255,255,255,0.62)",
-              maxWidth: 560, margin: "36px auto 0",
-              lineHeight: 1.6,
-              fontWeight: 400,
-            }}
-          >
-            Your go-to app for coaches, pickup games, camps, and tournaments in Kozhikode.
-          </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.9 }}
-            style={{
-              display: "flex", gap: 12, justifyContent: "center",
-              marginTop: 40, flexWrap: "wrap",
-            }}
-          >
-            <Magnetic strength={10}>
-              <Link href="/learn" style={{
-                display: "inline-flex", alignItems: "center", gap: 10,
-                padding: "16px 28px", borderRadius: 100,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                color: "#fff", fontSize: 15, fontWeight: 600,
-                boxShadow: "0 0 40px rgba(230,57,70,0.45)",
-                textDecoration: "none",
-              }}>
-                Find a coach
-                <ArrowUpRight size={16} />
-              </Link>
-            </Magnetic>
-            <Magnetic strength={8}>
-              <Link href="/play" style={{
-                display: "inline-flex", alignItems: "center", gap: 10,
-                padding: "16px 28px", borderRadius: 100,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                backdropFilter: "blur(12px)",
-                color: "#fff", fontSize: 15, fontWeight: 500,
-                textDecoration: "none",
-              }}>
-                Join a pickup game
-                <ArrowRight size={16} />
-              </Link>
-            </Magnetic>
-          </motion.div>
-
-          {/* Inline trust strip — live numbers folded into the hero */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 1.05 }}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              gap: 18, marginTop: 36, flexWrap: "wrap",
-            }}
-          >
-            {HERO_TRUST.map((t, i) => (
-              <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                {i > 0 && (
-                  <span aria-hidden style={{
-                    width: 4, height: 4, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.22)",
-                  }} />
-                )}
-                <span style={{ fontSize: 13.5, color: "rgba(255,255,255,0.62)" }}>
-                  <strong style={{ color: "#fff", fontWeight: 700 }}>{t.value}</strong>{" "}
-                  {t.label}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 0.8 }}
-        style={{
-          position: "absolute", bottom: 32, left: "50%",
-          transform: "translateX(-50%)", zIndex: 2,
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-          color: "rgba(255,255,255,0.4)",
-        }}
-      >
-        <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase" }}>
-          Scroll to explore
-        </span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <ArrowDown size={16} />
-        </motion.div>
-      </motion.div>
-    </section>
-  );
-}
-
-/* ── Marquee band ───────────────────────────────────────── */
-
-function Marquee() {
-  const items = [
-    "Built for Kozhikode",
-    "Verified coaches",
-    "Games every week",
-    "All kinds of sports",
-    "Beachside to indoor courts",
-    "Trusted by local players",
-  ];
-  return (
-    <div style={{
-      position: "relative",
-      padding: "40px 0",
-      borderTop: "1px solid rgba(255,255,255,0.05)",
-      borderBottom: "1px solid rgba(255,255,255,0.05)",
-      background: "rgba(10,10,10,0.6)",
-      overflow: "hidden",
-    }}>
-      <motion.div
-        className="marquee-track"
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-      >
-        {[...items, ...items, ...items].map((t, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 64, flexShrink: 0 }}>
-            <span style={{
-              fontFamily: "var(--font-serif)", fontStyle: "italic",
-              fontSize: "clamp(28px, 4vw, 48px)",
-              color: "rgba(255,255,255,0.9)",
-              whiteSpace: "nowrap",
-            }}>
-              {t}
-            </span>
-            <span style={{ color: "#e63946", fontSize: 20 }}>✦</span>
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-/* ── Quick navigation hub (5 category cards) ────────────── */
-
-type HubCard = {
-  href: string;
-  eyebrow: string;
-  title: string;
-  tagline: string;
-  bullets: string[];
-  icon: LucideIcon;
-  image: string;
-  imageAlt: string;
-  accent: string;
-};
-
-const HUB_CARDS: HubCard[] = [
-  {
-    href: "/learn",
-    eyebrow: "01 — Train",
-    title: "Learn",
-    tagline: "Coaches & academies, verified in person.",
-    bullets: ["50+ expert coaches", "Flexible schedules", "Every skill level"],
-    icon: GraduationCap,
-    image: STORY.learn.src,
-    imageAlt: STORY.learn.alt,
-    accent: "#ff6b74",
-  },
-  {
-    href: "/play",
-    eyebrow: "02 — Play",
-    title: "Play",
-    tagline: "Pickup games, five minutes from home.",
-    bullets: ["Instant matching", "Local courts", "Skill-matched partners"],
-    icon: Users,
-    image: STORY.play.src,
-    imageAlt: STORY.play.alt,
-    accent: "#f97316",
-  },
-  {
-    href: "/events",
-    eyebrow: "03 — Compete",
-    title: "Events",
-    tagline: "Tournaments and city-wide competitions.",
-    bullets: ["Open tournaments", "Cash prizes", "Official leagues"],
-    icon: Trophy,
-    image: EVENT_IMAGE.src,
-    imageAlt: EVENT_IMAGE.alt,
-    accent: "#a855f7",
-  },
-  {
-    href: "/camps",
-    eyebrow: "04 — Grow",
-    title: "Camps",
-    tagline: "Intensive programs that build athletes.",
-    bullets: ["Multi-day camps", "Skill development", "Certifications"],
-    icon: Target,
-    image: CAMP_IMAGE.src,
-    imageAlt: CAMP_IMAGE.alt,
-    accent: "#e63946",
-  },
-  {
-    href: "/workshops",
-    eyebrow: "05 — Master",
-    title: "Workshops",
-    tagline: "Focused sessions that sharpen your craft.",
-    bullets: ["Expert-led classes", "Hands-on drills", "Small group format"],
-    icon: Lightbulb,
-    image: WORKSHOP_IMAGE.src,
-    imageAlt: WORKSHOP_IMAGE.alt,
-    accent: "#22d3ee",
-  },
-];
-
-function HubCardItem({ card }: { card: HubCard }) {
-  const Icon = card.icon;
-  return (
-    <Link
-      href={card.href}
-      data-stagger
-      className="hub-card"
-      style={{
-        position: "relative",
-        display: "flex", flexDirection: "column",
-        background: "#0a0a0a",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 20,
-        overflow: "hidden",
-        textDecoration: "none",
-        transition: "border-color 360ms ease, transform 360ms ease, box-shadow 360ms ease",
-        isolation: "isolate",
-      }}
-    >
-      {/* Image head */}
-      <div style={{
-        position: "relative",
-        aspectRatio: "5/4",
-        overflow: "hidden",
-      }}>
-        <Image
-          src={card.image}
-          alt={card.imageAlt}
-          fill
-          sizes="(max-width: 640px) 90vw, (max-width: 1100px) 45vw, 320px"
-          quality={80}
-          style={{
-            objectFit: "cover",
-            filter: "saturate(0.85) brightness(0.85)",
-            transition: "transform 800ms cubic-bezier(0.16,1,0.3,1), filter 500ms",
-          }}
-          className="hub-card-img"
-        />
-        {/* Accent tint overlay */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `linear-gradient(140deg, ${card.accent}25 0%, transparent 55%)`,
-          mixBlendMode: "screen",
-        }} />
-        {/* Gradient to card body */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, transparent 30%, rgba(10,10,10,0.6) 85%, #0a0a0a 100%)",
-        }} />
-
-        {/* Icon badge */}
-        <div style={{
-          position: "absolute", top: 16, right: 16,
-          width: 40, height: 40, borderRadius: 12,
-          background: "rgba(10,10,10,0.6)",
-          border: `1px solid ${card.accent}40`,
-          backdropFilter: "blur(10px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: card.accent,
-          boxShadow: `0 0 24px ${card.accent}20`,
-        }}>
-          <Icon size={17} strokeWidth={2} />
-        </div>
-
-        {/* Eyebrow badge */}
-        <div style={{
-          position: "absolute", top: 16, left: 16,
-          padding: "5px 10px",
-          borderRadius: 100,
-          background: "rgba(0,0,0,0.55)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          backdropFilter: "blur(8px)",
-          fontSize: 10, fontWeight: 600, letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.75)",
-        }}>
-          {card.eyebrow}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div style={{
-        padding: "24px 26px 26px",
-        display: "flex", flexDirection: "column", gap: 16, flex: 1,
-      }}>
-        <div>
-          <h3 className="display" style={{
-            fontSize: 30,
-            color: "#fff",
-            marginBottom: 8,
-          }}>
-            {card.title}
-          </h3>
-          <p style={{
-            fontSize: 13.5,
-            color: "rgba(255,255,255,0.58)",
-            lineHeight: 1.55,
-          }}>
-            {card.tagline}
-          </p>
-        </div>
-
-        <ul style={{
-          listStyle: "none", padding: 0, margin: 0,
-          display: "flex", flexDirection: "column", gap: 8,
-          flex: 1,
-        }}>
-          {card.bullets.map(b => (
-            <li key={b} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              fontSize: 12.5, color: "rgba(255,255,255,0.6)",
-            }}>
-              <span style={{
-                width: 4, height: 4, borderRadius: "50%",
-                background: card.accent, flexShrink: 0,
-                boxShadow: `0 0 8px ${card.accent}90`,
-              }} />
-              {b}
-            </li>
-          ))}
-        </ul>
-
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          paddingTop: 14,
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          fontSize: 13, fontWeight: 600,
-          color: card.accent,
-        }}>
-          Explore {card.title}
-          <ArrowUpRight
-            size={14}
-            className="hub-card-arrow"
-            style={{ transition: "transform 320ms cubic-bezier(0.16,1,0.3,1)" }}
-          />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function QuickHub() {
-  return (
-    <section className="section-tight">
-      <div className="container-lg">
-        <div style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-          marginBottom: 56, gap: 24, flexWrap: "wrap",
-        }}>
-          <Reveal>
-            <div style={{ maxWidth: 640 }}>
-              <span className="eyebrow" style={{ color: "#e63946", display: "block", marginBottom: 16 }}>
-                Five ways in
-              </span>
-              <h2 className="display" style={{ fontSize: "clamp(36px, 4.5vw, 64px)", color: "#fff" }}>
-                Pick your{" "}
-                <span className="display-serif" style={{ color: "rgba(255,255,255,0.7)" }}>entry.</span>
-              </h2>
-            </div>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <p style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.5)",
-              maxWidth: 320,
-              lineHeight: 1.6,
-            }}>
-              Whether you&apos;re here to train, drop in, compete, or level up — jump
-              straight to what you need.
-            </p>
-          </Reveal>
-        </div>
-
-        <Stagger
-          stagger={0.08}
-          y={32}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            gap: 20,
-          }}
-          className="hub-grid"
-        >
-          {HUB_CARDS.map(c => <HubCardItem key={c.href} card={c} />)}
-        </Stagger>
-
-        {/* Sport pills — "every sport" message, folded in compactly */}
-        <Reveal delay={0.1}>
-          <div className="sport-pills">
-            <span className="sport-pills-label">Pick your game</span>
-            {SPORTS.map(sport => (
-              <Link key={sport} href={`/learn?sport=${sport}`} className="sport-pill">
-                {sport}
-              </Link>
-            ))}
-          </div>
-        </Reveal>
-      </div>
-
-      <style>{`
-        .hub-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12) !important; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
-        .hub-card:hover .hub-card-img { transform: scale(1.06); filter: saturate(1) brightness(0.95) !important; }
-        .hub-card:hover .hub-card-arrow { transform: translate(3px, -3px); }
-
-        .sport-pills {
-          display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-          margin-top: 48px; padding-top: 36px;
-          border-top: 1px solid rgba(255,255,255,0.06);
-        }
-        .sport-pills-label {
-          font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
-          text-transform: uppercase; color: rgba(255,255,255,0.4);
-          margin-right: 6px;
-        }
-        .sport-pill {
-          display: inline-flex; align-items: center;
-          padding: 9px 18px; border-radius: 100px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: rgba(255,255,255,0.78); font-size: 13.5px; font-weight: 500;
-          text-decoration: none;
-          transition: background 240ms ease, border-color 240ms ease, color 240ms ease, transform 240ms ease;
-        }
-        .sport-pill:hover {
-          background: rgba(230,57,70,0.12);
-          border-color: rgba(230,57,70,0.5);
-          color: #fff; transform: translateY(-2px);
-        }
-        @media (max-width: 1200px) {
-          .hub-grid { grid-template-columns: repeat(3, 1fr) !important; }
-        }
-        @media (max-width: 900px) {
-          .hub-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 560px) {
-          .hub-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </section>
-  );
-}
-
-/* ── Stats counter (used in the closing conversion section) ── */
-
-// Count-up driven by IntersectionObserver, not GSAP ScrollTrigger. The previous
-// ScrollTrigger version silently stayed at 0 (it never fired under Lenis smooth
-// scroll), so this is deliberately self-contained: the real number ALWAYS renders
-// (the animation is pure progressive enhancement).
 function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suffix?: string }) {
   const [val, setVal] = useState(from);
   const ref = useRef<HTMLSpanElement>(null);
@@ -638,8 +49,6 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
     if (!el) return;
 
     let raf = 0;
-
-    // No IntersectionObserver (very old browsers): still guarantee the number.
     if (typeof IntersectionObserver === "undefined") {
       raf = requestAnimationFrame(() => setVal(to));
       return () => cancelAnimationFrame(raf);
@@ -674,10 +83,6 @@ function Counter({ from = 0, to, suffix = "" }: { from?: number; to: number; suf
   return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
 }
 
-/* ── Closing conversion section (Immersive + Stats + CTA merged) ── */
-
-// Kept consistent with the hero trust strip (147+ players, 12 coaches) and the
-// sport pills (7 sports) — a mismatch here reads as "the product is empty".
 const CLOSE_STATS = [
   { value: 147, suffix: "+", label: "Players onboard" },
   { value: 12, suffix: "", label: "Founding coaches" },
@@ -686,120 +91,206 @@ const CLOSE_STATS = [
 ];
 
 function ConversionClose() {
+  const containerRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+      import("gsap").then(({ default: gsap }) => {
+        gsap.registerPlugin(ScrollTrigger);
+        if (!containerRef.current || !contentRef.current) return;
+        
+        // Background subtle parallax
+        gsap.fromTo(bgRef.current,
+          { yPercent: -20 },
+          {
+            yPercent: 20,
+            ease: "none",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            }
+          }
+        );
+
+        // Stagger the children
+        const elements = contentRef.current.querySelectorAll(".awwwards-reveal");
+        gsap.fromTo(elements,
+          { y: 80, opacity: 0 },
+          {
+            y: 0, opacity: 1,
+            duration: 1.4,
+            stagger: 0.15,
+            ease: "power4.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 75%",
+            }
+          }
+        );
+      });
+    });
+  }, []);
+
   return (
-    <section style={{ position: "relative", overflow: "hidden" }}>
-      {/* Parallax background */}
-      <Parallax speed={100} style={{ position: "absolute", inset: 0 }}>
-        <div style={{ position: "absolute", inset: "-10%" }}>
-          <Image
-            src={STORY.connect.src}
-            alt={STORY.connect.alt}
-            fill
-            sizes="100vw"
-            quality={85}
-            style={{ objectFit: "cover" }}
-          />
-        </div>
-      </Parallax>
+    <section ref={containerRef} style={{ position: "relative", overflow: "hidden", background: "#000000" }}>
+      <div style={{ position: "absolute", inset: "-15% 0", zIndex: -1 }}>
+        <img
+          ref={bgRef}
+          src={STORY.connect.src}
+          alt={STORY.connect.alt}
+          style={{ width: "100%", height: "100%", objectFit: "cover", filter: "grayscale(100%) opacity(0.35)" }}
+        />
+      </div>
       <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.55) 32%, rgba(5,5,5,0.98) 100%)",
+        position: "absolute", inset: 0, zIndex: 0,
+        background: "linear-gradient(180deg, #000000 0%, rgba(0,0,0,0.6) 30%, #000000 100%)",
       }} />
 
-      <div style={{ position: "relative", padding: "140px 0" }} className="close-pad">
+      <div ref={contentRef} style={{ position: "relative", zIndex: 10, padding: "240px 0 200px" }} className="close-pad">
         <div className="container-lg" style={{ textAlign: "center" }}>
-          <Reveal>
-            <span className="eyebrow" style={{ color: "#ff6b74", display: "block", marginBottom: 28 }}>
+          
+          <div className="awwwards-reveal">
+            <span className="eyebrow" style={{ 
+              color: "#747574", display: "block", marginBottom: 40, 
+              letterSpacing: "0.25em", fontSize: "12px", textTransform: "uppercase" 
+            }}>
               Camps · Tournaments · Community
             </span>
-          </Reveal>
-          <Reveal delay={0.08}>
+          </div>
+
+          <div className="awwwards-reveal">
             <h2 className="display" style={{
-              fontSize: "clamp(44px, 7vw, 116px)",
+              fontSize: "clamp(56px, 12vw, 160px)",
               color: "#fff",
-              maxWidth: 1000, margin: "0 auto 36px",
+              maxWidth: 1400, margin: "0 auto 48px",
+              lineHeight: 0.9,
+              letterSpacing: "-0.03em"
             }}>
-              Your next match{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>starts here.</span>
+              <SplitText text="Your next match" as="div" delay={0.2} scrollTrigger={true} />
+              <div style={{ marginTop: "12px" }}>
+                <SplitText text="starts here." className="display-serif" as="span" style={{ color: "#DCDDDA", fontStyle: "italic", fontWeight: 300, display: "inline-block" }} delay={0.4} scrollTrigger={true} />
+              </div>
             </h2>
-          </Reveal>
-          <Reveal delay={0.16}>
-            <p style={{
-              fontSize: "clamp(16px, 1.5vw, 20px)",
-              color: "rgba(255,255,255,0.72)",
-              maxWidth: 600, margin: "0 auto 44px",
-              lineHeight: 1.6,
-            }}>
-              Train with verified coaches, drop into pickup games, and show up for the
-              tournaments your city actually plays. One app, one move.
-            </p>
-          </Reveal>
+          </div>
 
-          {/* Live numbers — compact inline row */}
-          <Reveal delay={0.22}>
-            <div className="close-stats">
-              {CLOSE_STATS.map(s => (
-                <div key={s.label} className="close-stat">
-                  <div className="close-stat-num">
-                    <Counter to={s.value} suffix={s.suffix} />
-                  </div>
-                  <div className="close-stat-label">{s.label}</div>
+          <div className="awwwards-reveal">
+            <ScrollReveal 
+              baseOpacity={0}
+              enableBlur={true}
+              blurStrength={5}
+              staggerDelay={0.02}
+              textClassName="paragraph-reveal"
+            >
+              Train with verified coaches, drop into pickup games, and show up for the tournaments your city actually plays. One app, one move.
+            </ScrollReveal>
+            <style>{`
+              .paragraph-reveal {
+                font-size: clamp(18px, 2vw, 24px);
+                color: #A0A0A0;
+                max-width: 680px;
+                margin: 0 auto 100px;
+                line-height: 1.5;
+                font-weight: 400;
+              }
+            `}</style>
+          </div>
+
+          <div className="close-stats awwwards-reveal" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6vw", marginBottom: 120 }}>
+            {CLOSE_STATS.map(s => (
+              <div key={s.label} className="close-stat" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  fontFamily: "var(--font-sans)", fontWeight: 900,
+                  fontSize: "clamp(48px, 6vw, 84px)",
+                  color: "#fff", letterSpacing: "-0.05em", lineHeight: 1
+                }}>
+                  <Counter to={s.value} suffix={s.suffix} />
                 </div>
-              ))}
-            </div>
-          </Reveal>
+                <div style={{ fontSize: 13, color: "#747574", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
 
-          <Reveal delay={0.3}>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <Magnetic strength={12}>
-                <Link href="/register" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "18px 32px", borderRadius: 100,
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  boxShadow: "0 0 50px rgba(230,57,70,0.45)",
-                  color: "#fff", fontSize: 15, fontWeight: 700,
-                  textDecoration: "none",
-                }}>
-                  Create free account <ArrowUpRight size={16} />
-                </Link>
-              </Magnetic>
-              <Magnetic strength={10}>
-                <Link href="/play" style={{
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                  padding: "18px 32px", borderRadius: 100,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: "#fff", fontSize: 15, fontWeight: 600,
-                  textDecoration: "none",
-                }}>
-                  Browse games <ArrowRight size={16} />
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
+          <div className="awwwards-reveal conversion-btn-wrapper">
+            <Magnetic strength={40}>
+              <Link href="/register" className="conversion-btn conversion-btn-primary"
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                Create free account <ArrowUpRight size={20} />
+              </Link>
+            </Magnetic>
+            <Magnetic strength={30}>
+              <Link href="/play" className="conversion-btn conversion-btn-secondary"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+              >
+                Browse games <ArrowRight size={20} />
+              </Link>
+            </Magnetic>
+          </div>
+          <style>{`
+            .conversion-btn-wrapper {
+              display: flex;
+              gap: 24px;
+              justify-content: center;
+              flex-wrap: wrap;
+            }
+            .conversion-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              padding: 24px 48px;
+              border-radius: 100px;
+              font-size: 16px;
+              text-decoration: none;
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+            }
+            .conversion-btn-primary {
+              background: #F5F5F3;
+              color: #000;
+              font-weight: 700;
+            }
+            .conversion-btn-secondary {
+              background: rgba(255,255,255,0.03);
+              border: 1px solid rgba(255,255,255,0.1);
+              color: #fff;
+              font-weight: 600;
+              backdrop-filter: blur(10px);
+            }
+
+            @media (max-width: 768px) {
+              .conversion-btn-wrapper {
+                flex-direction: column;
+                gap: 12px;
+                padding: 0 24px;
+                align-items: stretch;
+              }
+              .conversion-btn-wrapper > div {
+                display: block !important;
+                width: 100%;
+              }
+              .conversion-btn {
+                padding: 16px 24px;
+                font-size: 15px;
+                width: 100%;
+              }
+            }
+          `}</style>
         </div>
       </div>
-
-      <style>{`
-        .close-stats {
-          display: flex; flex-wrap: wrap; justify-content: center;
-          gap: 48px; margin: 0 auto 48px; max-width: 760px;
-        }
-        .close-stat { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .close-stat-num {
-          font-family: var(--font-sans); font-weight: 900;
-          font-size: clamp(34px, 4.5vw, 52px);
-          color: #fff; letter-spacing: -0.04em; line-height: 1;
-        }
-        .close-stat-label {
-          font-size: 12.5px; color: rgba(255,255,255,0.55);
-          letter-spacing: 0.01em;
-        }
-        @media (max-width: 640px) {
-          .close-pad { padding: 96px 0 !important; }
-          .close-stats { gap: 28px 36px; }
-        }
-      `}</style>
     </section>
   );
 }
@@ -807,61 +298,185 @@ function ConversionClose() {
 /* ── Footer ─────────────────────────────────────────────── */
 
 function Footer() {
+  const footerRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+      import("gsap").then(({ default: gsap }) => {
+        gsap.registerPlugin(ScrollTrigger);
+        if (!footerRef.current || !contentRef.current) return;
+
+        // Parallax curtain reveal for the footer content
+        gsap.fromTo(contentRef.current,
+          { yPercent: -40, scale: 0.95 },
+          {
+            yPercent: 0,
+            scale: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: footerRef.current,
+              start: "top bottom",
+              end: "top 20%",
+              scrub: true,
+            }
+          }
+        );
+      });
+    });
+  }, []);
+
   return (
-    <footer style={{
-      borderTop: "1px solid rgba(255,255,255,0.06)",
-      padding: "72px 0 48px",
-    }}>
-      <div className="container-lg">
-        <div style={{
-          display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr",
-          gap: 48, marginBottom: 64,
-        }} className="four-col">
-          <div>
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center", marginBottom: 20, textDecoration: "none" }}>
-              <img src="/logo2.png" alt="Game Ground" style={{ height: 60, width: "auto", display: "block" }} />
+    <footer ref={footerRef} className="footer-section">
+      <div ref={contentRef} className="container-lg">
+        {/* Huge typographic CTA in footer */}
+        <div className="footer-cta-wrapper">
+            <Magnetic strength={15}>
+              <TrueFocusList 
+                items={[
+                  { text: "LEARN.", defaultColor: "#333333", x: "-3vw" },
+                  { text: "PLAY.", defaultColor: "#747574", x: "1vw" },
+                  { text: "CONNECT.", defaultColor: "#FFFFFF", x: "3vw" }
+                ]}
+                className="display"
+                style={{ 
+                  fontSize: "clamp(48px, 12vw, 180px)", 
+                  lineHeight: 0.85, 
+                  letterSpacing: "-0.04em",
+                  margin: 0,
+                  textAlign: "center"
+                }}
+              />
+            </Magnetic>
+        </div>
+
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <Link href="/" style={{ display: "inline-flex", alignItems: "center", marginBottom: 32, textDecoration: "none" }}>
+              <img src="/logo2.png" alt="Game Ground" style={{ height: 48, width: "auto", display: "block", filter: "brightness(0) invert(1)" }} />
             </Link>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 320, lineHeight: 1.6 }}>
-              Kozhikode&apos;s hyperlocal sports platform. Learn. Play. Connect.
+            <p className="footer-desc" style={{ fontSize: 16, color: "#747574", maxWidth: 320, lineHeight: 1.6 }}>
+              Kozhikode's hyperlocal sports platform. Learn. Play. Connect.
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-              <MapPin size={13} />
+            <div className="footer-built-in" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 32, fontSize: 14, color: "#DCDDDA", fontWeight: 600 }}>
+              <MapPin size={16} />
               <span>Built in Kozhikode, Kerala</span>
             </div>
           </div>
 
-          {[
-            { title: "Discover", links: [["Coaches", "/learn"], ["Games", "/play"], ["Camps", "/camps"], ["Events", "/events"]] },
-            { title: "Company", links: [["About", "/about"], ["Search", "/search"]] },
-            { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Coach Conditions", "/coach-conditions"]] },
-          ].map(col => (
-            <div key={col.title}>
-              <div className="eyebrow" style={{ marginBottom: 16, color: "rgba(255,255,255,0.4)" }}>
-                {col.title}
+          <div className="footer-links-container">
+            {[
+              { title: "Discover", links: [["Coaches", "/learn"], ["Games", "/play"], ["Camps", "/camps"], ["Events", "/events"]] },
+              { title: "Company", links: [["About", "/about"], ["Search", "/search"]] },
+              { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Coach Conditions", "/coach-conditions"]] },
+            ].map(col => (
+              <div key={col.title}>
+                <div className="footer-eyebrow" style={{ marginBottom: 32, color: "#747574", letterSpacing: "0.2em", fontSize: 12, textTransform: "uppercase" }}>
+                  {col.title}
+                </div>
+                <div className="footer-links-group" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {col.links.map(([label, href]) => (
+                    <Link key={href} href={href} className="footer-link" style={{
+                      fontSize: 16, color: "#DCDDDA", fontWeight: 500,
+                      textDecoration: "none", display: "flex", alignItems: "center", gap: 8,
+                      transition: "color 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+                    }}>
+                      <span className="footer-link-arrow" style={{ opacity: 0, transform: "translateX(-10px)", transition: "all 0.3s ease", fontSize: 18 }}>→</span>
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {col.links.map(([label, href]) => (
-                  <Link key={href} href={href} style={{
-                    fontSize: 14, color: "rgba(255,255,255,0.7)",
-                    textDecoration: "none",
-                  }}>
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div style={{
-          paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.05)",
           display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20,
-          flexWrap: "wrap", fontSize: 12, color: "rgba(255,255,255,0.35)",
+          flexWrap: "wrap", fontSize: 14, color: "#747574", fontWeight: 500,
+          borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 32
         }}>
           <span>© {new Date().getFullYear()} Game Ground. All rights reserved.</span>
-          <span>Photography by Unsplash contributors.</span>
         </div>
       </div>
+      <style>{`
+        .footer-section {
+          background: #000000;
+          padding: 160px 0 48px;
+          overflow: hidden;
+          position: relative;
+        }
+        .footer-cta-wrapper {
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          padding-bottom: 100px;
+          margin-bottom: 80px;
+          display: flex;
+          justify-content: center;
+        }
+        .footer-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 64px;
+          margin-bottom: 80px;
+        }
+        .footer-links-container {
+          display: contents;
+        }
+        .footer-links-group:hover .footer-link {
+          color: #4A4A4A !important;
+        }
+        .footer-links-group .footer-link:hover {
+          color: #FFFFFF !important;
+          transform: translateX(4px);
+        }
+        .footer-links-group .footer-link:hover .footer-link-arrow {
+          opacity: 1 !important;
+          transform: translateX(0) !important;
+        }
+
+        @media (max-width: 768px) {
+          .footer-section {
+            padding: 80px 0 48px;
+          }
+          .footer-cta-wrapper {
+            padding-bottom: 48px;
+            margin-bottom: 48px;
+          }
+          .footer-grid {
+            grid-template-columns: 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+          }
+          .footer-links-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px 8px;
+          }
+          .footer-brand img {
+            height: 40px !important;
+          }
+          .footer-desc {
+            font-size: 14px !important;
+          }
+          .footer-built-in {
+            margin-top: 24px !important;
+            font-size: 13px !important;
+          }
+          .footer-eyebrow {
+            margin-bottom: 20px !important;
+            font-size: 10px !important;
+          }
+          .footer-link {
+            font-size: 13px !important;
+          }
+          .footer-links-group {
+            gap: 16px !important;
+          }
+          .footer-link-arrow {
+            display: none !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }
@@ -869,22 +484,51 @@ function Footer() {
 /* ── Page ───────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loaded) {
+      if (typeof window !== "undefined") {
+        const lenis = (window as any).__lenis;
+        if (lenis) {
+          lenis.scrollTo(0, { immediate: true });
+        } else {
+          window.scrollTo(0, 0);
+        }
+        
+        if ((window as any).ScrollTrigger) {
+          (window as any).ScrollTrigger.refresh();
+        }
+      }
+    }
+  }, [loaded]);
+
   return (
     <>
-      <SmoothScroll />
-      <ScrollProgress />
+      {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
+      
+      {loaded && (
+        <>
+          <SmoothScroll />
+          <ScrollProgress />
+        </>
+      )}
+      
+      <EdgeNav />
       <PremiumNav variant="transparent" />
 
-      <main style={{ background: "#050505", color: "#fff", position: "relative" }}>
-        <Hero />
-
-        <Marquee />
-
-        <QuickHub />
-
-        <ConversionClose />
-
-        <Footer />
+      <main style={{ background: "#000000", color: "#fff", position: "relative" }}>
+        {loaded && <ImmersiveHero />}
+        {loaded && <CinematicDirectory />}
+        {loaded && <EntryScrollytelling />}
+        {loaded && <ConversionClose />}
+        {loaded && <Footer />}
       </main>
     </>
   );

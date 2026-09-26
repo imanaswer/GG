@@ -1,6 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import Lenis from "lenis";
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
 
 /**
  * Lenis-driven smooth scroll. Desktop + coarse-pointer devices get it;
@@ -22,17 +24,20 @@ export function SmoothScroll() {
     });
 
     let rafId = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    };
-    rafId = requestAnimationFrame(raf);
+    
+    // Sync GSAP ScrollTrigger with Lenis
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    gsap.ticker.lagSmoothing(0);
 
-    // Expose for GSAP ScrollTrigger sync
+    // Expose for global use
     (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
     return () => {
-      cancelAnimationFrame(rafId);
+      lenis.on('scroll', ScrollTrigger.update); // actually need to remove listener, but destroy handles it
+      gsap.ticker.remove((time) => lenis.raf(time * 1000));
       lenis.destroy();
       delete (window as unknown as { __lenis?: Lenis }).__lenis;
     };

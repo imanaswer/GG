@@ -41,9 +41,7 @@ export default function AdminUsers() {
 
   const filtered = (data?.users ?? []).filter(u => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.username.toLowerCase().includes(q.toLowerCase()));
 
-  const rateColor = (r: number) => r >= 90 ? "#4ade80" : r >= 70 ? "#eab308" : "#ef4444";
-  const td: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#d1d5db", borderTop: "1px solid rgba(255,255,255,0.05)" };
-  const th: React.CSSProperties = { padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" };
+  const rateColor = (r: number) => r >= 90 ? "#4ade80" : r >= 70 ? "#eab308" : "#fff";
 
   return (
     <AdminGuard>
@@ -54,63 +52,95 @@ export default function AdminUsers() {
               <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Users & Players</h1>
               <p style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{data?.total ?? 0} users</p>
             </div>
+            <a href="/api/admin/export?type=users" download style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 100, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", textDecoration: "none", transition: "all 0.2s ease" }}
+               onMouseEnter={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#000"; }}
+               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#fff"; }}>
+              Export CSV
+            </a>
           </div>
 
-          {/* Segment tabs */}
-          <div style={{ display: "flex", gap: 2, background: "#111", borderRadius: 10, padding: 4, width: "fit-content", marginBottom: 20 }}>
-            {SEGMENTS.map(s => (
-              <button key={s.val} onClick={() => setSegment(s.val)} style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: segment === s.val ? 700 : 500, border: "none", cursor: "pointer", fontFamily: "inherit", background: segment === s.val ? "#1c1c1c" : "transparent", color: segment === s.val ? "#fff" : "#6b7280" }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div style={{ position: "relative", marginBottom: 16, maxWidth: 320 }}>
-            <Search size={14} color="#6b7280" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or username…" style={{ width: "100%", height: 38, paddingLeft: 36, paddingRight: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#1c1c1c", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
-          </div>
-
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ background: "#111" }}>
-                  <tr>{["Name","Username","Role","Tier","Rep","Games","Reliability","Attendance","Joined","Actions"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {!filtered.length ? (
-                    <tr><td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No users found</td></tr>
-                  ) : filtered.map(u => (
-                    <tr key={u.id}>
-                      <td style={td}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#e63946", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{u.name[0]}</div>
-                          <span style={{ fontWeight: 600, color: "#fff" }}>{u.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ ...td, color: "#6b7280" }}>@{u.username}</td>
-                      <td style={td}><span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa", textTransform: "capitalize" }}>{u.role}</span></td>
-                      <td style={td}><TierBadge tier={u.tier} size="xs" /></td>
-                      <td style={{ ...td, fontWeight: 700, color: "#fff" }}>
-                        {u.reputationScore}
-                        {u.reputationOverride !== null && (
-                          <span title="Manually overridden" style={{ fontSize: 9, color: "#eab308", marginLeft: 5, fontWeight: 800 }}>OVR</span>
-                        )}
-                      </td>
-                      <td style={{ ...td, textAlign: "center" }}>{u.gamesPlayed}</td>
-                      <td style={{ ...td, color: "#eab308", fontWeight: 700 }}>★ {u.reliabilityScore.toFixed(1)}</td>
-                      <td style={{ ...td, color: rateColor(u.attendanceRate), fontWeight: 600 }}>{u.attendanceRate.toFixed(0)}%</td>
-                      <td style={{ ...td, color: "#6b7280", whiteSpace: "nowrap" }}>{new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
-                      <td style={td}>
-                        <button onClick={() => openOverride(u)} title="Override reputation" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "inline-flex", alignItems: "center" }}>
-                          <Pencil size={13} color="#60a5fa" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Filters & Search */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginBottom: 24 }}>
+            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.03)", borderRadius: 100, padding: 4 }}>
+              {SEGMENTS.map(s => (
+                <button key={s.val} onClick={() => setSegment(s.val)} style={{ padding: "8px 20px", borderRadius: 100, fontSize: 13, fontWeight: segment === s.val ? 700 : 600, border: "none", cursor: "pointer", fontFamily: "inherit", background: segment === s.val ? "#fff" : "transparent", color: segment === s.val ? "#000" : "#9ca3af", transition: "all 0.2s" }}>
+                  {s.label}
+                </button>
+              ))}
             </div>
+
+            {/* Search */}
+            <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
+              <Search size={16} color="#6b7280" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or username…" style={{ width: "100%", height: 44, paddingLeft: 42, paddingRight: 20, borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+            </div>
+          </div>
+
+          {/* Users List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Header Row */}
+            <div style={{ display: "flex", alignItems: "center", padding: "0 32px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
+              <div style={{ flex: 1.5, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>User Info</div>
+              <div style={{ flex: 1, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Engagement</div>
+              <div style={{ width: 140, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reputation</div>
+              <div style={{ width: 60, textAlign: "right", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Actions</div>
+            </div>
+
+            {!filtered.length ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#6b7280", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 24 }}>No users found</div>
+            ) : filtered.map(u => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, padding: "16px 32px", gap: 16, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}>
+                
+                {/* User Info */}
+                <div style={{ flex: 1.5, display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
+                    {u.name[0]}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{u.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}>@{u.username}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa", textTransform: "capitalize" }}>{u.role}</span>
+                      <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Joined {new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Engagement */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 24 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Games</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{u.gamesPlayed}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Attendance</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: rateColor(u.attendanceRate) }}>{u.attendanceRate.toFixed(0)}%</div>
+                  </div>
+                </div>
+
+                {/* Reputation */}
+                <div style={{ width: 140, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                  <TierBadge tier={u.tier} size="xs" />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
+                      {u.reputationScore}
+                    </span>
+                    {u.reputationOverride !== null && (
+                      <span title="Manually overridden" style={{ fontSize: 9, color: "#eab308", fontWeight: 800, padding: "2px 6px", borderRadius: 100, background: "rgba(234,179,8,0.15)" }}>OVR</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div style={{ width: 60, display: "flex", justifyContent: "flex-end" }}>
+                  <button onClick={() => openOverride(u)} title="Override reputation" style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
+                    <Pencil size={14} color="#60a5fa" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

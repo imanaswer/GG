@@ -9,7 +9,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Link2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { COACH_TYPES, SKILL_LEVELS, formatPrice } from "@/lib/taxonomy";
 
@@ -98,6 +98,30 @@ export default function AdminCoaches() {
 
   const update = <K extends keyof Coach>(key: K, val: Coach[K]) => setForm(f => ({ ...f, [key]: val }));
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const bulkDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} coaches?`)) return;
+    
+    setBulkDeleting(true);
+    try {
+      for (const id of Array.from(selectedIds)) {
+        await fetch("/api/admin/coaches", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["admin-coaches"] });
+      setSelectedIds(new Set());
+    } catch (err) {
+      alert("Error deleting some coaches");
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const batches = form.batches ?? [];
   const addBatch = () => update("batches", [...batches, { day: "", time: "", level: "All Levels", seats: 10 }] as never);
   const rmBatch = (i: number) => update("batches", batches.filter((_, j) => j !== i) as never);
@@ -116,33 +140,48 @@ export default function AdminCoaches() {
     <AdminGuard>
       <AdminShell>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Coaches Manager</h1>
-            <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 9, background: "#e63946", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              <Plus size={15} />Add Coach
-            </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+            <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 400, color: "#fff" }}>Coaches Manager</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <a href="/api/admin/export?type=coaches" download style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 100, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", transition: "all 0.2s ease" }}
+                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                Export CSV
+              </a>
+              <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 100, background: "#fff", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                <Plus size={15} />Add Coach
+              </button>
+            </div>
           </div>
 
           {pending.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#eab308" }}>Pending Approval</h2>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>{pending.length}</span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
                 {pending.map(c => (
-                  <div key={c.id} style={{ background: "#141414", border: "1px solid rgba(234,179,8,0.25)", borderRadius: 12, padding: "16px 18px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(234,179,8,0.25)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
+                    <div style={{ position: "absolute", top: 24, right: 24 }}>
+                      <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingRight: 32 }}>
                       <div>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{c.name}</p>
-                        <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{c.sport} · {c.type} · {c.location}</p>
+                        <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.01em" }}>{c.name}</h3>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.sport}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.type}</span>
+                        </div>
                       </div>
                       <Badge status="pending_approval" />
                     </div>
-                    <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 14 }}>{formatPrice(c.priceMin, c.priceMax)}/session</p>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => approve.mutate({ id: c.id, action: "approve" })} style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve</button>
-                      <button onClick={() => approve.mutate({ id: c.id, action: "reject" })}  style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, background: "transparent", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>Reject</button>
+                    
+                    <div style={{ fontSize: 14, color: "#9ca3af", fontWeight: 600 }}>{formatPrice(c.priceMin, c.priceMax)}/session</div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: "auto" }}>
+                      <button onClick={() => approve.mutate({ id: c.id, action: "approve" })} style={{ padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve</button>
+                      <button onClick={() => approve.mutate({ id: c.id, action: "reject" })}  style={{ padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer", fontFamily: "inherit" }}>Reject</button>
                     </div>
                   </div>
                 ))}
@@ -150,62 +189,83 @@ export default function AdminCoaches() {
             </div>
           )}
 
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>All Coaches ({active.length} active)</h2>
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={{ background: "#111" }}>
-                  <tr>{["Coach / Academy","Type","Location","Price","Seats","Bookings","Rating","Status","Agreement","Actions"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {!coaches.length ? (
-                    <tr><td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>No coaches</td></tr>
-                  ) : coaches.map(c => {
-                    const pct = c.totalSeats ? Math.round(((c.totalSeats - c.seatsLeft) / c.totalSeats) * 100) : 0;
-                    return (
-                      <tr key={c.id}>
-                        <td style={td}>
-                          <div style={{ fontWeight: 700, color: "#fff" }}>{c.name}</div>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{c.sport}</span>
-                        </td>
-                        <td style={{ ...td, color: "#9ca3af" }}>{c.type}</td>
-                        <td style={{ ...td, color: "#9ca3af", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.location}</td>
-                        <td style={{ ...td, color: "#9ca3af" }}>{c.price}</td>
-                        <td style={td}>
-                          <div style={{ fontSize: 12, marginBottom: 3 }}>{c.seatsLeft}/{c.totalSeats}</div>
-                          <div style={{ height: 3, background: "#1c1c1c", borderRadius: 99, width: 60, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
-                          </div>
-                          {!!c.batches?.length && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4 }}>{c.batches.length} batch{c.batches.length === 1 ? "" : "es"}</div>}
-                        </td>
-                        <td style={{ ...td, textAlign: "center" }}>{c.confirmedBookings}/{c.totalBookings}</td>
-                        <td style={{ ...td, color: "#eab308" }}>★ {c.rating.toFixed(1)} ({c.reviewCount})</td>
-                        <td style={td}><Badge status={c.status} /></td>
-                        <td style={td}>
-                          {c.agreement ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                              <span style={{ display: "inline-flex", width: "fit-content", alignItems: "center", padding: "2px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Signed</span>
-                              <span style={{ fontSize: 10, color: "#6b7280" }}>{new Date(c.agreement.acceptedAt).toLocaleDateString()}</span>
-                              <a href={`/api/coach/agreements/${c.agreement.id}/pdf`} style={{ fontSize: 11, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>View PDF</a>
-                            </div>
-                          ) : (
-                            <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>Pending Signature</span>
-                          )}
-                        </td>
-                        <td style={td}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <button onClick={() => openEdit(c)} style={iconBtn} title="Edit"><Pencil size={14} color="#60a5fa" /></button>
-                            <button onClick={() => copySignLink(c)} style={iconBtn} title="Copy agreement signing link"><Link2 size={14} color="#4ade80" /></button>
-                            <button onClick={() => openDelete(c)} style={iconBtn} title="Delete"><Trash2 size={14} color="#f87171" /></button>
-                            <Link href={`/coach/${c.id}`} target="_blank" style={{ fontSize: 11, color: "#60a5fa", textDecoration: "none", fontWeight: 600, marginLeft: 4 }}>View →</Link>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>All Coaches ({active.length} active)</h2>
+            {selectedIds.size > 0 && (
+              <button onClick={bulkDeleteSelected} disabled={bulkDeleting} style={{ fontSize: 12, color: "#ef4444", background: "rgba(239,68,68,0.1)", border: "none", padding: "6px 14px", borderRadius: 100, cursor: bulkDeleting ? "wait" : "pointer", fontWeight: 700 }}>
+                {bulkDeleting ? "Deleting..." : `Delete Selected (${selectedIds.size})`}
+              </button>
+            )}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 40 }}>
+            {!coaches.length ? (
+              <div style={{ padding: "40px", textAlign: "center", color: "#6b7280", gridColumn: "1 / -1", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 24 }}>No coaches found</div>
+            ) : coaches.map(c => {
+              const pct = c.totalSeats ? Math.round(((c.totalSeats - c.seatsLeft) / c.totalSeats) * 100) : 0;
+              return (
+                <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
+                  <div style={{ position: "absolute", top: 24, right: 24 }}>
+                    <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
+                  </div>
+                  
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, paddingRight: 32 }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.01em" }}>{c.name}</h3>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.sport}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.type}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                      <Badge status={c.status} />
+                      {c.agreement ? (
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", background: "rgba(34,197,94,0.1)", padding: "3px 10px", borderRadius: 100 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: "0.05em" }}>Signed</span>
+                          <a href={`/api/coach/agreements/${c.agreement.id}/pdf`} style={{ fontSize: 10, color: "#60a5fa", textDecoration: "none", fontWeight: 700 }}>PDF</a>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(234,179,8,0.1)", color: "#eab308", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>Pending Sig.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Middle Stats Grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, background: "rgba(0,0,0,0.3)", padding: 16, borderRadius: 16, marginTop: "auto" }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Seats</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-serif)" }}>{c.seatsLeft} <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-sans)" }}>/ {c.totalSeats}</span></div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Bookings</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-serif)" }}>{c.confirmedBookings} <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-sans)" }}>/ {c.totalBookings}</span></div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Rating</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "var(--font-serif)" }}>
+                        <span style={{ color: "#eab308", fontSize: 14 }}>★</span> {c.rating.toFixed(1)} <span style={{ color: "#6b7280", fontWeight: 600, fontSize: 12, fontFamily: "var(--font-sans)" }}>({c.reviewCount})</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Price</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-serif)" }}>{c.price}</div>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 16 }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button onClick={() => openEdit(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }} title="Edit"><Pencil size={14} color="#fff" /></button>
+                      <button onClick={() => copySignLink(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }} title="Copy link"><Link2 size={14} color="#fff" /></button>
+                      <button onClick={() => openDelete(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)" }} title="Delete"><Trash2 size={14} color="#ef4444" /></button>
+                    </div>
+                    <Link href={`/coach/${c.id}`} target="_blank" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#60a5fa", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.05em" }} title="View Profile">
+                      Profile <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -281,7 +341,7 @@ export default function AdminCoaches() {
                 <div key={b.id ?? i} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 12, marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Batch {i + 1}</span>
-                    <button type="button" onClick={() => rmBatch(i)} style={iconBtn} title="Remove batch"><Trash2 size={14} color="#f87171" /></button>
+                    <button type="button" onClick={() => rmBatch(i)} style={iconBtn} title="Remove batch"><Trash2 size={14} color="#ef4444" /></button>
                   </div>
                   <FormRow>
                     <FormInput label="Day(s)" value={b.day} onChange={v => setBatch(i, "day", v)} placeholder="Mon–Wed–Fri" />
@@ -297,7 +357,7 @@ export default function AdminCoaches() {
                 <Plus size={14} /> Add batch
               </button>
             </div>
-            {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}
+            {error && <p style={{ fontSize: 13, color: "#fff", marginBottom: 8 }}>{error}</p>}
             <FormActions onCancel={closeModal} submitLabel={modal === "add" ? "Add Coach" : "Save Changes"} loading={save.isPending} />
           </form>
         </AdminModal>

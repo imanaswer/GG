@@ -6,7 +6,7 @@ export const TIER_META: Record<Tier, { label: string; icon: string; color: strin
   silver: { label: "Silver", icon: "🥈", color: "#94a3b8", colorDim: "#475569" },
   gold:   { label: "Gold",   icon: "🥇", color: "#eab308", colorDim: "#a16207" },
   elite:  { label: "Elite",  icon: "💎", color: "#60a5fa", colorDim: "#1e40af" },
-  pro:    { label: "Pro",    icon: "👑", color: "#e63946", colorDim: "#991b1b" },
+  pro:    { label: "Pro",    icon: "👑", color: "#fff", colorDim: "#991b1b" },
 };
 
 export const TIER_THRESHOLDS: Record<Tier, number> = {

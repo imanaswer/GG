@@ -38,13 +38,13 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
 
 const brand = `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#080808;color:#fff;border-radius:12px;overflow:hidden">
-    <div style="background:#e63946;padding:20px 28px">
+    <div style="background:#fff;padding:20px 28px">
       <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.02em"></span>
     </div>
 `;
 const footer = `
     <div style="padding:20px 28px;background:#111;font-size:12px;color:#666;text-align:center">
-      Game Ground · Kozhikode, Kerala · <a href="https://www.gameground.net/privacy" style="color:#e63946">Privacy</a>
+      Game Ground · Kozhikode, Kerala · <a href="https://www.gameground.net/privacy" style="color:#fff">Privacy</a>
     </div>
   </div>
 `;
@@ -56,7 +56,7 @@ export const emails = {
       <h2 style="color:#fff;margin:0 0 12px">Booking Request Sent ✓</h2>
       <p style="color:#9ca3af">Hi ${playerName}, your request to book <strong style="color:#fff">${coachName}</strong> for <strong style="color:#fff">${batch}</strong> is now pending.</p>
       <p style="color:#9ca3af;margin-top:12px">The coach will confirm within 24–48 hours. We'll notify you immediately.</p>
-      <div style="margin-top:24px;padding:16px;background:#1a1a1a;border-radius:8px;border-left:3px solid #e63946">
+      <div style="margin-top:24px;padding:16px;background:#1a1a1a;border-radius:8px;border-left:3px solid #fff">
         <p style="color:#fff;font-weight:600;margin:0">What's next?</p>
         <p style="color:#9ca3af;font-size:13px;margin:6px 0 0">Once confirmed, you'll receive the coach's contact details and batch address.</p>
       </div>
@@ -66,7 +66,7 @@ export const emails = {
   bookingConfirmed: (playerName: string, coachName: string, batch: string, address: string, phone: string) => ({
     subject: "Your Booking is Confirmed! 🎉 — Game Ground",
     html: `${brand}<div style="padding:28px">
-      <h2 style="color:#e63946;margin:0 0 12px">Booking Confirmed! 🎉</h2>
+      <h2 style="color:#fff;margin:0 0 12px">Booking Confirmed! 🎉</h2>
       <p style="color:#9ca3af">Hi ${playerName}, your session with <strong style="color:#fff">${coachName}</strong> is confirmed.</p>
       <div style="margin-top:20px;padding:16px;background:#1a1a1a;border-radius:8px">
         <p style="color:#fff;font-weight:700;margin:0 0 8px">Session Details</p>
@@ -109,7 +109,7 @@ export const emails = {
       <h2 style="color:#fff;margin:0 0 12px">Password Reset Request</h2>
       <p style="color:#9ca3af">Hi ${userName}, we received a request to reset your Game Ground password.</p>
       <div style="margin-top:24px;text-align:center">
-        <a href="${resetUrl}" style="display:inline-block;padding:13px 32px;background:#e63946;color:#fff;border-radius:9px;font-weight:700;text-decoration:none;font-size:15px">Reset My Password</a>
+        <a href="${resetUrl}" style="display:inline-block;padding:13px 32px;background:#fff;color:#fff;border-radius:9px;font-weight:700;text-decoration:none;font-size:15px">Reset My Password</a>
       </div>
       <p style="color:#6b7280;font-size:12px;margin-top:20px;text-align:center">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
     </div>${footer}`,
@@ -131,7 +131,7 @@ export const emails = {
   bookingApproved: (playerName: string, coachName: string, slot: string, address: string, phone: string) => ({
     subject: "Your coaching session has been approved 🎉 — Game Ground",
     html: `${brand}<div style="padding:28px">
-      <h2 style="color:#e63946;margin:0 0 12px">Session Approved! 🎉</h2>
+      <h2 style="color:#fff;margin:0 0 12px">Session Approved! 🎉</h2>
       <p style="color:#9ca3af">Hi ${playerName}, your coaching session with <strong style="color:#fff">${coachName}</strong> has been approved.</p>
       <div style="margin-top:20px;padding:16px;background:#1a1a1a;border-radius:8px">
         <p style="color:#fff;font-weight:700;margin:0 0 8px">Session Details</p>
@@ -147,7 +147,7 @@ export const emails = {
     html: `${brand}<div style="padding:28px">
       <h2 style="color:#fff;margin:0 0 12px">Booking Request Rejected</h2>
       <p style="color:#9ca3af">Hi ${playerName}, your coaching session request with <strong style="color:#fff">${coachName}</strong> (${slot}) was rejected.</p>
-      ${reason ? `<div style="margin-top:16px;padding:14px;background:#1a1a1a;border-radius:8px;border-left:3px solid #e63946"><p style="color:#9ca3af;margin:0">Reason: ${reason}</p></div>` : ""}
+      ${reason ? `<div style="margin-top:16px;padding:14px;background:#1a1a1a;border-radius:8px;border-left:3px solid #fff"><p style="color:#9ca3af;margin:0">Reason: ${reason}</p></div>` : ""}
       <p style="color:#9ca3af;margin-top:16px;font-size:13px">You can browse other coaches and request a new session anytime.</p>
     </div>${footer}`,
   }),
@@ -159,7 +159,7 @@ export const emails = {
       <p style="color:#9ca3af">Thank you, ${name}. Your Coach Partnership Agreement is now on file.</p>
       <p style="color:#9ca3af;margin-top:12px">Agreement Number: <strong style="color:#fff">${agreementNumber}</strong><br/>
          Version: ${version}<br/>Signed: ${signedDate}</p>
-      <a href="${pdfUrl}" style="display:inline-block;margin-top:16px;background:#e63946;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Download PDF</a>
+      <a href="${pdfUrl}" style="display:inline-block;margin-top:16px;background:#fff;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Download PDF</a>
     </div>${footer}`,
   }),
 
@@ -168,7 +168,7 @@ export const emails = {
     html: `${brand}<div style="padding:28px">
       <h2 style="color:#fff;margin:0 0 12px">Welcome to Game Ground, ${name}! 🎉</h2>
       <p style="color:#9ca3af">Before you can go live as a coach, please review and sign your Coach Partnership Agreement. No login needed — just open your secure link below.</p>
-      <a href="${signLink}" style="display:inline-block;margin-top:18px;background:#e63946;color:#fff;padding:13px 22px;border-radius:8px;text-decoration:none;font-weight:700">Review &amp; Sign Agreement</a>
+      <a href="${signLink}" style="display:inline-block;margin-top:18px;background:#fff;color:#fff;padding:13px 22px;border-radius:8px;text-decoration:none;font-weight:700">Review &amp; Sign Agreement</a>
       <p style="color:#6b7280;font-size:12px;margin-top:18px">This link is unique to you — please don't share it. It expires in 30 days.</p>
     </div>${footer}`,
   }),

@@ -2,23 +2,29 @@
 import type { ProfileSeason } from "@/hooks/useData";
 
 export function SeasonStrip({ season }: { season: ProfileSeason }) {
-  const cells = [
-    { value: `${season.rep.toLocaleString()}`, label: "Season REP" },
-    { value: `#${season.rank}`, label: "Season Rank" },
-    { value: `${season.daysLeft}d`, label: "Ends In" },
-  ];
   return (
-    <div style={{ background: "linear-gradient(135deg, rgba(96,165,250,0.08), #0d0d0d)", border: "1px solid rgba(96,165,250,0.18)", borderRadius: 16, padding: "14px 16px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: "#93c5fd", textTransform: "uppercase", letterSpacing: "0.06em" }}>Season · {season.label}</span>
+    <div style={{ marginBottom: 12 }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 18,
+      }}>
+        <span style={{
+          fontSize: 11, color: "rgba(255,255,255,0.35)",
+          textTransform: "uppercase", letterSpacing: "0.15em",
+        }}>
+          Season · {season.label}
+        </span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{season.daysLeft}d remaining</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-        {cells.map(c => (
-          <div key={c.label} style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{c.value}</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{c.label}</div>
-          </div>
-        ))}
+      <div style={{ display: "flex", gap: 40 }}>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, marginBottom: 4 }}>{season.rep.toLocaleString()}</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.15em" }}>Season Rep</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, marginBottom: 4 }}>#{season.rank}</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.15em" }}>Season Rank</div>
+        </div>
       </div>
     </div>
   );

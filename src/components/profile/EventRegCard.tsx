@@ -10,7 +10,7 @@ import { PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS, isPaymentStatus } from "@
 const APPROVAL: Record<string, { label: string; bg: string; color: string }> = {
   pending:   { label: "Pending approval", bg: "rgba(234,179,8,0.15)",  color: "#eab308" },
   approved:  { label: "Approved",         bg: "rgba(34,197,94,0.15)",  color: "#4ade80" },
-  rejected:  { label: "Rejected",         bg: "rgba(239,68,68,0.15)",  color: "#f87171" },
+  rejected:  { label: "Rejected",         bg: "rgba(255,255,255,0.15)",  color: "#fff" },
   cancelled: { label: "Cancelled",        bg: "rgba(107,114,128,0.15)",color: "#9ca3af" },
 };
 
@@ -53,7 +53,7 @@ export function EventRegCard({ reg, onCancel, cancelling }: {
       {(showTicket || canCancel) && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {showTicket && (
-            <Link href={`/events/${reg.entityId}/ticket`} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)", color: "#ff6b74", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+            <Link href={`/events/${reg.entityId}/ticket`} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.3)", color: "#ff6b74", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
               <Ticket size={13} /> Download ticket
             </Link>
           )}
@@ -62,7 +62,7 @@ export function EventRegCard({ reg, onCancel, cancelling }: {
               type="button"
               disabled={cancelling}
               onClick={() => { if (reg.entityId && confirm("Cancel your registration for this event?")) onCancel(reg.entityId); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "transparent", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: cancelling ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: cancelling ? 0.6 : 1 }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 100, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: cancelling ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: cancelling ? 0.6 : 1 }}>
               <X size={13} /> {cancelling ? "Cancelling…" : "Cancel registration"}
             </button>
           )}

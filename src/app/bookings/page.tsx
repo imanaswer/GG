@@ -45,9 +45,9 @@ export default function PlayerBookings() {
           {GROUPS.map(g => (
             <button key={g.key} onClick={() => setTab(g.key)}
               style={{ padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                background: tab === g.key ? "#e63946" : "transparent",
-                color: tab === g.key ? "#fff" : "#9ca3af",
-                border: `1px solid ${tab === g.key ? "#e63946" : "rgba(255,255,255,0.12)"}` }}>
+                background: tab === g.key ? "#fff" : "transparent",
+                color: tab === g.key ? "#000" : "#9ca3af",
+                border: `1px solid ${tab === g.key ? "#fff" : "rgba(255,255,255,0.12)"}` }}>
               {g.label}
             </button>
           ))}
@@ -58,7 +58,7 @@ export default function PlayerBookings() {
         ) : !list.length ? (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <p style={{ color: "#9ca3af", fontSize: 16 }}>No {group.label.toLowerCase()} sessions.</p>
-            <Link href="/coach" style={{ color: "#e63946", fontSize: 14, textDecoration: "none" }}>Find a coach →</Link>
+            <Link href="/coach" style={{ color: "#fff", fontSize: 14, textDecoration: "none" }}>Find a coach →</Link>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -74,15 +74,15 @@ export default function PlayerBookings() {
                 </div>
 
                 {b.status === "rejected" && (
-                  <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                    <p style={{ fontSize: 13, color: "#f87171", fontWeight: 600 }}>Your booking request was rejected.</p>
+                  <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    <p style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>Your booking request was rejected.</p>
                     {b.rejectionReason && <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>Reason: {b.rejectionReason}</p>}
                   </div>
                 )}
 
                 {(b.status === "pending" || b.status === "approved") && (
                   <button onClick={() => cancel.mutate(b.id)} disabled={cancel.isPending}
-                    style={{ marginTop: 12, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "transparent", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", fontFamily: "inherit" }}>
+                    style={{ marginTop: 12, padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", cursor: "pointer", fontFamily: "inherit" }}>
                     Cancel booking
                   </button>
                 )}

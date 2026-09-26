@@ -74,7 +74,7 @@ export async function openRazorpayCheckout(args: CheckoutArgs): Promise<Razorpay
       // The panel and CTA take the brand red; the backdrop matches the page behind
       // it. Razorpay's standard checkout exposes nothing else — the payment-methods
       // side is always its own white, there is no dark mode to opt into.
-      theme: { color: "#e63946", backdrop_color: "#050505" },
+      theme: { color: "#fff", backdrop_color: "#050505" },
       handler: (resp) => resolve(resp),
       modal: { ondismiss: () => reject(new Error("Payment cancelled")) },
     });

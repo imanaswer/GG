@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X, Navigation, ChevronDown, ChevronRight, Trash2, Clock } from "lucide-react";
+import { MapPin, Building2, CalendarClock, Percent, Ban, Plus, X, Navigation, ChevronDown, ChevronRight, Trash2, Clock, Pencil, Archive, CheckCircle2 } from "lucide-react";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard } from "@/components/admin/StatCard";
@@ -68,11 +68,18 @@ export default function AdminVenues() {
     <AdminGuard>
       <AdminShell>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Venues</h1>
-            <button onClick={() => setCreating(true)} style={primaryBtn}>
-              <Plus size={15} /> Add Venue
-            </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+            <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 400, color: "#fff" }}>Venues</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <a href="/api/admin/export?type=venues" download style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 100, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", transition: "all 0.2s ease" }}
+                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                Export CSV
+              </a>
+              <button onClick={() => setCreating(true)} style={primaryBtn}>
+                <Plus size={15} /> Add Venue
+              </button>
+            </div>
           </div>
 
           {err && <div style={errBox}>{err}</div>}
@@ -87,10 +94,10 @@ export default function AdminVenues() {
           </div>
 
           {/* Venue list */}
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            {venues.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#6b7280", fontSize: 14 }}>No venues yet. Add your first one.</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {venues.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#6b7280", fontSize: 14, background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>No venues yet. Add your first one.</div>}
             {venues.map((v) => (
-              <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{v.name}</span>
@@ -114,13 +121,13 @@ export default function AdminVenues() {
                   <div>{v.slotCount} slots · {v.blockedSlots} blocked</div>
                   <div>{v.upcomingGames} upcoming · {v.occupancyRate}% full</div>
                 </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", maxWidth: 320 }}>
-                  <button onClick={() => setSlotsFor(v)} style={ghostBtn}>Slots</button>
-                  <button onClick={() => setEditing(v)} style={ghostBtn}>Edit</button>
-                  {v.status !== "ACTIVE" && <button onClick={() => setStatus(v, "ACTIVE")} style={ghostBtn}>Enable</button>}
-                  {v.status === "ACTIVE" && <button onClick={() => setStatus(v, "INACTIVE")} style={ghostBtn}>Disable</button>}
-                  {v.status !== "ARCHIVED" && <button onClick={() => setStatus(v, "ARCHIVED")} style={ghostBtn}>Archive</button>}
-                  <button onClick={() => del(v)} style={dangerBtn}>Delete</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={() => setSlotsFor(v)} style={iconBtn} title="Manage Slots"><CalendarClock size={16} color="#e5e7eb" /></button>
+                  <button onClick={() => setEditing(v)} style={iconBtn} title="Edit Venue"><Pencil size={16} color="#60a5fa" /></button>
+                  {v.status !== "ACTIVE" && <button onClick={() => setStatus(v, "ACTIVE")} style={iconBtn} title="Enable Venue"><CheckCircle2 size={16} color="#4ade80" /></button>}
+                  {v.status === "ACTIVE" && <button onClick={() => setStatus(v, "INACTIVE")} style={iconBtn} title="Disable Venue"><Ban size={16} color="#eab308" /></button>}
+                  {v.status !== "ARCHIVED" && <button onClick={() => setStatus(v, "ARCHIVED")} style={iconBtn} title="Archive Venue"><Archive size={16} color="#9ca3af" /></button>}
+                  <button onClick={() => del(v)} style={iconBtn} title="Delete Venue"><Trash2 size={16} color="#ef4444" /></button>
                 </div>
               </div>
             ))}
@@ -239,7 +246,7 @@ function slotStatus(s: SlotRow): "booked" | "blocked" | "available" {
 const STATUS_DOT: Record<string, { color: string; label: string }> = {
   available: { color: "#22c55e", label: "Available" },
   booked: { color: "#eab308", label: "Booked" },
-  blocked: { color: "#ef4444", label: "Blocked" },
+  blocked: { color: "#fff", label: "Blocked" },
 };
 
 function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void }) {
@@ -409,7 +416,7 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
       {/* ─── Simplified bulk generator ─── */}
       <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <Plus size={14} color="#e63946" />
+          <Plus size={14} color="#fff" />
           <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Generate Slots</span>
         </div>
 
@@ -535,7 +542,7 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
               {pastCount > 0 && !confirmCleanup && (
                 <button onClick={deletePastSlots} disabled={busy} style={{
                   ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5,
-                  color: "#f87171", borderColor: "rgba(239,68,68,0.25)",
+                  color: "#fff", borderColor: "rgba(255,255,255,0.25)",
                   opacity: busy ? 0.5 : 1,
                 }}>
                   <Trash2 size={12} /> Clean up {pastCount} past slot{pastCount !== 1 ? "s" : ""}
@@ -543,7 +550,7 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
               )}
               {confirmCleanup && (
                 <>
-                  <span style={{ fontSize: 11.5, color: "#f87171", fontWeight: 600 }}>Delete {pastCount} past slots?</span>
+                  <span style={{ fontSize: 11.5, color: "#fff", fontWeight: 600 }}>Delete {pastCount} past slots?</span>
                   <button onClick={deletePastSlots} disabled={busy} style={{
                     ...dangerBtn, fontSize: 11, padding: "4px 10px",
                     opacity: busy ? 0.5 : 1,
@@ -613,7 +620,7 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
                           onChange={() => toggleSlotSelection(s.id)}
                           style={{
                             marginRight: 2,
-                            accentColor: "#ef4444",
+                            accentColor: "#fff",
                             cursor: "pointer",
                             width: 14, height: 14
                           }}
@@ -628,7 +635,7 @@ function SlotManager({ venue, onClose }: { venue: VenueRow; onClose: () => void 
                         <div style={{ flex: 1, fontSize: 12.5, color: st === "blocked" ? "#6b7280" : "#e5e7eb" }}>
                           {fmtTime(s.startTime)} – {fmtTime(s.endTime)}
                           {s.isBlocked && (
-                            <span style={{ marginLeft: 8, color: "#f87171", fontSize: 11, fontStyle: "italic" }}>
+                            <span style={{ marginLeft: 8, color: "#fff", fontSize: 11, fontStyle: "italic" }}>
                               {s.blockReason || "blocked"}
                             </span>
                           )}
@@ -683,14 +690,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const input: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark", boxSizing: "border-box" };
-const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 9, border: "none", background: "#e63946", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" };
-const ghostBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
-const ghostBtnSm: React.CSSProperties = { padding: "4px 9px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.10)", background: "transparent", color: "#9ca3af", fontSize: 11, fontWeight: 600, cursor: "pointer" };
-const dangerBtn: React.CSSProperties = { padding: "6px 11px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#f87171", fontSize: 12, fontWeight: 600, cursor: "pointer" };
-const dangerBtnSm: React.CSSProperties = { padding: "4px 9px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.08)", color: "#f87171", fontSize: 11, fontWeight: 600, cursor: "pointer" };
-const sportTag: React.CSSProperties = { padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "#9ca3af", fontSize: 11, fontWeight: 600 };
-const pillOn: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid #e63946", background: "rgba(230,57,70,0.15)", color: "#fff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
-const pillOff: React.CSSProperties = { padding: "6px 13px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#9ca3af", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
-const errBox: React.CSSProperties = { padding: "10px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: 13, marginBottom: 14 };
+const input: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: 12, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark", boxSizing: "border-box" };
+const primaryBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: 100, border: "none", background: "#fff", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" };
+const ghostBtn: React.CSSProperties = { padding: "6px 14px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const ghostBtnSm: React.CSSProperties = { padding: "4px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#9ca3af", fontSize: 11, fontWeight: 600, cursor: "pointer" };
+const dangerBtn: React.CSSProperties = { padding: "6px 14px", borderRadius: 100, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const dangerBtnSm: React.CSSProperties = { padding: "4px 10px", borderRadius: 100, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 600, cursor: "pointer" };
+const sportTag: React.CSSProperties = { padding: "4px 10px", borderRadius: 100, background: "rgba(255,255,255,0.06)", color: "#d1d5db", fontSize: 11, fontWeight: 600 };
+const pillOn: React.CSSProperties = { padding: "6px 16px", borderRadius: 100, border: "1px solid #fff", background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
+const pillOff: React.CSSProperties = { padding: "6px 16px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#9ca3af", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
+const errBox: React.CSSProperties = { padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 13, marginBottom: 16 };
+const iconBtn: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", transition: "all 0.2s" };
 

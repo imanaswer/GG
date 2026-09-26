@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 
 export function AdminModal({
   open,
@@ -50,9 +50,9 @@ export function AdminModal({
           width: "90vw",
           maxWidth: width,
           maxHeight: "85vh",
-          background: "#141414",
+          background: "#050505",
           border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 14,
+          borderRadius: 20,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -68,7 +68,7 @@ export function AdminModal({
             flexShrink: 0,
           }}
         >
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0 }}>{title}</h2>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 400, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{title}</h2>
           <button
             onClick={onClose}
             style={{
@@ -95,22 +95,24 @@ const labelStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
   color: "#9ca3af",
-  marginBottom: 6,
+  marginBottom: 10,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "10px 12px",
-  fontSize: 13,
+  padding: "12px 16px",
+  fontSize: 14,
+  lineHeight: "1.5",
   color: "#fff",
-  background: "#0d0d0d",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 8,
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.2)",
+  borderRadius: 12,
   fontFamily: "inherit",
   outline: "none",
   boxSizing: "border-box",
+  transition: "border-color 0.2s ease",
 };
 
 export function FormField({
@@ -123,9 +125,11 @@ export function FormField({
   style?: React.CSSProperties;
 }) {
   return (
-    <div style={{ marginBottom: 16, ...style }}>
+    <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", ...style }}>
       <label style={labelStyle}>{label}</label>
-      {children}
+      <div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -183,7 +187,7 @@ export function FormTextarea({
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
         placeholder={placeholder}
-        style={{ ...inputStyle, resize: "vertical" }}
+        style={{ ...inputStyle, minHeight: 100, resize: "vertical" }}
       />
     </FormField>
   );
@@ -204,13 +208,30 @@ export function FormSelect({
 }) {
   return (
     <FormField label={label} style={style}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} style={inputStyle}>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div style={{ position: "relative" }}>
+        <select 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)} 
+          style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 40 }}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value} style={{ background: "#111", color: "#fff" }}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown 
+          size={16} 
+          color="#9ca3af" 
+          style={{ 
+            position: "absolute", 
+            right: 14, 
+            top: "50%", 
+            transform: "translateY(-50%)", 
+            pointerEvents: "none" 
+          }} 
+        />
+      </div>
     </FormField>
   );
 }
@@ -244,15 +265,17 @@ export function FormMultiSelect({
               onClick={() => toggle(opt)}
               style={{
                 padding: "8px 14px",
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
-                borderRadius: 8,
+                borderRadius: 100,
                 cursor: "pointer",
                 fontFamily: "inherit",
-                background: active ? "rgba(230,57,70,0.15)" : "#0d0d0d",
-                color: active ? "#e63946" : "#9ca3af",
-                border: `1px solid ${active ? "rgba(230,57,70,0.5)" : "rgba(255,255,255,0.1)"}`,
-                transition: "all 0.12s",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                background: active ? "#fff" : "transparent",
+                color: active ? "#000" : "rgba(255,255,255,0.5)",
+                border: `1px solid ${active ? "#fff" : "rgba(255,255,255,0.2)"}`,
+                transition: "all 0.15s",
               }}
             >
               {active ? "✓ " : ""}
@@ -304,14 +327,16 @@ export function FormRow({ children }: { children: React.ReactNode }) {
 }
 
 const btnBase: React.CSSProperties = {
-  height: 40,
-  borderRadius: 9,
+  height: 48,
+  borderRadius: 100,
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   cursor: "pointer",
   fontFamily: "inherit",
   border: "none",
-  padding: "0 20px",
+  padding: "0 24px",
 };
 
 export function FormActions({
@@ -331,8 +356,8 @@ export function FormActions({
         style={{
           ...btnBase,
           background: "transparent",
-          color: "#9ca3af",
-          border: "1px solid rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.5)",
+          border: "1px solid rgba(255,255,255,0.2)",
         }}
       >
         Cancel
@@ -342,8 +367,8 @@ export function FormActions({
         disabled={loading}
         style={{
           ...btnBase,
-          background: "#e63946",
-          color: "#fff",
+          background: "#fff",
+          color: "#000",
           opacity: loading ? 0.6 : 1,
         }}
       >
@@ -370,17 +395,17 @@ export function DeleteConfirm({
         Are you sure you want to delete
       </p>
       <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 20 }}>{name}?</p>
-      <p style={{ fontSize: 12, color: "#f87171", marginBottom: 24 }}>
+      <p style={{ fontSize: 12, color: "#fff", marginBottom: 24 }}>
         This action cannot be undone. All related data will also be removed.
       </p>
-      <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
         <button
           onClick={onCancel}
           style={{
             ...btnBase,
             background: "transparent",
-            color: "#9ca3af",
-            border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.5)",
+            border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
           Cancel
@@ -390,8 +415,9 @@ export function DeleteConfirm({
           disabled={loading}
           style={{
             ...btnBase,
-            background: "#ef4444",
-            color: "#fff",
+            background: "rgba(239,68,68,0.1)",
+            color: "#ef4444",
+            border: "1px solid rgba(239,68,68,0.3)",
             opacity: loading ? 0.6 : 1,
           }}
         >

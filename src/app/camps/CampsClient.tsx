@@ -1,8 +1,28 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState, Suspense } from "react";
-import { Search, Filter, Clock, Users, Star, Target, Award, Sparkles, ChevronRight, Calendar, MapPin, SlidersHorizontal, X } from "lucide-react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  Suspense,
+  startTransition,
+} from "react";
+import {
+  Search,
+  Check,
+  ArrowUpRight,
+  X,
+  MapPin,
+  Clock,
+  Users,
+  Star,
+  ChevronDown,
+  Calendar,
+} from "lucide-react";
+import { NearMeToggle } from "@/components/NearMeToggle";
+import { distanceKm, sortByDistance, formatKm, type Coords } from "@/lib/maps";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { PremiumNav } from "@/components/premium/PremiumNav";
@@ -10,618 +30,933 @@ import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Reveal, Stagger } from "@/components/premium/Reveal";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { Tilt3D } from "@/components/premium/Tilt3D";
-import { useCamps, type Camp, type CampFilters } from "@/hooks/useData";
+import { SkillBadge, SportBadge } from "@/components/Shared";
+import { useCamps, type CampFilters, type Camp } from "@/hooks/useData";
 import { CAMP_IMAGE } from "@/lib/premium-images";
 
-const SPORTS    = ["Basketball","Football","Badminton","Cricket","Tennis","Fitness","Multi-Sport"] as const;
-const LEVELS    = [
-  { v: "Beginner",     l: "Beginner" },
+const SPORTS = [
+  "Basketball",
+  "Football",
+  "Badminton",
+  "Cricket",
+  "Tennis",
+  "Fitness",
+  "Multi-Sport",
+] as const;
+
+const LEVELS = [
+  { v: "Beginner", l: "Beginner" },
   { v: "Intermediate", l: "Intermediate" },
-  { v: "Advanced",     l: "Advanced" },
-  { v: "All Levels",   l: "All levels" },
+  { v: "Advanced", l: "Advanced" },
+  { v: "All Levels", l: "All levels" },
 ] as const;
+
 const DURATIONS = [
-  { v: "short",  l: "1–5 days"  },
+  { v: "short", l: "1–5 days" },
   { v: "medium", l: "6–10 days" },
-  { v: "long",   l: "10+ days"  },
+  { v: "long", l: "10+ days" },
 ] as const;
+
 const AGE_GROUPS = [
-  { v: "6–12 years",  l: "6–12 years"  },
+  { v: "6–12 years", l: "6–12 years" },
   { v: "10–16 years", l: "10–16 years" },
   { v: "12–18 years", l: "12–18 years" },
   { v: "15–25 years", l: "15–25 years" },
 ] as const;
 
-/* ── Spots badge ───────────────────────────────────────── */
-function spotsLabel(p: number, max: number) {
-  const left = max - p;
-  if (left <= 0) return { text: "Full",                bg: "rgba(239,68,68,0.92)", fg: "#fff" };
-  if (left <= 5) return { text: `Only ${left} left`,  bg: "rgba(234,179,8,0.92)", fg: "#000" };
-  return             { text: `${left} spots left`, bg: "rgba(34,197,94,0.9)",  fg: "#000" };
+export function formatSportName(text: string) {
+  if (!text) return "";
+  if (text === "BOXING/KICK") return "Boxing/Kick";
+  return text
+    .split("/")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join("/");
 }
 
-/* ── Hero ──────────────────────────────────────────────── */
+/* ── Hero band ──────────────────────────────────────────── */
 
 function Hero({ count }: { count: number | null }) {
   return (
-    <section className="page-hero" style={{
-      position: "relative", overflow: "hidden",
-    }}>
-      <div style={{ position: "absolute", inset: 0, opacity: 0.3 }}>
-        <Image
-          src={CAMP_IMAGE.src}
-          alt={CAMP_IMAGE.alt}
-          fill priority quality={80} sizes="100vw"
-          style={{ objectFit: "cover", filter: "saturate(0.6) brightness(0.65)" }}
-        />
-      </div>
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.3) 30%, #050505 100%)",
-      }} />
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 65% 55% at 50% 30%, rgba(230,57,70,0.14), transparent 70%)",
-      }} />
+    <section
+      style={{
+        position: "relative",
+        padding: "160px 0 24px",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <div
+        className="container-lg"
+        style={{ position: "relative", zIndex: 10 }}
+      >
+        <Reveal>
+          <Magnetic strength={20}>
+            <motion.div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "8px 20px",
+                borderRadius: 100,
+                background: "rgba(25, 25, 25, 0.8)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                marginBottom: 40,
+                cursor: "pointer",
+                backdropFilter: "blur(10px)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+              whileHover={{
+                scale: 1.02,
+                borderColor: "rgba(255, 255, 255, 0.3)",
+                background: "rgba(30, 30, 30, 0.5)",
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
+              <motion.div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "-100%",
+                  bottom: 0,
+                  width: "100%",
+                  background:
+                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
+                  zIndex: 0,
+                }}
+                animate={{ x: ["0%", "200%"] }}
+                transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+              />
 
-      <div className="container-lg" style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 520px", minWidth: 0 }}>
-          <Reveal>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "8px 16px", borderRadius: 100,
-              background: "rgba(230,57,70,0.08)",
-              border: "1px solid rgba(230,57,70,0.25)",
-              marginBottom: 28,
-            }}>
-              <Sparkles size={13} color="#e63946" />
-              <span style={{
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.16em",
-                textTransform: "uppercase", color: "#ff6b74",
-              }}>
-                {count !== null ? `${count} intensive camp${count === 1 ? "" : "s"} open` : "Training camps · Kozhikode"}
+              <span
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 6,
+                  height: 6,
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    background: "#FFFFFF",
+                    opacity: 0.8,
+                    animation: "ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
+                  }}
+                />
+                <span
+                  style={{
+                    position: "relative",
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: "#FFFFFF",
+                    boxShadow: "0 0 8px 2px rgba(255, 255, 255, 0.8)",
+                  }}
+                />
               </span>
-            </div>
-          </Reveal>
 
-          <Reveal delay={0.06}>
-            <h1 className="display" style={{
-              fontSize: "clamp(44px, 7vw, 104px)",
-              color: "#fff", maxWidth: 1100,
-            }}>
-              Transform in{" "}
-              <span className="display-serif" style={{ color: "#ff6b74" }}>days,</span>{" "}
-              not seasons.
-            </h1>
-          </Reveal>
-
-          <Reveal delay={0.14}>
-            <p style={{
-              fontSize: 18, color: "rgba(255,255,255,0.6)",
-              maxWidth: 640, marginTop: 28, lineHeight: 1.6,
-            }}>
-              Multi-day intensives led by working coaches. Small squads, structured blocks,
-              tangible progress by the time you leave.
-            </p>
-          </Reveal>
-        </div>
-
-        <Reveal delay={0.22}>
-          <Magnetic strength={10}>
-            <Link href="#camps" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "14px 22px", borderRadius: 100,
-              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-              boxShadow: "0 0 32px rgba(230,57,70,0.4)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              textDecoration: "none",
-            }}>
-              Browse camps
-              <ChevronRight size={15} />
-            </Link>
+              <span
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  fontFamily: "var(--font-sans), sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.9)",
+                  transform: "translateY(1px)",
+                }}
+              >
+                {count !== null
+                  ? `${count} intensive camps live`
+                  : "Intensive camps · Kozhikode"}
+              </span>
+            </motion.div>
           </Magnetic>
         </Reveal>
+
+        <div style={{ padding: "20px 0 20px 0" }}>
+          <h1
+            className="display"
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontSize: "clamp(32px, 7.5vw, 130px)",
+              lineHeight: 0.9,
+              letterSpacing: "-0.01em",
+              color: "#fff",
+              width: "100%",
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            <motion.div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
+              <motion.div
+                initial={{ y: "100%", rotateZ: 4, opacity: 0 }}
+                animate={{ y: "0%", rotateZ: 0, opacity: 1 }}
+                transition={{
+                  duration: 1.2,
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.1,
+                }}
+              >
+                Transform in{" "}
+                <span
+                  style={{
+                    color: "var(--text3)",
+                    fontStyle: "italic",
+                    paddingRight: "10px",
+                  }}
+                >
+                  days,
+                </span>
+              </motion.div>
+            </motion.div>
+            <motion.div style={{ overflow: "hidden" }}>
+              <motion.div
+                initial={{ y: "100%", rotateZ: 4, opacity: 0 }}
+                animate={{ y: "0%", rotateZ: 0, opacity: 1 }}
+                transition={{
+                  duration: 1.2,
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.18,
+                }}
+              >
+                not seasons.
+              </motion.div>
+            </motion.div>
+          </h1>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 24,
+              marginTop: 20,
+              flexWrap: "wrap",
+            }}
+          >
+            <Reveal delay={0.4}>
+              <p
+                style={{
+                  fontSize: "clamp(16px, 1.5vw, 20px)",
+                  color: "rgba(255,255,255,0.6)",
+                  maxWidth: 580,
+                  margin: 0,
+                  lineHeight: 1.6,
+                  fontWeight: 400,
+                }}
+              >
+                Multi-day intensives led by working coaches. Small squads, structured blocks, tangible progress by the time you leave.
+              </p>
+            </Reveal>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-/* ── Pill filter group ─────────────────────────────────── */
+/* ── Filter dropdown ────────────────────────────────────── */
 
-type PillGroupProps = {
+type ToolbarDropdownProps = {
   label: string;
   options: readonly { v: string; l: string }[];
   value?: string;
   onChange: (v: string) => void;
+  align?: "left" | "center" | "right";
 };
 
-function PillGroup({ label, options, value, onChange }: PillGroupProps) {
+function ToolbarDropdown({
+  label,
+  options,
+  value,
+  onChange,
+  align = "left",
+}: ToolbarDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const activeOption = options.find((o) => o.v === value);
+
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-      <span className="eyebrow" style={{ marginRight: 8, fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
-        {label}
-      </span>
-      {[{ v: "all", l: `All ${label.toLowerCase()}` }, ...options].map(opt => {
-        const active = (value ?? "all") === opt.v;
-        return (
-          <button
-            key={opt.v}
-            onClick={() => onChange(opt.v)}
+    <div
+      ref={ref}
+      style={{
+        position: "relative",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 24px",
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+          textAlign: "left",
+          gap: 2,
+          outline: "none",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.4)",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: value ? "#fff" : "rgba(255,255,255,0.5)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {activeOption
+            ? label === "Sport"
+              ? formatSportName(activeOption.l)
+              : activeOption.l
+            : `Any ${label}`}
+          <ChevronDown
+            size={14}
             style={{
-              padding: "6px 14px", borderRadius: 100,
-              fontSize: 12, fontWeight: 500, cursor: "pointer",
-              border: "1px solid", fontFamily: "inherit",
-              background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-              color: active ? "#ff6b74" : "rgba(255,255,255,0.6)",
-              borderColor: active ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
-              transition: "all 180ms",
+              color: "rgba(255,255,255,0.4)",
+              transform: open ? "rotate(180deg)" : "none",
+              transition: "transform 0.2s",
+            }}
+          />
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: align === "left" ? 0 : align === "center" ? "50%" : "auto",
+              right: align === "right" ? 0 : "auto",
+              marginLeft: align === "center" ? -100 : 0,
+              marginTop: 16,
+              background: "#111111",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 16,
+              padding: 8,
+              minWidth: 200,
+              zIndex: 50,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
             }}
           >
-            {opt.l}
-          </button>
-        );
-      })}
+            <button
+              onClick={() => {
+                onChange("all");
+                setOpen(false);
+              }}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "10px 16px",
+                background: !value ? "rgba(255,255,255,0.05)" : "transparent",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                outline: "none",
+                color: !value ? "#fff" : "rgba(255,255,255,0.6)",
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            >
+              Any {label}
+            </button>
+            {options.map((opt) => {
+              const active = value === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  onClick={() => {
+                    onChange(opt.v);
+                    setOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "10px 16px",
+                    background: active
+                      ? "rgba(255,255,255,0.05)"
+                      : "transparent",
+                    border: "none",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    outline: "none",
+                    color: active ? "#fff" : "rgba(255,255,255,0.6)",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  {label === "Sport" ? formatSportName(opt.l) : opt.l}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-/* ── Featured camp card (wide, 2-col grid) ─────────────── */
+/* ── Camp card ──────────────────────────────────────────── */
 
-function FeaturedCard({ camp }: { camp: Camp }) {
-  const sl = spotsLabel(camp.participants, camp.maxParticipants);
+function CampCard({ camp }: { camp: Camp }) {
+  const isFull = camp.maxParticipants - camp.participants <= 0;
   const img = camp.imageUrl || CAMP_IMAGE.src;
+  
+  const pct = Math.min(100, Math.round((camp.participants / camp.maxParticipants) * 100));
+  const slotsLeft = Math.max(0, camp.maxParticipants - camp.participants);
+  const standing = camp.userRegistration ? "Joined" : null;
+  const isFree = camp.price === 0;
 
   return (
-    <Tilt3D intensity={6} data-stagger style={{ height: "100%", borderRadius: 24 }}>
-    <Link
+    <Tilt3D
+      intensity={8}
       data-stagger
-      href={`/camps/${camp.id}`}
-      className="camp-card camp-card-featured"
-      style={{
-        textDecoration: "none", display: "flex", flexDirection: "column",
-        background: "#0a0a0a",
-        border: "1px solid rgba(230,57,70,0.3)",
-        borderRadius: 24, overflow: "hidden",
-        transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
-        height: "100%",
-      }}
+      style={{ height: "100%", borderRadius: 20 }}
     >
-      <div style={{ position: "relative", aspectRatio: "5/4", overflow: "hidden" }}>
-        <div className="camp-card-img" style={{ position: "absolute", inset: 0 }}>
-          <Image
-            src={img} alt={camp.title}
-            fill
-            sizes="(max-width: 900px) 100vw, 50vw"
-            style={{ objectFit: "cover", filter: "saturate(0.85)" }}
-          />
-        </div>
+      <div
+        data-stagger
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          aspectRatio: "3/4",
+          background: "#000",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 20,
+          overflow: "hidden",
+          transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
+        }}
+        className="camp-card group"
+      >
+        <Image
+          src={img}
+          alt={camp.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={{ objectFit: "cover", transition: "transform 0.6s cubic-bezier(0.16,1,0.3,1)" }}
+          className="group-hover:scale-105"
+        />
 
-        {/* Featured badge */}
-        <div style={{
-          position: "absolute", top: 16, left: 16,
-          display: "inline-flex", alignItems: "center", gap: 5,
-          padding: "5px 12px", borderRadius: 100,
-          background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-          fontSize: 11, fontWeight: 800, color: "#000",
-          boxShadow: "0 4px 20px rgba(245,158,11,0.5)",
-          letterSpacing: "0.04em",
-        }}>
-          <Sparkles size={11} />Featured
-        </div>
+        {/* Gradient Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 45%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
 
-        {/* Spots badge */}
-        <div style={{
-          position: "absolute", top: 16, right: 16,
-          padding: "5px 12px", borderRadius: 100,
-          background: sl.bg, color: sl.fg,
-          fontSize: 11, fontWeight: 700,
-          backdropFilter: "blur(8px)",
-        }}>
-          {sl.text}
-        </div>
+        {/* Full card clickable link */}
+        <Link href={`/camps/${camp.id}`} style={{ position: "absolute", inset: 0, zIndex: 10 }} />
 
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)",
-          pointerEvents: "none",
-        }} />
-
-        <div style={{ position: "absolute", bottom: 18, left: 20, right: 20 }}>
-          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-              background: "rgba(230,57,70,0.95)", color: "#fff",
-            }}>{camp.sport}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-              background: "rgba(0,0,0,0.55)", color: "#fff",
-              border: "1px solid rgba(255,255,255,0.18)",
-              backdropFilter: "blur(8px)",
-            }}>{camp.duration}</span>
+        {/* Top Badges */}
+        <div
+          className="camp-card-top"
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            right: 16,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            zIndex: 20,
+            pointerEvents: "none",
+          }}
+        >
+          <div className="camp-card-badges" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <SportBadge sport={camp.sport} />
+            <SkillBadge level={camp.skillLevel} />
           </div>
-          <h3 style={{
-            fontSize: 24, fontWeight: 800, color: "#fff",
-            letterSpacing: "-0.02em", lineHeight: 1.2, margin: 0,
-            textShadow: "0 2px 16px rgba(0,0,0,0.5)",
-          }}>
-            {camp.title}
-          </h3>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Star size={14} color="#e63946" fill="#e63946" />
-            <span style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>{camp.rating}</span>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>({camp.reviews})</span>
-          </div>
-          <span style={{
-            fontSize: 11, padding: "3px 9px", borderRadius: 100,
-            background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)",
-            fontWeight: 600, border: "1px solid rgba(255,255,255,0.06)",
-          }}>{camp.skillLevel}</span>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          {[
-            { Icon: Calendar, v: camp.dates },
-            { Icon: MapPin,   v: camp.location },
-            { Icon: Users,    v: `${camp.ageGroup} · ${camp.participants}/${camp.maxParticipants} enrolled` },
-          ].map(({ Icon, v }) => (
-            <div key={v} style={{
-              display: "flex", alignItems: "center", gap: 8,
-              fontSize: 13, color: "rgba(255,255,255,0.6)",
-            }}>
-              <Icon size={13} color="#e63946" style={{ flexShrink: 0 }} />
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
-            </div>
-          ))}
-        </div>
-
-        {camp.highlights.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {camp.highlights.slice(0, 3).map((h, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 8,
-                fontSize: 12.5, color: "rgba(255,255,255,0.5)",
-              }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: "50%",
-                  background: "#e63946", flexShrink: 0,
-                }} />
-                {h}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: "auto",
-        }}>
-          <div>
-            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 3 }}>
-              Total
-            </p>
-            <p style={{ fontSize: 26, fontWeight: 800, color: "#ff6b74", letterSpacing: "-0.03em", margin: 0 }}>
-              {camp.priceDisplay}
-            </p>
-          </div>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "11px 20px", borderRadius: 100,
-            background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-            color: "#fff", fontSize: 13, fontWeight: 700,
-            boxShadow: "0 2px 18px rgba(230,57,70,0.3)",
-          }}>
-            Register
-            <ChevronRight size={14} />
-          </div>
-        </div>
-      </div>
-    </Link>
-    </Tilt3D>
-  );
-}
-
-/* ── Compact camp card ─────────────────────────────────── */
-
-function CompactCard({ camp }: { camp: Camp }) {
-  const sl = spotsLabel(camp.participants, camp.maxParticipants);
-  const img = camp.imageUrl || CAMP_IMAGE.src;
-
-  return (
-    <Tilt3D intensity={8} data-stagger style={{ height: "100%", borderRadius: 20 }}>
-    <Link
-      data-stagger
-      href={`/camps/${camp.id}`}
-      className="camp-card camp-card-compact"
-      style={{
-        textDecoration: "none", display: "flex", flexDirection: "column",
-        background: "#0a0a0a",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 20, overflow: "hidden",
-        transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
-        height: "100%",
-      }}
-    >
-      <div style={{ position: "relative", aspectRatio: "5/4", overflow: "hidden" }}>
-        <div className="camp-card-img" style={{ position: "absolute", inset: 0 }}>
-          <Image
-            src={img} alt={camp.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            style={{ objectFit: "cover", filter: "saturate(0.85)" }}
-          />
-        </div>
-
-        <div style={{
-          position: "absolute", top: 12, right: 12,
-          padding: "3px 10px", borderRadius: 100,
-          background: sl.bg, color: sl.fg,
-          fontSize: 10, fontWeight: 700,
-          backdropFilter: "blur(8px)",
-        }}>{sl.text}</div>
-
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, transparent 45%, rgba(0,0,0,0.78) 100%)",
-          pointerEvents: "none",
-        }} />
-
-        <div style={{ position: "absolute", bottom: 12, left: 14, right: 14 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-            background: "rgba(0,0,0,0.55)", color: "#fff",
-            border: "1px solid rgba(255,255,255,0.18)",
-            backdropFilter: "blur(8px)",
-          }}>
-            {camp.duration}
+          <span
+            className="camp-card-badge"
+            style={{
+              fontWeight: 700,
+              background: isFree ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.15)",
+              color: isFree ? "#000" : "#fff",
+              backdropFilter: "blur(12px)",
+              border: isFree ? "none" : "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 100
+            }}
+          >
+            {isFree ? "Free" : `₹${camp.price}`}
           </span>
         </div>
-      </div>
 
-      <div style={{ padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100,
-            background: "rgba(230,57,70,0.14)", color: "#ff6b74",
-            letterSpacing: "0.04em",
-          }}>{camp.sport}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Star size={11} color="#e63946" fill="#e63946" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{camp.rating}</span>
+        {/* Bottom Content */}
+        <div
+          className="camp-card-content"
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: 24,
+            zIndex: 20,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            pointerEvents: "none",
+          }}
+        >
+          <h3
+            className="camp-card-title"
+            style={{
+              fontFamily: "var(--font-serif)",
+              lineHeight: 1.05,
+              fontWeight: 400,
+              color: "#fff",
+              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            }}
+          >
+            {camp.title}
+          </h3>
+
+          <div className="camp-card-info" style={{ display: "flex", flexDirection: "column", color: "rgba(255,255,255,0.7)" }}>
+            <div className="camp-card-info-item" style={{ display: "flex", alignItems: "center" }}>
+              <MapPin size={14} style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {camp.location}
+              </span>
+            </div>
+            <div className="camp-card-info-item" style={{ display: "flex", alignItems: "center" }}>
+              <Clock size={14} style={{ flexShrink: 0 }} />
+              <span>
+                {camp.dates}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <h3 style={{
-          fontSize: 15.5, fontWeight: 800, color: "#fff",
-          lineHeight: 1.3, letterSpacing: "-0.01em", margin: 0,
-        }}>
-          {camp.title}
-        </h3>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Calendar size={12} color="#e63946" style={{ flexShrink: 0 }} />
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{camp.dates}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            <Users size={12} color="#e63946" style={{ flexShrink: 0 }} />
-            <span>{camp.ageGroup}</span>
-          </div>
-        </div>
-
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "auto",
-        }}>
+          {/* Slot bar */}
           <div>
-            <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 2 }}>
-              Price
-            </p>
-            <p style={{ fontSize: 18, fontWeight: 800, color: "#ff6b74", letterSpacing: "-0.02em", margin: 0 }}>
-              {camp.priceDisplay}
-            </p>
+            <div
+              className="camp-card-slots"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.6)",
+                marginBottom: 6,
+              }}
+            >
+              <span>{camp.participants} / {camp.maxParticipants} Spots</span>
+              <span style={{ color: isFull ? "#fff" : slotsLeft <= 2 ? "#fbbf24" : "#fff" }}>
+                {isFull ? "Full" : `${slotsLeft} left`}
+              </span>
+            </div>
+            <div style={{ height: 4, background: "rgba(255,255,255,0.15)", borderRadius: 100, overflow: "hidden" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  height: "100%",
+                  background: pct >= 100 ? "#fff" : pct >= 75 ? "#fff" : "#fff",
+                  borderRadius: 100,
+                }}
+              />
+            </div>
           </div>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "7px 14px", borderRadius: 100,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.78)", fontSize: 11, fontWeight: 600,
-          }}>
-            Details<ChevronRight size={12} />
+
+          {/* Footer */}
+          <div
+            className="camp-card-footer"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: 16,
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              pointerEvents: "auto",
+              position: "relative",
+              zIndex: 30, // Above the link so buttons are clickable
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+              <Star size={12} fill="#eab308" color="#eab308" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+                {camp.rating.toFixed(1)}
+              </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.5)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {camp.organizer}
+              </span>
+            </div>
+
+            {standing ? (
+              <Link
+                href={`/camps/${camp.id}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "6px 14px",
+                  borderRadius: 100,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  background: "rgba(255,255,255,0.1)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  textDecoration: "none",
+                  flexShrink: 0,
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <Check size={12} /> {standing}
+              </Link>
+            ) : (
+              <Link
+                href={`/camps/${camp.id}`}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 100,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  background: isFull ? "transparent" : "#fff",
+                  color: isFull ? "rgba(255,255,255,0.5)" : "#000",
+                  border: isFull ? "1px solid rgba(255,255,255,0.1)" : "none",
+                  textDecoration: "none",
+                  flexShrink: 0,
+                }}
+              >
+                {isFull ? "Waitlist" : "View"}
+              </Link>
+            )}
           </div>
         </div>
       </div>
-    </Link>
     </Tilt3D>
   );
 }
 
-/* ── Skeleton ──────────────────────────────────────────── */
-function CampSkeleton({ aspect = "5/4" }: { aspect?: string }) {
+/* ── Skeleton ───────────────────────────────────────────── */
+
+function CampSkeleton() {
   return (
-    <div style={{
-      background: "#0a0a0a",
-      border: "1px solid rgba(255,255,255,0.05)",
-      borderRadius: 20, overflow: "hidden", height: "100%",
-    }}>
-      <div className="skeleton" style={{ aspectRatio: aspect, borderRadius: 0 }} />
-      <div style={{ padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <div className="skeleton" style={{ height: 14, width: "65%", borderRadius: 6 }} />
-        <div className="skeleton" style={{ height: 12, width: "45%", borderRadius: 6 }} />
-        <div className="skeleton" style={{ height: 22, width: "40%", borderRadius: 6 }} />
-      </div>
+    <div
+      style={{
+        background: "#0a0a0a",
+        border: "1px solid rgba(255,255,255,0.05)",
+        borderRadius: 20,
+        overflow: "hidden",
+        height: "100%",
+      }}
+    >
+      <div
+        className="skeleton"
+        style={{ aspectRatio: "3/4", borderRadius: 0 }}
+      />
     </div>
   );
 }
 
-/* ── Page ──────────────────────────────────────────────── */
+/* ── Page ───────────────────────────────────────────────── */
 
 function CampsContent({ initialCamps }: { initialCamps?: Camp[] }) {
   const [filters, setFilters] = useState<CampFilters>({});
-  const [search, setSearch]   = useState("");
-  const { data, isLoading, error } = useCamps({ ...filters, q: search || undefined }, initialCamps);
 
-  const featured = useMemo(() => data?.filter(c => c.featured) ?? [], [data]);
-  const regular  = useMemo(() => data?.filter(c => !c.featured) ?? [], [data]);
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 260);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data, isLoading, error } = useCamps(
+    { ...filters, q: debounced || undefined },
+    initialCamps,
+  );
+
+  const [origin, setOrigin] = useState<Coords | null>(null);
+  const sortedData = useMemo(() => sortByDistance(data ?? [], origin), [data, origin]);
+  const featured = useMemo(() => sortedData.filter(c => c.featured), [sortedData]);
+  const regular  = useMemo(() => sortedData.filter(c => !c.featured), [sortedData]);
+
+  const hasFilters = useMemo(() => !!search || Object.values(filters).some(Boolean), [search, filters]);
 
   const set = (k: keyof CampFilters, v: string) =>
-    setFilters(p => ({ ...p, [k]: v === "all" || !v ? undefined : v }));
-
-  const hasFilters = useMemo(
-    () => !!search || Object.values(filters).some(Boolean),
-    [search, filters],
-  );
+    setFilters((p) => ({ ...p, [k]: v === "all" || !v ? undefined : v }));
 
   return (
     <>
       <SmoothScroll />
       <PremiumNav variant="solid" />
 
-      <main style={{ background: "#050505", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <main
+        className="noise"
+        style={{
+          background: "#000000",
+          color: "#fff",
+          position: "relative",
+          overflow: "hidden",
+          minHeight: "100vh",
+        }}
+      >
         <Hero count={data?.length ?? null} />
 
-        <section id="camps">
+        <section
+          style={{ position: "relative", zIndex: 2, padding: "16px 0 32px" }}
+        >
           <div className="container-lg">
-            {/* Glass filter */}
-            <Reveal>
-              <div style={{
-                display: "flex", flexDirection: "column", gap: 16,
-                background: "rgba(13,13,13,0.7)",
-                backdropFilter: "blur(18px)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 20, padding: 20, marginBottom: 48,
-              }}>
-                <div style={{ position: "relative" }}>
+            <Reveal
+              style={{ position: "relative", zIndex: 100, marginBottom: 32 }}
+            >
+              <div
+                className="camps-filter-bar"
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  padding: "16px",
+                  borderRadius: "100px",
+                  background: "rgba(13,13,13,0.7)",
+                  backdropFilter: "blur(18px)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+                }}
+              >
+                <div
+                  className="camps-filter-search"
+                  style={{
+                    flex: "1 1 200px",
+                    minWidth: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    position: "relative",
+                    paddingLeft: 16,
+                  }}
+                >
                   <Search
-                    size={15} color="rgba(255,255,255,0.4)"
-                    style={{ position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                    size={16}
+                    color="rgba(255,255,255,0.4)"
+                    style={{ position: "absolute", left: 16 }}
                   />
                   <input
-                    placeholder="Search camps by name, sport, or location…"
+                    placeholder="Search camps, sports, venues…"
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     style={{
-                      width: "100%", padding: "14px 18px 14px 48px",
-                      fontSize: 14, background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12, color: "#fff", outline: "none",
-                      fontFamily: "inherit",
+                      width: "100%",
+                      padding: "10px 10px 10px 42px",
+                      background: "transparent",
+                      border: "none",
+                      color: "#fff",
+                      outline: "none",
+                      fontSize: 14,
+                      fontWeight: 500,
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(230,57,70,0.35)"; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                   />
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-                    <SlidersHorizontal size={13} />
-                    <span className="eyebrow" style={{ margin: 0, color: "rgba(255,255,255,0.4)" }}>Filter</span>
-                    <AnimatePresence>
-                      {hasFilters && (
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          onClick={() => { setFilters({}); setSearch(""); }}
-                          style={{
-                            marginLeft: "auto",
-                            display: "inline-flex", alignItems: "center", gap: 4,
-                            padding: "4px 12px", borderRadius: 100,
-                            fontSize: 11, color: "rgba(255,255,255,0.55)",
-                            background: "transparent",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            cursor: "pointer", fontFamily: "inherit",
-                          }}
-                        >
-                          <X size={11} /> Clear
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                <div
+                  style={{
+                    width: 1,
+                    background: "rgba(255,255,255,0.1)",
+                    margin: "0 8px",
+                  }}
+                />
 
-                  <PillGroup
-                    label="Sport"
-                    options={SPORTS.map(s => ({ v: s, l: s }))}
-                    value={filters.sport}
-                    onChange={v => set("sport", v)}
-                  />
-                  <PillGroup
-                    label="Level"
-                    options={LEVELS}
-                    value={filters.skillLevel}
-                    onChange={v => set("skillLevel", v)}
-                  />
-                  <PillGroup
-                    label="Duration"
-                    options={DURATIONS}
-                    value={filters.duration}
-                    onChange={v => set("duration", v)}
-                  />
-                  <PillGroup
-                    label="Age"
-                    options={AGE_GROUPS}
-                    value={filters.ageGroup}
-                    onChange={v => set("ageGroup", v)}
-                  />
-                </div>
-              </div>
+                <ToolbarDropdown
+                  label="Sport"
+                  options={SPORTS.map(s => ({ v: s, l: s }))}
+                  value={filters.sport}
+                  onChange={(v) => set("sport", v)}
+                  align="left"
+                />
+
+                <div className="camps-filter-divider" />
+
+                <ToolbarDropdown
+                  label="Level"
+                  options={LEVELS}
+                  value={filters.skillLevel}
+                  onChange={(v) => set("skillLevel", v)}
+                  align="right"
+                />
+
+                <div className="camps-filter-divider" />
+
+                <ToolbarDropdown
+                  label="Duration"
+                  options={DURATIONS}
+                  value={filters.duration}
+                  onChange={(v) => set("duration", v)}
+                  align="left"
+                />
+
+                <div className="camps-filter-divider" />
+
+                <ToolbarDropdown
+                  label="Age"
+                  options={AGE_GROUPS}
+                  value={filters.ageGroup}
+                  onChange={(v) => set("ageGroup", v)}
+                  align="right"
+                />
+              
+
+
+</div>
             </Reveal>
 
-            {/* Meta row */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginBottom: 28, flexWrap: "wrap", gap: 12,
-            }}>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
-                {isLoading
-                  ? "Loading camps…"
-                  : error
-                    ? "Couldn't load camps"
-                    : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "camp" : "camps"} available`}
-              </span>
+            
+            {/* Meta */}
+            <div
+              className="result-meta"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 28,
+                flexWrap: "wrap",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: "rgba(255,255,255,0.45)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {isLoading
+                    ? "Loading camps…"
+                    : error
+                      ? "Couldn't load camps"
+                      : `${data?.length ?? 0} ${(data?.length ?? 0) === 1 ? "camp" : "camps"} available`}
+                </span>
+                <NearMeToggle onChange={setOrigin} />
+              </div>
+              {!isLoading && !error && (data?.length ?? 0) > 0 && (
+                <Magnetic strength={6}>
+                  <Link
+                    href="/workshops"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.6)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Looking for workshops instead? <ArrowUpRight size={12} />
+                  </Link>
+                </Magnetic>
+              )}
             </div>
 
-            {/* Content */}
+
+{/* Results */}
             {isLoading ? (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                gap: 20,
-              }}>
-                {Array(6).fill(0).map((_, i) => <CampSkeleton key={i} />)}
+              <div className="camp-grid">
+                {Array(8)
+                  .fill(0)
+                  .map((_, i) => (
+                    <CampSkeleton key={i} />
+                  ))}
               </div>
             ) : error ? (
-              <div style={{
-                padding: "80px 24px", textAlign: "center", borderRadius: 20,
-                background: "rgba(239,68,68,0.04)",
-                border: "1px solid rgba(239,68,68,0.15)",
-              }}>
-                <p style={{ color: "#f87171", fontSize: 15, fontWeight: 600 }}>
+              <div
+                style={{
+                  padding: "80px 24px",
+                  textAlign: "center",
+                  borderRadius: 20,
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                <p style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>
                   Failed to load camps. Please refresh.
                 </p>
               </div>
-            ) : !data?.length ? (
+            ) : featured.length === 0 && regular.length === 0 ? (
               <div style={{ textAlign: "center", padding: "100px 0" }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: 20,
-                  background: "rgba(230,57,70,0.08)",
-                  border: "1px solid rgba(230,57,70,0.18)",
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 20,
-                }}>
-                  <Target size={24} color="#ff6b74" />
-                </div>
-                <h3 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.02em" }}>
-                  No camps match those filters.
+                <h3
+                  style={{
+                    fontFamily: "var(--font-serif)",
+                    fontSize: 32,
+                    fontWeight: 400,
+                    color: "#fff",
+                    marginBottom: 12,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  No camps found.
                 </h3>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>
-                  Try a different sport, level, or clear the filters.
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 16 }}>
+                  Try adjusting your filters or search term.
                 </p>
               </div>
             ) : (
@@ -630,51 +965,48 @@ function CampsContent({ initialCamps }: { initialCamps?: Camp[] }) {
                 {featured.length > 0 && (
                   <div style={{ marginBottom: 72 }}>
                     <Reveal>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                        <Award size={20} color="#e63946" />
-                        <h2 className="display" style={{
-                          fontSize: "clamp(24px, 3vw, 32px)",
-                          color: "#fff", margin: 0,
-                        }}>
-                          Featured camps
-                        </h2>
-                      </div>
+                      <h2 className="display" style={{
+                        fontFamily: "var(--font-serif)",
+                        fontSize: "clamp(24px, 4vw, 42px)",
+                        color: "#fff", marginBottom: 24,
+                        fontWeight: 400
+                      }}>
+                        Featured camps
+                      </h2>
                     </Reveal>
                     <Stagger
-                      stagger={0.06}
-                      y={24}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                        gap: 24,
-                      }}
+                      stagger={0.05}
+                      y={20}
+                      className="camp-grid"
                     >
-                      {featured.map(c => <FeaturedCard key={c.id} camp={c} />)}
+                      {featured.map((camp) => (
+                        <CampCard key={camp.id} camp={camp} />
+                      ))}
                     </Stagger>
                   </div>
                 )}
 
                 {/* All */}
                 {regular.length > 0 && (
-                  <div style={{ marginBottom: 120 }}>
+                  <div style={{ paddingBottom: 80 }}>
                     <Reveal>
                       <h2 className="display" style={{
-                        fontSize: "clamp(24px, 3vw, 32px)",
+                        fontFamily: "var(--font-serif)",
+                        fontSize: "clamp(24px, 4vw, 42px)",
                         color: "#fff", marginBottom: 24,
+                        fontWeight: 400
                       }}>
                         All camps
                       </h2>
                     </Reveal>
                     <Stagger
                       stagger={0.05}
-                      y={24}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                        gap: 20,
-                      }}
+                      y={20}
+                      className="camp-grid"
                     >
-                      {regular.map(c => <CompactCard key={c.id} camp={c} />)}
+                      {regular.map((camp) => (
+                        <CampCard key={camp.id} camp={camp} />
+                      ))}
                     </Stagger>
                   </div>
                 )}
@@ -683,27 +1015,155 @@ function CampsContent({ initialCamps }: { initialCamps?: Camp[] }) {
           </div>
         </section>
       </main>
-
+      
       <style>{`
         .camp-card:hover {
-          border-color: rgba(230,57,70,0.3);
-          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(230,57,70,0.12);
-          transform: translateY(-4px);
+          border-color: rgba(255,255,255,0.2) !important;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important;
         }
-        .camp-card-featured:hover {
-          border-color: rgba(230,57,70,0.5);
-          box-shadow: 0 30px 80px rgba(230,57,70,0.18), 0 0 0 1px rgba(230,57,70,0.2);
+        .camp-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 24px;
         }
-        .camp-card-img img { transition: transform 700ms cubic-bezier(0.16,1,0.3,1), filter 500ms; }
-        .camp-card:hover .camp-card-img img { transform: scale(1.05); filter: saturate(1); }
+        .camp-card-badge {
+          font-size: 11px;
+          padding: 4px 12px;
+        }
+        .camp-card-content {
+          padding: 24px;
+          gap: 16px;
+        }
+        .camp-card-title {
+          font-size: clamp(24px, 5vw, 32px);
+          margin-bottom: 0;
+        }
+        .camp-card-info {
+          gap: 8px;
+          font-size: 13px;
+        }
+        .camp-card-info-item {
+          gap: 8px;
+        }
+        .camp-card-footer {
+          padding-top: 16px;
+        }
+        .camps-filter-divider {
+          width: 1px;
+          background: rgba(255,255,255,0.1);
+          margin: 0 8px;
+        }
+        @media (max-width: 900px) {
+          .camps-filter-bar {
+            flex-wrap: wrap;
+            border-radius: 24px !important;
+            padding: 16px !important;
+            gap: 16px;
+          }
+          .camps-filter-divider {
+            display: none;
+          }
+          .camps-filter-search {
+            width: 100%;
+            flex-basis: 100%;
+            padding-left: 8px !important;
+            height: 48px;
+          }
+          .camps-filter-btn {
+            width: 100% !important;
+            flex-basis: 100%;
+            height: 48px !important;
+            border-radius: 100px !important;
+          }
+          .toolbar-dropdown-wrapper {
+            flex: 1;
+            min-width: 30%;
+            padding: 8px !important;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+          }
+          .toolbar-dropdown-wrapper button {
+            width: 100%;
+            align-items: center !important;
+            text-align: center !important;
+          }
+          .result-meta {
+            flex-wrap: wrap;
+            gap: 16px 0 !important;
+          }
+          .meta-near-me {
+            order: 1;
+            width: 100%;
+          }
+          .meta-count {
+            order: 2;
+          }
+          .meta-link {
+            order: 3;
+            margin-left: auto;
+          }
+          .camp-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .camp-card {
+            aspect-ratio: auto !important;
+            min-height: 340px !important;
+          }
+          .camp-card-top {
+            top: 12px !important;
+            left: 12px !important;
+            right: 12px !important;
+          }
+          .camp-card-badges {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px !important;
+          }
+          .camp-card-content {
+            padding: 12px !important;
+            gap: 10px !important;
+          }
+          .camp-card-title {
+            font-size: 18px !important;
+            margin-bottom: 4px !important;
+          }
+          .camp-card-info {
+            gap: 4px !important;
+            font-size: 10px !important;
+          }
+          .camp-card-info-item {
+            gap: 4px !important;
+          }
+          .camp-card-info-item svg {
+            width: 10px !important;
+            height: 10px !important;
+          }
+          .camp-card-footer {
+            padding-top: 10px !important;
+          }
+          .camp-card-badge {
+            font-size: 9px !important;
+            padding: 4px 8px !important;
+          }
+        }
       `}</style>
     </>
   );
 }
 
-export default function CampsClient({ initialCamps }: { initialCamps?: Camp[] }) {
+export default function CampsClient({
+  initialCamps,
+}: {
+  initialCamps?: Camp[];
+}) {
   return (
-    <Suspense fallback={<div style={{ background: "#050505", minHeight: "100vh" }} />}>
+    <Suspense
+      fallback={
+        <div style={{ background: "#050505", minHeight: "100vh" }} />
+      }
+    >
       <CampsContent initialCamps={initialCamps} />
     </Suspense>
   );

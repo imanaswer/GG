@@ -67,7 +67,7 @@ export function HostPaymentCard({ payment }: { payment: HostPayment }) {
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-        <IndianRupee size={15} style={{ color: "#e63946" }} />
+        <IndianRupee size={15} style={{ color: "#fff" }} />
         <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#fff" }}>
           Payment
         </h3>
@@ -188,8 +188,8 @@ export function PayHostPanel({
   return (
     <div style={{
       ...card,
-      background: "rgba(230,57,70,0.06)",
-      border: "1px solid rgba(230,57,70,0.22)",
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.22)",
     }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
         Next step — pay the host directly

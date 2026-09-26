@@ -126,6 +126,12 @@ export const SPORT_FALLBACKS: Record<string, PremiumImage[]> = {
     { src: "/sports/fitness-04.webp", alt: "Trainer spotting a lift at a gym in India", credit: "Unsplash / Frederick Shaw" },
     { src: "/sports/fitness-05.webp", alt: "Group huddle at the end of a training session", credit: "Unsplash / Sum Sum" },
   ],
+  Combat: [
+    { src: "/sports/kickboxing-01.jpg", alt: "Cinematic close-up of kickboxing training in a gritty, high-end gym", credit: "Game Ground Exclusive" },
+  ],
+  TableTennis: [
+    { src: "/sports/tabletennis-01.jpg", alt: "Dynamic cinematic shot of a table tennis match in a premium club", credit: "Game Ground Exclusive" },
+  ],
 };
 
 export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
@@ -140,5 +146,20 @@ export function pickFallback(list: PremiumImage[], seed: string): PremiumImage {
  * creation time) so a game keeps the same photo on every view.
  */
 export function gameImage(sport: string | undefined | null, seed: string): PremiumImage {
-  return pickFallback(SPORT_FALLBACKS[sport ?? ""] ?? GAME_FALLBACKS, seed);
+  const normalizedSport = (sport || "").trim().toLowerCase().replace(/\s+/g, "");
+  
+  // Find matching key case-insensitively, ignoring spaces
+  const match = Object.keys(SPORT_FALLBACKS).find(k => k.toLowerCase().replace(/\s+/g, "") === normalizedSport);
+  
+  // Special case mappings
+  let fallbackKey = match;
+  if (!match) {
+    if (normalizedSport.includes("calisthenics") || normalizedSport.includes("gym") || normalizedSport.includes("fit")) {
+      fallbackKey = "Fitness";
+    } else if (normalizedSport.includes("box") || normalizedSport.includes("kick") || normalizedSport.includes("mma") || normalizedSport.includes("martial")) {
+      fallbackKey = "Combat";
+    }
+  }
+
+  return pickFallback(fallbackKey ? SPORT_FALLBACKS[fallbackKey] : GAME_FALLBACKS, seed);
 }

@@ -1,6 +1,11 @@
 "use client";
 import { createElement, useEffect, useRef, type CSSProperties, type ElementType } from "react";
 import { gsap } from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 type Props = {
   text: string;
@@ -11,6 +16,8 @@ type Props = {
   className?: string;
   style?: CSSProperties;
   as?: ElementType;
+  /** Whether to animate on scroll (using ScrollTrigger) */
+  scrollTrigger?: boolean;
 };
 
 /**
@@ -19,7 +26,7 @@ type Props = {
  * Uses `lang="en"` default spacing — words stay together, chars animate.
  */
 export function SplitText({
-  text, delay = 0, stagger = 0.025, className, style, as = "span",
+  text, delay = 0, stagger = 0.025, className, style, as = "span", scrollTrigger = false
 }: Props) {
   const rootRef = useRef<HTMLElement>(null);
 
@@ -30,15 +37,26 @@ export function SplitText({
     if (!chars.length) return;
 
     gsap.set(chars, { yPercent: -110 });
+    
     const tween = gsap.to(chars, {
+      scrollTrigger: scrollTrigger ? {
+        trigger: el,
+        start: "top 85%",
+      } : undefined,
       yPercent: 0,
       duration: 0.9,
       ease: "expo.out",
       stagger,
-      delay,
+      delay: scrollTrigger ? 0 : delay, // If using ScrollTrigger, delay is relative to entering view
     });
-    return () => { tween.kill(); };
-  }, [delay, stagger, text]);
+    
+    return () => { 
+      if (tween.scrollTrigger) {
+        tween.scrollTrigger.kill();
+      }
+      tween.kill(); 
+    };
+  }, [delay, stagger, text, scrollTrigger]);
 
   const words = text.split(" ");
 

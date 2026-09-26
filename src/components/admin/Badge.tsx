@@ -17,8 +17,8 @@ export function Badge({ status }: { status: string }) {
     pending:           { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
     confirmed:         { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
     approved:          { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
-    rejected:          { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
-    cancelled:         { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
+    rejected:          { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
+    cancelled:         { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
     open:              { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
     full:              { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
     completed:         { bg: "rgba(107,114,128,0.15)", color: "#9ca3af" },
@@ -27,13 +27,13 @@ export function Badge({ status }: { status: string }) {
     pending_approval:  { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
     paid:              { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
     unpaid:            { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
-    Live:              { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
+    Live:              { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
     "Registration Open": { bg: "rgba(34,197,94,0.15)", color: "#4ade80" },
   };
-  const s = map[status] ?? { bg: "rgba(255,255,255,0.07)", color: "#9ca3af" };
+  const s = map[status] ?? { bg: "transparent", color: "rgba(255,255,255,0.4)" };
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 100, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, textTransform: "capitalize", whiteSpace: "nowrap" }}>
-      {status === "Live" && <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 100, border: `1px solid ${s.color}`, color: s.color, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
+      {status === "Live" && <span style={{ width: 4, height: 4, background: s.color, borderRadius: "50%", display: "inline-block" }} />}
       {LABEL_OVERRIDES[status] ?? status.replace("_", " ")}
     </span>
   );

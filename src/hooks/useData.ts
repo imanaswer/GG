@@ -344,6 +344,7 @@ export type Camp = {
   id: string; title: string; sport: string; duration: string; dates: string;
   startDate: string; endDate: string; registrationDeadline: string;
   location: string; address: string; distance: string;
+  lat?: number; lng?: number;
   price: number; priceDisplay: string;
   ageGroup: string; skillLevel: string; rating: number; reviews: number;
   participants: number; maxParticipants: number;
@@ -454,6 +455,7 @@ export type Workshop = {
   sessions: { date: string; time: string; topic: string; description: string }[];
   startDate: string; endDate: string; registrationDeadline: string;
   location: string; address: string; distance: string;
+  lat?: number; lng?: number;
   price: number; priceDisplay: string;
   ageGroup: string; audienceType: string; skillLevel: string;
   rating: number; reviewCount: number;

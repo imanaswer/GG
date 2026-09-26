@@ -1,6 +1,7 @@
 "use client";
 import { use, useState, useMemo } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { useUserProfile, useUserActivity } from "@/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
@@ -57,8 +58,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   return (
     <>
       <PremiumNav variant="solid" />
-      <main style={{ background: "#050505", minHeight: "100vh", paddingTop: 96, paddingBottom: 80 }}>
-        <div className="container-lg" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 760, margin: "0 auto", padding: "0 16px" }}>
+      <main style={{ background: "#050505", minHeight: "100vh", paddingTop: 120, paddingBottom: 100 }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 24px" }}>
           <PlayerHeroCard
             name={profile.name} username={profile.username} avatarUrl={profile.avatarUrl}
             tier={profile.tier} reputationScore={profile.reputationScore} rank={profile.playerRank}
@@ -69,7 +70,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           <ProfileTabs tabs={tabs} active={tab} onChange={setTab} />
 
           {tab === "Overview" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               <RankProgress reputationScore={profile.reputationScore} />
               <StatStrip gamesPlayed={profile.gamesPlayed} attendanceRate={profile.attendanceRate} reputationScore={profile.reputationScore} streakWeeks={streakWeeks} />
               <SeasonStrip season={profile.season} />
@@ -84,7 +85,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           {tab === "Bookings" && isOwn && <BookingsTab bookings={profile.bookings ?? []} registrations={profile.registrations} />}
           {tab === "Achievements" && <AchievementsRail achievements={achievements} variant="grid" />}
           {tab === "Settings" && isOwn && (
-            <Link href="/profile/edit" style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 46, padding: "0 20px", borderRadius: 100, background: "linear-gradient(135deg,#e63946,#b91c2d)", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 14, alignSelf: "flex-start" }}>Edit profile & settings</Link>
+            <Link href="/profile/edit" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              fontSize: 13, fontWeight: 700, color: "#fff",
+              textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.08em",
+              paddingBottom: 2,
+              borderBottom: "1px solid rgba(255,255,255,0.3)",
+            }}>
+              Edit profile & settings <ArrowRight size={14} />
+            </Link>
           )}
         </div>
       </main>
@@ -93,5 +102,5 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 }
 
 function Center({ children }: { children: React.ReactNode }) {
-  return <main style={{ background: "#050505", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 14, paddingTop: 96 }}>{children}</main>;
+  return <main style={{ background: "#050505", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: 14, paddingTop: 96 }}>{children}</main>;
 }

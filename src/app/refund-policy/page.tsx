@@ -34,8 +34,8 @@ export default function RefundPolicy() {
 
         <p style={{ fontSize: 13, color: "#6b7280", marginTop: 40 }}>
           See also our{" "}
-          <Link href="/terms" style={{ color: "#e63946" }}>Terms of Service</Link> and{" "}
-          <Link href="/privacy" style={{ color: "#e63946" }}>Privacy Policy</Link>.
+          <Link href="/terms" style={{ color: "#fff", textDecoration: "underline" }}>Terms of Service</Link> and{" "}
+          <Link href="/privacy" style={{ color: "#fff", textDecoration: "underline" }}>Privacy Policy</Link>.
         </p>
       </main>
     </div>

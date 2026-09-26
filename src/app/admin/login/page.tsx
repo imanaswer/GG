@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield } from "lucide-react";
@@ -14,7 +14,7 @@ export default function AdminLogin() {
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError("");
-    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" }, // email omitted entirely = the legacy shared-password branch, kept for one release
+    const r = await fetch("/api/admin/auth", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.trim() || undefined, password: pw }) });
     setLoading(false);
     if (r.ok) router.push("/admin");
@@ -22,60 +22,87 @@ export default function AdminLogin() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(230,57,70,0.1) 0%, transparent 65%)", pointerEvents: "none" }} />
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <img src="/logo2.png" alt="Game Ground" style={{ height: 64, width: "auto", margin: "0 auto 16px", display: "block" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
-            <Shield size={16} color="#e63946" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#e63946", textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Access</span>
+        
+        {/* Logo & Header */}
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <img src="/logo2.png" alt="Game Ground" style={{ height: 48, width: "auto", margin: "0 auto 24px", display: "block", filter: "brightness(0) invert(1)" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
+            <Shield size={14} color="rgba(255,255,255,0.4)" />
+            <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>Admin Access</span>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Dashboard Login</h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>Restricted to authorised team members only</p>
+          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 40, fontWeight: 800, color: "#fff", letterSpacing: "0.01em", marginBottom: 12 }}>Dashboard Login</h1>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>Restricted to authorised team members only.</p>
         </div>
 
-        <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "28px" }}>
-          <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Email</label>
+        {/* Form */}
+        <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Email</label>
+            <input
+              type="email"
+              placeholder="you@gameground.net"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              autoComplete="username"
+              style={{ 
+                width: "100%", height: 50, padding: "0 16px", 
+                background: "transparent", 
+                border: "none",
+                borderBottom: `1px solid ${error ? "#fff" : "rgba(255,255,255,0.2)"}`, 
+                color: "#fff", fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                transition: "border-color 200ms ease"
+              }}
+              onFocus={e => { if(!error) e.currentTarget.style.borderColor = "#fff"; }}
+              onBlur={e => { if(!error) e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
+            />
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Optional — leave blank to use the shared password.</span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Password</label>
+            <div style={{ position: "relative" }}>
               <input
-                type="email"
-                placeholder="you@gameground.net"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="username"
-                style={{ width: "100%", height: 44, padding: "0 14px", borderRadius: 9, border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`, background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                type={show ? "text" : "password"}
+                placeholder="Enter your password"
+                value={pw}
+                onChange={e => setPw(e.target.value)}
+                required
+                style={{ 
+                  width: "100%", height: 50, padding: "0 48px 0 16px", 
+                  background: "transparent", 
+                  border: "none",
+                  borderBottom: `1px solid ${error ? "#fff" : "rgba(255,255,255,0.2)"}`, 
+                  color: "#fff", fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                  transition: "border-color 200ms ease"
+                }}
+                onFocus={e => { if(!error) e.currentTarget.style.borderColor = "#fff"; }}
+                onBlur={e => { if(!error) e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
               />
-              <span style={{ fontSize: 11, color: "#4b5563" }}>Optional — leave blank to use the shared password.</span>
+              <button type="button" onClick={() => setShow(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer" }}>
+                {show ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+            {error && <p style={{ fontSize: 13, color: "#fff", marginTop: 4 }}>{error}</p>}
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>Password</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type={show ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={pw}
-                  onChange={e => setPw(e.target.value)}
-                  required
-                  style={{ width: "100%", height: 44, padding: "0 44px 0 14px", borderRadius: 9, border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`, background: "#1c1c1c", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                />
-                <button type="button" onClick={() => setShow(s => !s)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>
-                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {error && <p style={{ fontSize: 12, color: "#ef4444" }}>{error}</p>}
-            </div>
-            <button type="submit" disabled={loading} style={{ height: 46, borderRadius: 10, fontSize: 14, fontWeight: 700, background: "#e63946", color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "inherit", marginTop: 8 }}>
-              {loading ? "Verifying…" : "Access Dashboard"}
-            </button>
-          </form>
-          <p style={{ textAlign: "center", fontSize: 11, color: "#4b5563", marginTop: 20 }}>
-            Session expires after 60 minutes of inactivity
-          </p>
-        </div>
+          <button type="submit" disabled={loading} style={{ 
+            height: 56, borderRadius: 100, fontSize: 15, fontWeight: 600, 
+            background: "#fff", color: "#000", border: "none", 
+            cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, 
+            fontFamily: "inherit", marginTop: 16,
+            transition: "opacity 200ms ease, transform 200ms ease"
+          }}>
+            {loading ? "Verifying…" : "Access Dashboard"}
+          </button>
+        </form>
+        
+        <p style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 40 }}>
+          Session expires after 60 minutes of inactivity
+        </p>
+
       </div>
     </div>
   );

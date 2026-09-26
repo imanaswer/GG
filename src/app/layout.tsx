@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Inter, Instrument_Serif, Dela_Gothic_One, Geist } from "next/font/google";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { Providers } from "@/context/Providers";
@@ -7,14 +7,11 @@ import { PWARegister } from "@/components/PWARegister";
 import { PostHogPageView } from "@/components/PostHogPageView";
 import { siteUrl } from "@/lib/siteUrl";
 import { jsonLdScript } from "@/lib/seo";
+import { CustomCursor } from "@/components/premium/CustomCursor";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -22,6 +19,13 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
   weight: "400",
   style: ["normal", "italic"],
+});
+
+const delaGothic = Dela_Gothic_One({
+  subsets: ["latin"],
+  variable: "--font-dela",
+  display: "swap",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -69,7 +73,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e63946",
+  themeColor: "#fff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -103,24 +107,24 @@ const siteJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={cn(instrumentSerif.variable, delaGothic.variable, "font-sans", geist.variable)}>
       <body suppressHydrationWarning>
         <script {...jsonLdScript(siteJsonLd)} />
         <Providers>
           <Suspense>
             <PostHogPageView />
           </Suspense>
+          {/* <CustomCursor /> */}
           {children}
           <PWARegister />
           <Toaster
             theme="dark"
-            position="bottom-right"
-            toastOptions={{
-              style: { background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" },
-            }}
+            position="bottom-center"
+            toastOptions={{ style: { background: "rgba(15, 15, 15, 0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", borderRadius: "100px", padding: "12px 20px", boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)", fontSize: "14px", fontWeight: 600, letterSpacing: "-0.01em" } }}
           />
         </Providers>
       </body>
     </html>
   );
 }
+

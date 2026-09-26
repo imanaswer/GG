@@ -82,7 +82,7 @@ function AdminGamesInner() {
       >
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{g.title}</span>
-          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{g.sport}</span>
+          <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: "rgba(255,255,255,0.15)", color: "#fff" }}>{g.sport}</span>
           {(g.status === "completed" || g.status === "archived") && (g.pointsAwarded
             ? <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#4ade80" }}>✓ finalized</span>
             : <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: "#eab308" }}>● awaiting review</span>)}
@@ -96,7 +96,7 @@ function AdminGamesInner() {
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div style={{ fontSize: 12, color: "#fff", marginBottom: 4 }}>{filled}/{g.slots}</div>
           <div style={{ height: 4, background: "#1c1c1c", borderRadius: 99, width: 70, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#ef4444" : "#e63946", borderRadius: 99 }} />
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#fff" : "#fff", borderRadius: 99 }} />
           </div>
         </td>
         <td style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: g.cost === "Free" ? "#4ade80" : "#fff" }}>{g.cost}</td>
@@ -116,10 +116,17 @@ function AdminGamesInner() {
     <AdminGuard>
       <AdminShell>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", marginBottom: 20 }}>Games Tracker</h1>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+            <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 400, color: "#fff" }}>Games Manager</h1>
+            <a href="/api/admin/export?type=games" download style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 100, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", textDecoration: "none", transition: "all 0.2s ease" }}
+               onMouseEnter={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#000"; }}
+               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#fff"; }}>
+              Export CSV
+            </a>
+          </div>
 
           {weekOnly && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(230,57,70,0.10)", border: "1px solid rgba(230,57,70,0.3)", width: "fit-content" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.3)", width: "fit-content" }}>
               <span style={{ fontSize: 12.5, fontWeight: 600, color: "#fca5a5" }}>Showing open/full games scheduled within the last 7 days</span>
               <Link href="/admin/games" style={{ fontSize: 12, fontWeight: 700, color: "#fff", textDecoration: "none", lineHeight: 1 }} aria-label="Clear filter">✕</Link>
             </div>
@@ -149,15 +156,15 @@ function AdminGamesInner() {
                     >
                       <span style={{ fontSize: 13, color: "#6b7280" }}>{isOpen ? "▼" : "▶"}</span>
                       <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{BUCKET_LABELS[b]}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(230,57,70,0.15)", color: "#e63946" }}>{gameBuckets[b].length}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(255,255,255,0.15)", color: "#fff" }}>{gameBuckets[b].length}</span>
                     </button>
                     {isOpen && (
-                      <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                      <div style={{ background: "transparent", overflow: "hidden", marginBottom: 24 }}>
                         <div style={{ overflowX: "auto" }}>
                           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                            <thead style={{ background: "#111" }}>
+                            <thead>
                               <tr>{["Game","Organiser","Location","Date & Time","Slots","Cost","Status","Waitlist"].map(h => (
-                                <th key={h} style={{ padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                                <th key={h} style={{ padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>{h}</th>
                               ))}</tr>
                             </thead>
                             <tbody>{gameBuckets[b].map(renderGameRow)}</tbody>
@@ -193,7 +200,7 @@ function AdminGamesInner() {
               {selected.completedAt && <p style={{ fontSize: 11, color: "#6b7280" }}>Completed {new Date(selected.completedAt).toLocaleString("en-IN")}</p>}
               {selected.cancelledAt && <p style={{ fontSize: 11, color: "#6b7280" }}>Cancelled {new Date(selected.cancelledAt).toLocaleString("en-IN")}</p>}
 
-              {err && <p style={{ marginTop: 12, fontSize: 12, color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "8px 10px", borderRadius: 8 }}>{err}</p>}
+              {err && <p style={{ marginTop: 12, fontSize: 12, color: "#fff", background: "rgba(255,255,255,0.1)", padding: "8px 10px", borderRadius: 8 }}>{err}</p>}
 
               <div style={{ marginTop: 16 }}>
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 10 }}>
@@ -212,7 +219,7 @@ function AdminGamesInner() {
                         )}
                         {p.name}
                         {!finalizable && p.attended === true && <span style={{ color: "#4ade80", fontSize: 11 }}>✓</span>}
-                        {!finalizable && p.attended === false && <span style={{ color: "#ef4444", fontSize: 11 }}>missed</span>}
+                        {!finalizable && p.attended === false && <span style={{ color: "#fff", fontSize: 11 }}>missed</span>}
                       </span>
                       <span style={{ color: "#eab308" }}>★ {p.reliabilityScore.toFixed(1)}</span>
                     </div>

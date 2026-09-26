@@ -49,7 +49,7 @@ export function adminAlertHtml(opts: {
             + `<td style="padding:4px 0;color:#111;font-size:13px;font-weight:600">${l.value}</td></tr>`)
     .join("");
   const cta = opts.link
-    ? `<p style="margin:18px 0 0"><a href="${opts.link.href}" style="background:#e63946;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">${opts.link.label}</a></p>`
+    ? `<p style="margin:18px 0 0"><a href="${opts.link.href}" style="background:#fff;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">${opts.link.label}</a></p>`
     : "";
   return `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:520px">
     <h2 style="margin:0 0 12px;font-size:17px;color:#111">${opts.heading}</h2>

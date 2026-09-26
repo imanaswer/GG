@@ -22,7 +22,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, { bg: string; color: string }> = {
   pending:  { bg: "rgba(234,179,8,0.15)",   color: "#eab308" },
   paid:     { bg: "rgba(34,197,94,0.15)",   color: "#4ade80" },
-  failed:   { bg: "rgba(239,68,68,0.15)",   color: "#f87171" },
+  failed:   { bg: "rgba(239,68,68,0.15)",   color: "#ef4444" },
   refund_pending: { bg: "rgba(249,115,22,0.15)", color: "#fb923c" },
   refunded: { bg: "rgba(168,85,247,0.15)",  color: "#c084fc" },
 };

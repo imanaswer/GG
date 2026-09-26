@@ -37,7 +37,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['172.30.10.236'],
+  allowedDevOrigins: ['172.30.10.236', '192.168.1.9', 'gg-demo-2026.loca.lt'],
   images: {
     qualities: [75, 80, 85],
     remotePatterns: [

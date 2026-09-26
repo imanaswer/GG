@@ -11,43 +11,50 @@ export function RankProgress({ reputationScore }: { reputationScore: number }) {
   const width = useTransform(widthPct, v => `${v}%`);
 
   useEffect(() => {
-    const a1 = animate(rep, reputationScore, { duration: 1.1, ease: "easeOut" });
-    const a2 = animate(widthPct, info.progressPct, { duration: 1.1, ease: "easeOut" });
+    const a1 = animate(rep, reputationScore, { duration: 1.4, ease: "easeOut" });
+    const a2 = animate(widthPct, info.progressPct, { duration: 1.4, ease: "easeOut" });
     return () => { a1.stop(); a2.stop(); };
   }, [reputationScore, info.progressPct, rep, widthPct]);
 
   return (
-    <div style={{
-      background: `linear-gradient(135deg, ${info.colorDim}22 0%, #0d0d0d 60%)`,
-      border: `1px solid ${info.color}33`, borderRadius: 24, padding: "32px 28px",
-      boxShadow: `0 0 60px ${info.color}18`, position: "relative", overflow: "hidden",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 40 }}>{info.icon}</span>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>{info.label}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Current tier</div>
-          </div>
+    <div style={{ marginBottom: 12 }}>
+      {/* Section label */}
+      <div style={{
+        fontSize: 11, color: "rgba(255,255,255,0.35)",
+        textTransform: "uppercase", letterSpacing: "0.15em",
+        marginBottom: 16,
+      }}>
+        Rank Progression
+      </div>
+
+      {/* Tier labels row */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 28 }}>{info.icon}</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em" }}>{info.label}</span>
         </div>
         {info.next && (
-          <div style={{ textAlign: "right", opacity: 0.7 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{info.next.label}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Next tier</div>
-          </div>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>
+            → {info.next.label}
+          </span>
         )}
       </div>
 
-      <div style={{ position: "relative", height: 16, borderRadius: 100, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 18 }}>
-        <motion.div style={{ width, height: "100%", borderRadius: 100, background: `linear-gradient(90deg, ${info.colorDim}, ${info.color})`, boxShadow: `0 0 16px ${info.color}` }} />
+      {/* Progress bar — ultra thin and refined */}
+      <div style={{ position: "relative", height: 3, borderRadius: 100, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 16 }}>
+        <motion.div style={{ width, height: "100%", borderRadius: 100, background: info.color }} />
       </div>
 
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 44, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em" }}>
-          <motion.span>{repText}</motion.span> <span style={{ fontSize: 20, color: info.color }}>REP</span>
+      {/* Rep count and distance to next */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: 36, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+            <motion.span>{repText}</motion.span>
+          </span>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>REP</span>
         </div>
-        <div style={{ marginTop: 8, fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
-          {info.next ? `${info.next.pointsToNext} REP to ${info.next.label}` : "Top tier reached 👑"}
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+          {info.next ? `${info.next.pointsToNext} to ${info.next.label}` : "Top tier reached"}
         </div>
       </div>
     </div>

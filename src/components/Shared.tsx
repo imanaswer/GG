@@ -56,9 +56,9 @@ export function Stars({ value, size = 13 }: { value: number; size?: number }) {
 export function SlotBar({ filled, total }: { filled: number; total: number }) {
   const pct = Math.min(100, Math.round((filled / total) * 100));
   const color =
-    pct >= 100 ? "#ef4444" :
+    pct >= 100 ? "#fff" :
     pct >= 80  ? "#eab308" :
-    pct >= 50  ? "#f97316" : "#e63946";
+    pct >= 50  ? "#f97316" : "#fff";
   return (
     <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 99, overflow: "hidden", width: "100%" }}>
       <motion.div
@@ -73,19 +73,13 @@ export function SlotBar({ filled, total }: { filled: number; total: number }) {
 
 /* ── Skill level badge ────────────────────────────────── */
 export function SkillBadge({ level }: { level: string }) {
-  const map: Record<string, { bg: string; color: string; border: string }> = {
-    Beginner:      { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
-    Intermediate:  { bg: "rgba(234,179,8,0.08)",  color: "#fbbf24", border: "rgba(234,179,8,0.2)"  },
-    Advanced:      { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
-    "All Levels":  { bg: "rgba(96,165,250,0.08)", color: "#60a5fa", border: "rgba(96,165,250,0.2)" },
-  };
-  const s = map[level] ?? { bg: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "rgba(255,255,255,0.08)" };
   return (
     <span style={{
-      display: "inline-flex", padding: "3px 10px", borderRadius: 100,
+      display: "inline-flex", padding: "4px 12px", borderRadius: 100,
       fontSize: 11, fontWeight: 600, whiteSpace: "nowrap",
-      background: s.bg, color: s.color,
-      border: `1px solid ${s.border}`,
+      background: "rgba(255,255,255,0.06)", color: "#fff",
+      border: `1px solid rgba(255,255,255,0.15)`,
+      backdropFilter: "blur(12px)",
     }}>
       {level}
     </span>
@@ -96,14 +90,11 @@ export function SkillBadge({ level }: { level: string }) {
 export function SportBadge({ sport }: { sport: string }) {
   return (
     <span style={{
-      display: "inline-flex", padding: "3px 10px", borderRadius: 100,
+      display: "inline-flex", padding: "4px 12px", borderRadius: 100,
       fontSize: 11, fontWeight: 700,
-      // Solid fill + white text so it stays legible over any card photo
-      // (the faint tinted version vanished against the images).
-      background: "rgba(230,57,70,0.92)", color: "#fff",
-      border: "1px solid rgba(255,107,116,0.55)",
-      backdropFilter: "blur(4px)",
-      boxShadow: "0 1px 6px rgba(0,0,0,0.3)",
+      background: "rgba(255,255,255,0.15)", color: "#fff",
+      border: "1px solid rgba(255,255,255,0.3)",
+      backdropFilter: "blur(12px)",
     }}>
       {sport}
     </span>
@@ -115,11 +106,11 @@ export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string; border: string }> = {
     pending:   { bg: "rgba(234,179,8,0.08)",  color: "#fbbf24", border: "rgba(234,179,8,0.2)"  },
     approved:  { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
-    rejected:  { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
+    rejected:  { bg: "rgba(255,255,255,0.08)",  color: "#fff", border: "rgba(255,255,255,0.2)"  },
     confirmed: { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
-    cancelled: { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
+    cancelled: { bg: "rgba(255,255,255,0.08)",  color: "#fff", border: "rgba(255,255,255,0.2)"  },
     open:      { bg: "rgba(34,197,94,0.08)",  color: "#4ade80", border: "rgba(34,197,94,0.2)"  },
-    full:      { bg: "rgba(239,68,68,0.08)",  color: "#f87171", border: "rgba(239,68,68,0.2)"  },
+    full:      { bg: "rgba(255,255,255,0.08)",  color: "#fff", border: "rgba(255,255,255,0.2)"  },
     completed: { bg: "rgba(96,165,250,0.08)", color: "#60a5fa", border: "rgba(96,165,250,0.2)" },
   };
   const s = map[status] ?? { bg: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "rgba(255,255,255,0.08)" };
@@ -160,7 +151,7 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-            <Sparkles size={14} color="#e63946" />
+            <Sparkles size={14} color="#fff" />
           </motion.div>
           <span style={{ fontSize: 13, color: "#52525b" }}>Finding the best matches for you…</span>
         </div>
@@ -183,12 +174,12 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
       style={{ marginBottom: 32 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Sparkles size={14} color="#e63946" />
+        <Sparkles size={14} color="#fff" />
         <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Recommended for you</span>
         <span style={{
           fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 100,
-          background: "rgba(230,57,70,0.08)", color: "#e63946",
-          border: "1px solid rgba(230,57,70,0.18)", letterSpacing: "0.05em",
+          background: "rgba(255,255,255,0.08)", color: "#fff",
+          border: "1px solid rgba(255,255,255,0.18)", letterSpacing: "0.05em",
         }}>
           {data.poweredBy === "claude" ? "✦ Claude AI" : "Smart picks"}
         </span>
@@ -213,12 +204,12 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
               >
                 <Link href={href} style={{ textDecoration: "none" }}>
                   <motion.div
-                    whileHover={{ borderColor: "rgba(230,57,70,0.35)", y: -2 }}
+                    whileHover={{ borderColor: "rgba(255,255,255,0.35)", y: -2 }}
                     style={{
                       display: "flex", alignItems: "center", gap: 12,
                       padding: "12px 14px", borderRadius: 13,
                       background: "rgba(255,255,255,0.02)",
-                      border: "1px solid rgba(230,57,70,0.12)",
+                      border: "1px solid rgba(255,255,255,0.12)",
                       cursor: "pointer",
                       transition: "border-color 0.2s",
                     }}
@@ -227,7 +218,7 @@ export function AIBanner({ type }: { type: "games" | "coaches" }) {
                       <Img src={img} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#e63946", marginBottom: 2, letterSpacing: "0.04em" }}>{sport}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#fff", marginBottom: 2, letterSpacing: "0.04em" }}>{sport}</div>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</p>
                       <p style={{ fontSize: 11, color: "#52525b", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{reason}</p>
                     </div>
@@ -258,8 +249,8 @@ export function SectionHeader({
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "5px 13px", borderRadius: 100,
-          background: "rgba(230,57,70,0.07)", border: "1px solid rgba(230,57,70,0.18)",
-          fontSize: 11, fontWeight: 700, color: "#e63946",
+          background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)",
+          fontSize: 11, fontWeight: 700, color: "#fff",
           marginBottom: 16, letterSpacing: "0.06em",
           textTransform: "uppercase",
         }}>

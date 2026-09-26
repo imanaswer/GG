@@ -18,7 +18,7 @@ function passwordStrength(pw: string): { label: string; pct: number; color: stri
   if (/\d/.test(pw))   score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const map = [
-    { label: "Too short", pct: 15, color: "#ef4444" },
+    { label: "Too short", pct: 15, color: "#fff" },
     { label: "Weak",      pct: 30, color: "#f97316" },
     { label: "Fair",      pct: 55, color: "#f59e0b" },
     { label: "Good",      pct: 80, color: "#84cc16" },
@@ -95,8 +95,8 @@ function ResetForm() {
 
           {!token ? (
             <div className="sent-container">
-              <div data-a className="sent-icon-wrapper" style={{ background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.2)" }}>
-                <AlertCircle size={32} color="#ef4444" strokeWidth={2} />
+              <div data-a className="sent-icon-wrapper" style={{ background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)" }}>
+                <AlertCircle size={32} color="#fff" strokeWidth={2} />
               </div>
               <h1 data-a className="reg-title" style={{ textAlign: "center", marginBottom: 16 }}>
                 Invalid reset link
@@ -115,7 +115,7 @@ function ResetForm() {
             <>
               <div data-a className="reg-header">
                 <div className="icon-badge">
-                  <Lock size={22} color="#e63946" />
+                  <Lock size={22} color="#fff" />
                 </div>
                 <h1 className="reg-title" style={{ fontSize: 32 }}>New password</h1>
                 <p className="reg-subtitle">
@@ -154,7 +154,7 @@ function ResetForm() {
 
                 <div data-a className="reg-field">
                   <Label>Confirm password</Label>
-                  <div className="input-wrapper" style={{ borderColor: pw2 && !match ? "rgba(239,68,68,0.5)" : undefined }}>
+                  <div className="input-wrapper" style={{ borderColor: pw2 && !match ? "rgba(255,255,255,0.5)" : undefined }}>
                     <Input
                       type="password"
                       placeholder="Repeat your password"
@@ -164,7 +164,7 @@ function ResetForm() {
                     />
                   </div>
                   {pw2 && !match && (
-                    <div style={{ fontSize: 13, color: "#ef4444", marginTop: 4, fontWeight: 500 }}>Passwords don&apos;t match</div>
+                    <div style={{ fontSize: 13, color: "#fff", marginTop: 4, fontWeight: 500 }}>Passwords don&apos;t match</div>
                   )}
                 </div>
 
@@ -200,7 +200,7 @@ function ResetForm() {
           position: absolute; border-radius: 50%; filter: blur(80px); z-index: 1; pointer-events: none;
         }
         .orb-1 {
-          width: 400px; height: 400px; background: rgba(230, 57, 70, 0.4);
+          width: 400px; height: 400px; background: rgba(255,255,255, 0.4);
           top: -10%; left: -10%; animation: float 8s ease-in-out infinite alternate;
         }
         .orb-2 {
@@ -226,12 +226,12 @@ function ResetForm() {
         }
         .reg-card-glow {
           position: absolute; top: 0; left: 0; right: 0; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent); opacity: 0.6;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent); opacity: 0.6;
         }
 
         .icon-badge {
           width: 48px; height: 48px; border-radius: 14px;
-          background: rgba(230,57,70,0.1); border: 1px solid rgba(230,57,70,0.25);
+          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
           display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
         }
 
@@ -251,8 +251,8 @@ function ResetForm() {
           border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease;
         }
         .input-wrapper:focus-within {
-          background: rgba(255,255,255,0.06); border-color: rgba(230,57,70,0.5);
-          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
+          background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.5);
+          box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
         }
         .input-wrapper input {
           background: transparent !important; border: none !important; box-shadow: none !important;
@@ -273,10 +273,10 @@ function ResetForm() {
         .reg-submit {
           width: 100%; height: 56px; border-radius: 16px; font-size: 16px; font-weight: 700;
           color: #fff; border: none; cursor: pointer; position: relative; overflow: hidden;
-          background: #e63946; box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
+          background: #fff; box-shadow: 0 10px 30px -10px rgba(255,255,255,0.6);
         }
         .reg-submit-bg {
-          position: absolute; inset: 0; background: linear-gradient(135deg, #ff4d5d, #b91c2d); transition: opacity 0.3s ease;
+          position: absolute; inset: 0; background: linear-gradient(135deg, #ff4d5d, #fff); transition: opacity 0.3s ease;
         }
         .reg-submit:hover .reg-submit-bg { opacity: 0.8; }
         .reg-submit-text { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }

@@ -5,7 +5,7 @@ import { StatCard }   from "@/components/admin/StatCard";
 import { Badge }      from "@/components/admin/Badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { IndianRupee, AlertTriangle, Inbox as InboxIcon, ExternalLink } from "lucide-react";
+import { IndianRupee, AlertTriangle, Inbox as InboxIcon, ExternalLink, CheckCircle2 } from "lucide-react";
 
 type RefundDue = { id:string; amount:number; currency:string; entityType:string; entityName:string; userName:string; userEmail:string; razorpayPaymentId:string|null; since:string; ageDays:number };
 type Orphan    = { id:string; amount:number; entityType:string; entityName:string; razorpayPaymentId:string|null; capturedAt:string|null; ageDays:number };
@@ -15,35 +15,30 @@ type Inbox = {
   totals: { refundsDue:number; refundsDuePaise:number; orphanedCharges:number; needsAction:number };
 };
 
-const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+const rupees = (paise: number) => `₹\u2009${Math.round(paise / 100).toLocaleString("en-IN")}`;
 const age = (d: number) => d === 0 ? "today" : d === 1 ? "1 day" : `${d} days`;
 
-const card: React.CSSProperties = { background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden", marginBottom: 22 };
-const th: React.CSSProperties = { padding: "10px 14px", fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", whiteSpace: "nowrap" };
-const td: React.CSSProperties = { padding: "12px 14px", fontSize: 13, color: "#d1d5db", borderTop: "1px solid rgba(255,255,255,0.05)", verticalAlign: "middle" };
-const btn = (danger = false): React.CSSProperties => ({
-  padding: "5px 11px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-  border: "1px solid", background: "transparent",
-  color: danger ? "#f87171" : "#60a5fa", borderColor: danger ? "rgba(248,113,113,0.35)" : "rgba(96,165,250,0.35)",
-});
+const primaryBtn: React.CSSProperties = { padding: "8px 16px", borderRadius: 100, border: "none", background: "#fff", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const ghostBtn: React.CSSProperties = { padding: "8px 16px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#d1d5db", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const actionBtn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 100, border: "1px solid rgba(96, 165, 250, 0.4)", background: "rgba(96, 165, 250, 0.1)", color: "#60a5fa", fontSize: 12, fontWeight: 700, cursor: "pointer" };
 
 function Section({ title, hint, count, children }: { title: string; hint: string; count: number; children: React.ReactNode }) {
   return (
-    <div style={card}>
-      <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{title}</span>
-          <span style={{ fontSize: 12, color: count > 0 ? "#eab308" : "#4b5563", fontWeight: 700 }}>{count}</span>
-        </div>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>{hint}</p>
+    <div style={{ marginBottom: 48 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, padding: "0 8px" }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>{title}</h2>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 100, background: count > 0 ? "rgba(234,179,8,0.15)" : "rgba(255,255,255,0.05)", color: count > 0 ? "#eab308" : "#9ca3af" }}>{count} ITEMS</span>
       </div>
-      <div style={{ overflowX: "auto" }}>{children}</div>
+      <p style={{ margin: "0 8px 20px", fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{hint}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {children}
+      </div>
     </div>
   );
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p style={{ padding: "18px 16px", margin: 0, fontSize: 13, color: "#4b5563" }}>{children}</p>;
+  return <div style={{ padding: "40px 24px", textAlign: "center", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, color: "rgba(255,255,255,0.4)", fontSize: 13 }}>{children}</div>;
 }
 
 export default function AdminInbox() {
@@ -76,16 +71,16 @@ export default function AdminInbox() {
   return (
     <AdminGuard>
       <AdminShell>
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>Inbox</h1>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0" }}>
+        <div style={{ marginBottom: 40, padding: "0 8px" }}>
+          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 42, fontWeight: 400, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>Inbox</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: "8px 0 0", letterSpacing: "0.02em" }}>
             Everything waiting on a human. Derived from live state, so it is right even if an alert never arrived.
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 22 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 48 }}>
           <StatCard value={rupees(t?.refundsDuePaise ?? 0)} label="Money we owe" sub={`${t?.refundsDue ?? 0} refunds due`} icon={IndianRupee} color="#fb923c" />
-          <StatCard value={String(t?.orphanedCharges ?? 0)} label="Orphaned charges" sub="Paid, nothing granted" icon={AlertTriangle} color={t?.orphanedCharges ? "#f87171" : undefined} />
+          <StatCard value={String(t?.orphanedCharges ?? 0)} label="Orphaned charges" sub="Paid, nothing granted" icon={AlertTriangle} color={t?.orphanedCharges ? "#fff" : undefined} />
           <StatCard value={String(t?.needsAction ?? 0)} label="Needs action" sub="Unresolved items" icon={InboxIcon} />
         </div>
 
@@ -96,24 +91,30 @@ export default function AdminInbox() {
           hint="Cancelled and paid. The seat is back on sale; the money is not. Refund in Razorpay using the payment id, then close it out on the booking row."
         >
           {data && data.refundsDue.length === 0
-            ? <Empty>Nothing owed. </Empty>
+            ? <Empty>Nothing owed. Everything is settled.</Empty>
             : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr style={{ background: "#111" }}>
-                  <th style={th}>Waiting</th><th style={th}>Amount</th><th style={th}>Who</th><th style={th}>What</th><th style={th}>Razorpay payment id</th>
-                </tr></thead>
-                <tbody>
-                  {data?.refundsDue.map(r => (
-                    <tr key={r.id}>
-                      <td style={{ ...td, color: r.ageDays >= 7 ? "#f87171" : "#d1d5db", fontWeight: r.ageDays >= 7 ? 700 : 400 }}>{age(r.ageDays)}</td>
-                      <td style={{ ...td, fontWeight: 700, color: "#fff" }}>{rupees(r.amount)}</td>
-                      <td style={td}>{r.userName}<div style={{ fontSize: 11, color: "#6b7280" }}>{r.userEmail}</div></td>
-                      <td style={td}><Badge status={r.entityType} /> <span style={{ marginLeft: 6 }}>{r.entityName}</span></td>
-                      <td style={{ ...td, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, color: "#9ca3af" }}>{r.razorpayPaymentId ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {data?.refundsDue.map(r => (
+                  <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div style={{ minWidth: 100 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: r.ageDays >= 7 ? "#ef4444" : "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>WAITING</div>
+                      <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(r.ageDays)}</div>
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                        <span style={{ fontSize: 18, fontWeight: 400, fontFamily: "var(--font-serif)", color: "#fff" }}>{rupees(r.amount)}</span>
+                        <Badge status={r.entityType} />
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{r.entityName}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                        <span>{r.userName} · {r.userEmail}</span>
+                        <span>ID: {r.razorpayPaymentId ?? "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
         </Section>
 
@@ -124,22 +125,28 @@ export default function AdminInbox() {
           {data && data.orphanedCharges.length === 0
             ? <Empty>None. Every capture reached a booking.</Empty>
             : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr style={{ background: "#111" }}>
-                  <th style={th}>Captured</th><th style={th}>Amount</th><th style={th}>What</th><th style={th}>Razorpay payment id</th><th style={th}>Order</th>
-                </tr></thead>
-                <tbody>
-                  {data?.orphanedCharges.map(o => (
-                    <tr key={o.id}>
-                      <td style={{ ...td, color: "#f87171", fontWeight: 700 }}>{age(o.ageDays)} ago</td>
-                      <td style={{ ...td, fontWeight: 700, color: "#fff" }}>{rupees(o.amount)}</td>
-                      <td style={td}><Badge status={o.entityType} /> <span style={{ marginLeft: 6 }}>{o.entityName}</span></td>
-                      <td style={{ ...td, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, color: "#9ca3af" }}>{o.razorpayPaymentId ?? "—"}</td>
-                      <td style={{ ...td, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, color: "#6b7280" }}>{o.id}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                {data?.orphanedCharges.map(o => (
+                  <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div style={{ minWidth: 100 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>CAPTURED</div>
+                      <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(o.ageDays)} ago</div>
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                        <span style={{ fontSize: 18, fontWeight: 400, fontFamily: "var(--font-serif)", color: "#fff" }}>{rupees(o.amount)}</span>
+                        <Badge status={o.entityType} />
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{o.entityName}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                        <span>Order: {o.id}</span>
+                        <span>Razorpay: {o.razorpayPaymentId ?? "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
         </Section>
 
@@ -150,45 +157,48 @@ export default function AdminInbox() {
           {data && data.needsAction.length === 0
             ? <Empty>Clear. Nothing is waiting.</Empty>
             : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr style={{ background: "#111" }}>
-                  <th style={th}>Waiting</th><th style={th}>Item</th><th style={th}>Handled by</th><th style={{ ...th, textAlign: "right" }}>Actions</th>
-                </tr></thead>
-                <tbody>
-                  {data?.needsAction.map(a => (
-                    <tr key={a.id}>
-                      <td style={{ ...td, color: a.ageDays >= 2 ? "#eab308" : "#d1d5db" }}>{age(a.ageDays)}</td>
-                      <td style={td}>
-                        <div style={{ color: "#fff", fontWeight: 600 }}>{a.title}</div>
-                        {a.body && <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{a.body}</div>}
-                        {a.undelivered && (
-                          <div style={{ fontSize: 11, color: "#f87171", marginTop: 3 }}>
-                            Alert never delivered — nobody was told about this one.
-                          </div>
-                        )}
+              <>
+                {data?.needsAction.map(a => (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 20, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div style={{ minWidth: 100 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: a.ageDays >= 2 ? "#eab308" : "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>WAITING</div>
+                      <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(a.ageDays)}</div>
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{a.title}</div>
+                      {a.body && <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>{a.body}</div>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
                         {a.link && (
-                          <a href={a.link} style={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                            Open <ExternalLink size={11} />
+                          <a href={a.link} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#60a5fa", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            Open details <ExternalLink size={12} />
                           </a>
                         )}
-                      </td>
-                      <td style={td}>
-                        {a.claimedByName
-                          ? <span style={{ color: a.claimStale ? "#eab308" : "#9ca3af" }}>
-                              {a.claimedByName}{a.claimStale && <span style={{ fontSize: 11 }}> · stale, can be taken</span>}
-                            </span>
-                          : <span style={{ color: "#4b5563" }}>—</span>}
-                      </td>
-                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
-                        {a.claimedById
-                          ? <button style={btn()} onClick={() => act.mutate({ id: a.id, action: "unclaim" })}>Release</button>
-                          : <button style={btn()} onClick={() => act.mutate({ id: a.id, action: "claim" })}>Claim</button>}
-                        <button style={{ ...btn(true), marginLeft: 8 }} onClick={() => act.mutate({ id: a.id, action: "resolve" })}>Done</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        {a.undelivered && (
+                          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "2px 8px", borderRadius: 100 }}>Alert undelivered</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div style={{ minWidth: 140, padding: "0 20px", borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>HANDLED BY</div>
+                      {a.claimedByName
+                        ? <div style={{ fontSize: 13, color: a.claimStale ? "#eab308" : "#fff", fontWeight: 700 }}>
+                            {a.claimedByName}
+                            {a.claimStale && <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.1em" }}>Stale</div>}
+                          </div>
+                        : <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Unassigned</div>}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, paddingLeft: 12 }}>
+                      {a.claimedById
+                        ? <button style={ghostBtn} onClick={() => act.mutate({ id: a.id, action: "unclaim" })}>Release</button>
+                        : <button style={primaryBtn} onClick={() => act.mutate({ id: a.id, action: "claim" })}>Claim</button>}
+                      <button style={actionBtn} onClick={() => act.mutate({ id: a.id, action: "resolve" })}><CheckCircle2 size={14}/> Done</button>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
         </Section>
       </AdminShell>

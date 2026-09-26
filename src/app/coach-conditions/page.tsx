@@ -31,9 +31,9 @@ export default function CoachConditions() {
           <p style={{ fontSize: 13, color: "#6b7280" }}>The specific financial terms and operational rules of your partnership with Game Ground. Applies to all coaches and academies onboarded in Kozhikode, Kerala and beyond.</p>
         </div>
 
-        <div style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.18)", borderRadius: 12, padding: "16px 20px", marginBottom: 36 }}>
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: "16px 20px", marginBottom: 36 }}>
           <p style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.8, margin: 0 }}>
-            <strong style={{ color: "#fff" }}>Important notice to the partner:</strong> This document sets out the specific financial terms of your partnership with Game Ground. By signing your individual contract, you also confirm that you have read and agreed to the complete platform rules below, which can be viewed online at any time at <a href="https://gameground.net/coach-conditions" style={{ color: "#e63946" }}>gameground.net/coach-conditions</a>.
+            <strong style={{ color: "#fff" }}>Important notice to the partner:</strong> This document sets out the specific financial terms of your partnership with Game Ground. By signing your individual contract, you also confirm that you have read and agreed to the complete platform rules below, which can be viewed online at any time at <a href="https://gameground.net/coach-conditions" style={{ color: "#fff", textDecoration: "underline" }}>gameground.net/coach-conditions</a>.
           </p>
         </div>
 
@@ -63,11 +63,11 @@ export default function CoachConditions() {
         </Section>
 
         <Section title="5. Contact">
-          <p>For questions about these conditions, contact us at <a href="mailto:hello@gameground.net" style={{ color: "#e63946" }}>hello@gameground.net</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
+          <p>For questions about these conditions, contact us at <a href="mailto:hello@gameground.net" style={{ color: "#fff", textDecoration: "underline" }}>hello@gameground.net</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
         </Section>
 
         <p style={{ fontSize: 13, color: "#4b5563", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 24, marginTop: 8 }}>
-          Also read our <Link href="/terms" style={{ color: "#e63946", textDecoration: "none", fontWeight: 600 }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: "#e63946", textDecoration: "none", fontWeight: 600 }}>Privacy Policy</Link>
+          Also read our <Link href="/terms" style={{ color: "#fff", textDecoration: "underline", fontWeight: 600 }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: "#fff", textDecoration: "underline", fontWeight: 600 }}>Privacy Policy</Link>
         </p>
       </main>
     </div>

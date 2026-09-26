@@ -30,7 +30,7 @@ export function BulkActionBar({
             height: 34, padding: "0 14px", borderRadius: 8, fontSize: 12.5, fontWeight: 700,
             fontFamily: "inherit", cursor: pending ? "wait" : "pointer", border: "none",
             background: a.danger ? "rgba(239,68,68,0.15)" : "#4ade80",
-            color: a.danger ? "#f87171" : "#000",
+            color: a.danger ? "#ef4444" : "#000",
           }}>{pending === a.action ? "Working…" : a.label}</button>
         ))}
       </div>

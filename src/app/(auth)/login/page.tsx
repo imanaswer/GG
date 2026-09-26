@@ -54,31 +54,17 @@ function LoginForm() {
     const err = await login(email, pw);
     setLoading(false);
     if (err) { toast.error(err); return; }
-    toast.success("Welcome back");
+    toast.success("Welcome back to the Arena", {
+      description: "You have successfully signed in.",
+      icon: "⚡",
+      style: { border: "1px solid rgba(255, 255, 255, 0.2)", background: "#111", color: "#fff" }
+    });
     router.push(redirect);
   };
 
 
   return (
-    <div className="reg-page">
-      {/* Background image — sport theme */}
-      <div className="reg-bg">
-        <Image
-          src={HERO_BACKDROPS[1].src} // Basketball court at night for login
-          alt={HERO_BACKDROPS[1].alt}
-          fill
-          priority
-          quality={90}
-          sizes="100vw"
-          style={{ objectFit: "cover" }}
-        />
-        <div className="reg-bg-overlay" />
-      </div>
-
-      {/* Decorative Orbs for Glassmorphism pop */}
-      <div className="reg-orb orb-1" />
-      <div className="reg-orb orb-2" />
-
+    <div className="reg-page noise">
       {/* Logo */}
       <Link href="/" className="reg-logo">
         <img src="/logo2.png" alt="Game Ground" className="reg-logo-icon" />
@@ -87,7 +73,6 @@ function LoginForm() {
       {/* Centered card */}
       <div className="reg-center">
         <div ref={cardRef} className="reg-card">
-          <div className="reg-card-glow" />
           
           {/* Header */}
           <div data-a className="reg-header">
@@ -110,7 +95,7 @@ function LoginForm() {
             <div data-a className="reg-field">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Label>Password</Label>
-                <Link href="/forgot-password" style={{ fontSize: 13, color: "#a1a1aa", textDecoration: "none", fontWeight: 500, marginRight: 4 }}>
+                <Link href="/forgot-password" style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textDecoration: "none", fontWeight: 600 }}>
                   Forgot?
                 </Link>
               </div>
@@ -129,11 +114,10 @@ function LoginForm() {
               </div>
             </div>
 
-            <div data-a style={{ marginTop: 8 }}>
+            <div data-a>
               <button type="submit" disabled={loading} className="reg-submit">
-                <div className="reg-submit-bg" />
                 <span className="reg-submit-text">
-                  {loading ? "Signing in…" : (<>Sign in <ArrowRight size={18} /></>)}
+                  {loading ? "Signing in…" : (<>Sign in <ArrowRight size={16} /></>)}
                 </span>
               </button>
             </div>
@@ -151,8 +135,6 @@ function LoginForm() {
             </div>
           </div>
 
-
-
           <p data-a className="reg-legal">
             By signing in you agree to our{" "}
             <Link href="/terms" className="reg-legal-link">Terms</Link> &{" "}
@@ -169,209 +151,136 @@ function LoginForm() {
           align-items: center;
           justify-content: center;
           background: #000;
+          color: #fff;
           overflow: hidden;
           font-family: var(--font-sans), sans-serif;
         }
-        .reg-bg {
-          position: absolute; inset: 0; z-index: 0;
-        }
-        .reg-bg-overlay {
-          position: absolute; inset: 0;
-          background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.85) 100%);
-          backdrop-filter: blur(8px);
-        }
         
-        .reg-orb {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(80px);
-          z-index: 1;
-          pointer-events: none;
-        }
-        .orb-1 {
-          width: 400px; height: 400px;
-          background: rgba(230, 57, 70, 0.4);
-          top: -10%; left: -10%;
-          animation: float 8s ease-in-out infinite alternate;
-        }
-        .orb-2 {
-          width: 500px; height: 500px;
-          background: rgba(255, 107, 53, 0.2);
-          bottom: -20%; right: -10%;
-          animation: float 10s ease-in-out infinite alternate-reverse;
-        }
-        @keyframes float {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(30px, 50px); }
-        }
-
         .reg-logo {
-          position: absolute; top: 32px; left: 40px; z-index: 20;
-          transition: transform 0.3s ease;
+          position: absolute; top: 40px; left: 40px; z-index: 20;
+          transition: opacity 0.2s ease;
         }
-        .reg-logo:hover {
-          transform: scale(1.05);
-        }
+        .reg-logo:hover { opacity: 0.7; }
         .reg-logo-icon {
-          height: 40px; width: auto; display: block;
+          height: 32px; width: auto; display: block; filter: brightness(0) invert(1);
         }
 
         .reg-center {
           position: relative; z-index: 10;
           width: 100%; max-width: 440px;
-          padding: 20px;
+          padding: 24px;
         }
+        
         .reg-card {
-          position: relative;
-          background: rgba(20, 20, 20, 0.6);
-          backdrop-filter: blur(30px) saturate(150%);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 28px;
-          padding: 44px 40px;
-          box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
-          overflow: hidden;
-        }
-        .reg-card-glow {
-          position: absolute; top: 0; left: 0; right: 0; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(230,57,70,0.8), transparent);
-          opacity: 0.6;
+          width: 100%;
         }
 
-        .reg-header { margin-bottom: 32px; text-align: left; }
+        .reg-header { margin-bottom: 40px; text-align: left; }
         .reg-title {
           font-family: var(--font-serif);
-          font-size: 38px; font-weight: 500; color: #fff;
-          letter-spacing: -0.04em; margin-bottom: 8px;
-          line-height: 1.1;
+          font-size: 56px; font-weight: 400; color: #fff;
+          letter-spacing: -0.03em; margin-bottom: 12px;
+          line-height: 1;
         }
-        .reg-subtitle { font-size: 15px; color: #a1a1aa; }
+        .reg-subtitle { font-size: 16px; color: rgba(255,255,255,0.5); }
         .reg-link {
-          color: #e63946; font-weight: 600; text-decoration: none;
-          transition: color 0.2s ease;
+          color: #fff; font-weight: 600; text-decoration: none;
+          border-bottom: 1px solid rgba(255,255,255,0.3);
+          transition: border-color 0.2s ease;
         }
-        .reg-link:hover { color: #ff4d5d; }
+        .reg-link:hover { border-color: #fff; }
 
-        .reg-form { display: flex; flex-direction: column; gap: 20px; }
-        .reg-field { display: flex; flex-direction: column; gap: 8px; }
+        .reg-form { display: flex; flex-direction: column; gap: 28px; }
+        .reg-field { display: flex; flex-direction: column; gap: 12px; }
         .reg-field label {
-          font-size: 13px; font-weight: 600; color: #d4d4d8;
-          margin-left: 4px; letter-spacing: 0.02em;
+          font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4);
+          letter-spacing: 0.1em; text-transform: uppercase;
         }
         
         .input-wrapper {
           position: relative;
-          border-radius: 14px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          transition: all 0.3s ease;
-        }
-        .input-wrapper:focus-within {
-          background: rgba(255,255,255,0.06);
-          border-color: rgba(230,57,70,0.5);
-          box-shadow: 0 0 0 4px rgba(230,57,70,0.1);
         }
         .input-wrapper input {
+          width: 100%;
           background: transparent !important;
           border: none !important;
+          border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+          border-radius: 0 !important;
           box-shadow: none !important;
-          height: 52px;
-          font-size: 15px;
+          height: 40px;
+          font-size: 16px;
           color: #fff;
+          padding: 0;
+          transition: border-color 0.3s;
         }
-        .input-wrapper input::placeholder { color: #52525b; }
+        .input-wrapper input:focus {
+          border-bottom-color: #fff !important;
+          outline: none;
+        }
+        .input-wrapper input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; }
 
         .reg-eye {
-          position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-          color: #71717a; background: none; border: none;
-          cursor: pointer; padding: 8px; border-radius: 8px;
-          transition: all 0.2s ease;
+          position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+          color: rgba(255,255,255,0.3); background: none; border: none;
+          cursor: pointer; padding: 4px;
+          transition: color 0.2s ease;
         }
-        .reg-eye:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .reg-eye:hover { color: #fff; }
 
         .reg-submit {
-          width: 100%; height: 56px; border-radius: 16px;
-          font-size: 16px; font-weight: 700; font-family: inherit;
-          color: #fff; border: none; cursor: pointer;
-          position: relative; overflow: hidden;
-          background: #e63946;
-          box-shadow: 0 10px 30px -10px rgba(230,57,70,0.6);
+          width: 100%; height: 56px; border-radius: 100px;
+          font-size: 13px; font-weight: 700; font-family: inherit;
+          color: #000; border: none; cursor: pointer;
+          background: #fff;
+          margin-top: 12px;
+          text-transform: uppercase; letter-spacing: 0.05em;
+          transition: transform 0.2s, box-shadow 0.2s;
         }
-        .reg-submit-bg {
-          position: absolute; inset: 0;
-          background: linear-gradient(135deg, #ff4d5d, #b91c2d);
-          transition: opacity 0.3s ease;
-        }
-        .reg-submit:hover .reg-submit-bg { opacity: 0.8; }
-        .reg-submit-text {
-          position: relative; z-index: 1;
-          display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .reg-submit:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(255,255,255,0.15); }
+        .reg-submit-text { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .reg-divider {
-          display: flex; align-items: center; gap: 12px;
-          margin: 28px 0;
+          display: flex; align-items: center; gap: 16px;
+          margin: 36px 0;
         }
-        .reg-divider .line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+        .reg-divider .line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
         .reg-divider .text {
-          font-size: 12px; font-weight: 600; text-transform: uppercase;
-          letter-spacing: 0.1em; color: #71717a;
+          font-size: 11px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.1em; color: rgba(255,255,255,0.3);
         }
 
         .google-btn-wrapper {
-          border-radius: 16px; overflow: hidden;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 100px; overflow: hidden;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.2);
           transition: all 0.3s ease;
         }
         .google-btn-wrapper:hover {
-          background: rgba(255,255,255,0.06);
-          border-color: rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05);
+          border-color: rgba(255,255,255,0.4);
         }
         .google-btn-wrapper button {
-          height: 54px !important;
+          height: 56px !important;
           background: transparent !important;
           border: none !important;
+          width: 100%;
         }
-
-        .demo-btn {
-          width: 100%; height: 54px; border-radius: 16px;
-          font-size: 15px; font-weight: 600; font-family: inherit;
-          color: #d4d4d8; border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.02); cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 10px;
-          transition: all 0.3s ease;
+        .google-btn-wrapper button span {
+          color: #fff !important; font-weight: 600 !important;
         }
-        .demo-btn:hover {
-          background: rgba(230,57,70,0.08);
-          border-color: rgba(230,57,70,0.3);
-          color: #fff;
-        }
-        .demo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .reg-legal {
-          margin-top: 32px; font-size: 13px; color: #71717a;
+          margin-top: 48px; font-size: 12px; color: rgba(255,255,255,0.3);
           text-align: center; line-height: 1.6;
         }
-        .reg-legal-link { color: #a1a1aa; text-decoration: none; font-weight: 500; transition: color 0.2s; }
-        .reg-legal-link:hover { color: #fff; text-decoration: underline; }
+        .reg-legal-link { color: rgba(255,255,255,0.5); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: color 0.2s, border-color 0.2s; }
+        .reg-legal-link:hover { color: #fff; border-color: #fff; }
 
-        @media (max-width: 580px) {
-          .reg-page {
-            flex-direction: column;
-            justify-content: flex-start;
-            padding-top: 24px;
-            overflow-y: auto;
-          }
-          .reg-logo {
-            position: relative;
-            top: 0; left: 0;
-            margin-bottom: 8px;
-            align-self: center;
-          }
-          .reg-center { padding: 16px; margin-bottom: 24px; }
-          .reg-card { padding: 36px 24px; border-radius: 24px; }
-          .reg-title { font-size: 32px; }
+        @media (max-width: 600px) {
+          .reg-page { padding-top: 80px; align-items: flex-start; }
+          .reg-logo { top: 24px; left: 24px; }
+          .reg-title { font-size: 44px; }
         }
       `}</style>
     </div>

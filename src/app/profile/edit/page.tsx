@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, AlertTriangle, Save, User, MapPin, Trophy, Loader2, Image as ImageIcon, Check, Upload } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Loader2, Check, Upload, ArrowRight } from "lucide-react";
 import { PremiumNav } from "@/components/premium/PremiumNav";
 import { Input, Label, Textarea } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
@@ -57,7 +57,7 @@ export default function EditProfile() {
       <div style={{ minHeight: "100vh", background: "#050505" }}>
         <PremiumNav />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 160 }}>
-          <Loader2 size={26} color="#e63946" style={{ animation: "spin 1s linear infinite" }} />
+          <Loader2 size={22} color="rgba(255,255,255,0.3)" style={{ animation: "spin 1s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       </div>
@@ -109,105 +109,107 @@ export default function EditProfile() {
   return (
     <div style={{ minHeight: "100vh", background: "#050505" }}>
       <PremiumNav />
-      <main style={{ paddingTop: 96, paddingBottom: 80 }}>
-        <div className="container-lg" style={{ maxWidth: 780 }}>
+      <main style={{ paddingTop: 120, paddingBottom: 100 }}>
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "0 24px" }}>
 
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
-            <Link href={`/profile/${user!.id}`} aria-label="Back" style={{
-              width: 40, height: 40, borderRadius: 12,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none", color: "rgba(255,255,255,0.65)",
-              transition: "all 160ms ease",
+          <div style={{ marginBottom: 56 }}>
+            <Link href={`/profile/${user!.id}`} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              fontSize: 13, color: "rgba(255,255,255,0.4)",
+              textDecoration: "none", marginBottom: 20,
+              transition: "color 200ms ease",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(230,57,70,0.08)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; }}
             >
-              <ArrowLeft size={17} />
+              <ArrowLeft size={14} /> Back to profile
             </Link>
-            <div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 600, marginBottom: 4 }}>Settings</div>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Edit profile</h1>
-            </div>
+            <h1 style={{
+              fontSize: "clamp(36px, 6vw, 56px)",
+              fontFamily: "var(--font-serif)",
+              fontWeight: 400,
+              letterSpacing: "-0.03em",
+              lineHeight: 1,
+              color: "#fff",
+              margin: 0,
+              textTransform: "uppercase",
+            }}>
+              Edit Profile
+            </h1>
           </div>
 
-          {/* Avatar picker */}
-          <SectionCard Icon={ImageIcon} title="Avatar" hint="Pick a profile picture. Leave unset to show your initials.">
-            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+          {/* ── Avatar ── */}
+          <Section label="Avatar">
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 20 }}>
               <div style={{
-                width: 72, height: 72, borderRadius: "50%",
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+                width: 80, height: 80, borderRadius: "50%",
+                background: "#111",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontSize: 26, fontWeight: 800,
+                color: "#fff", fontSize: 28, fontWeight: 800,
                 overflow: "hidden",
-                border: "2px solid rgba(255,255,255,0.08)",
-                flexShrink: 0,
+                border: "2px solid rgba(255,255,255,0.1)",
+                flexShrink: 0, fontFamily: "var(--font-serif)",
               }}>
                 {profile.avatarUrl ? (
-                  <Image src={profile.avatarUrl} alt="Current avatar" width={72} height={72} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <Image src={profile.avatarUrl} alt="Current avatar" width={80} height={80} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   (profile.name?.[0] ?? "?").toUpperCase()
                 )}
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", flex: 1, minWidth: 200 }}>
-                {profile.avatarUrl
-                  ? "Upload your own photo, pick a preset below, or use initials."
-                  : "Showing your initials. Upload a photo or pick a preset below."}
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                style={{ display: "none" }}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) uploadAvatar(file);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                style={{
-                  padding: "8px 14px", borderRadius: 100,
-                  fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-                  background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                  color: "#fff",
-                  border: "none",
-                  cursor: uploading ? "not-allowed" : "pointer",
-                  opacity: uploading ? 0.6 : 1,
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                }}
-              >
-                {uploading
-                  ? <><Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</>
-                  : <><Upload size={13} /> Upload photo</>}
-              </button>
-              {profile.avatarUrl && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: "none" }}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadAvatar(file);
+                    e.target.value = "";
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => set("avatarUrl", "")}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
                   style={{
-                    padding: "8px 14px", borderRadius: 100,
-                    fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "rgba(255,255,255,0.7)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    cursor: "pointer",
+                    padding: "10px 18px", borderRadius: 6,
+                    fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                    background: "#fff",
+                    color: "#050505",
+                    border: "none",
+                    cursor: uploading ? "not-allowed" : "pointer",
+                    opacity: uploading ? 0.5 : 1,
+                    display: "inline-flex", alignItems: "center", gap: 6,
                   }}
                 >
-                  Use initials
+                  {uploading
+                    ? <><Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</>
+                    : <><Upload size={13} /> Upload photo</>}
                 </button>
-              )}
+                {profile.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => set("avatarUrl", "")}
+                    style={{
+                      padding: "10px 18px", borderRadius: 6,
+                      fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                      background: "transparent",
+                      color: "rgba(255,255,255,0.5)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
             <div style={{
-              marginTop: 18,
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
-              gap: 12,
+              gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))",
+              gap: 10,
             }}>
               {AVATAR_OPTIONS.map(url => {
                 const selected = profile.avatarUrl === url;
@@ -222,12 +224,13 @@ export default function EditProfile() {
                       position: "relative",
                       aspectRatio: "1",
                       borderRadius: "50%",
-                      padding: 3,
-                      background: selected ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
+                      padding: 2,
+                      background: selected ? "#fff" : "transparent",
                       border: selected ? "none" : "1px solid rgba(255,255,255,0.08)",
                       cursor: "pointer",
-                      transition: "transform 160ms",
+                      transition: "transform 160ms, opacity 160ms",
                       fontFamily: "inherit",
+                      opacity: selected ? 1 : 0.6,
                     }}
                     className="avatar-option"
                   >
@@ -236,18 +239,17 @@ export default function EditProfile() {
                       overflow: "hidden", background: "#0d0d0d",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                      <Image src={url} alt="Avatar option" width={72} height={72} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <Image src={url} alt="Avatar option" width={64} height={64} unoptimized style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     {selected && (
                       <span style={{
-                        position: "absolute", bottom: -2, right: -2,
-                        width: 22, height: 22, borderRadius: "50%",
-                        background: "#e63946",
-                        border: "2px solid #0b0b0b",
+                        position: "absolute", bottom: -1, right: -1,
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: "#fff",
+                        border: "2px solid #050505",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#fff",
                       }}>
-                        <Check size={11} strokeWidth={3} />
+                        <Check size={10} strokeWidth={3} color="#050505" />
                       </span>
                     )}
                   </button>
@@ -255,19 +257,19 @@ export default function EditProfile() {
               })}
             </div>
             <style>{`
-              .avatar-option:hover { transform: translateY(-2px); }
+              .avatar-option:hover { transform: translateY(-2px); opacity: 1 !important; }
               @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>
-          </SectionCard>
+          </Section>
 
-          {/* Basic info card */}
-          <SectionCard Icon={User} title="Basic information" hint="This is what other players see on your profile.">
+          {/* ── Basic Info ── */}
+          <Section label="Basic Information">
             <FieldRow label="Full name">
               <Input value={profile.name} onChange={e => set("name", e.target.value)} placeholder="Your full name" />
             </FieldRow>
             <FieldRow label="Username">
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.35)", fontSize: 14 }}>@</span>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.25)", fontSize: 14 }}>@</span>
                 <Input
                   style={{ paddingLeft: 32 }}
                   value={profile.username}
@@ -285,10 +287,10 @@ export default function EditProfile() {
                 maxLength={200}
               />
             </FieldRow>
-          </SectionCard>
+          </Section>
 
-          {/* Contact card */}
-          <SectionCard Icon={MapPin} title="Contact & location">
+          {/* ── Contact ── */}
+          <Section label="Contact & Location">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="two-col">
               <FieldRow label="Location">
                 <Input value={profile.location} onChange={e => set("location", e.target.value)} placeholder="e.g. Kozhikode, Kerala" />
@@ -301,10 +303,10 @@ export default function EditProfile() {
                 />
               </FieldRow>
             </div>
-          </SectionCard>
+          </Section>
 
-          {/* Sports card */}
-          <SectionCard Icon={Trophy} title="Sports I play" hint="Pick everything you'd join a game for — even occasionally.">
+          {/* ── Sports ── */}
+          <Section label="Sports I Play">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {SPORTS.map(s => {
                 const active = profile.sports.includes(s);
@@ -314,18 +316,17 @@ export default function EditProfile() {
                     type="button"
                     onClick={() => toggleSport(s)}
                     style={{
-                      padding: "8px 16px",
+                      padding: "10px 20px",
                       borderRadius: 100,
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: "pointer",
                       border: "1px solid",
                       fontFamily: "inherit",
-                      background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
-                      color: active ? "#fff" : "rgba(255,255,255,0.6)",
-                      borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-                      boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
-                      transition: "all 160ms ease",
+                      background: active ? "#fff" : "transparent",
+                      color: active ? "#050505" : "rgba(255,255,255,0.5)",
+                      borderColor: active ? "#fff" : "rgba(255,255,255,0.1)",
+                      transition: "all 200ms ease",
                     }}
                   >
                     {s}
@@ -333,31 +334,19 @@ export default function EditProfile() {
                 );
               })}
             </div>
-          </SectionCard>
+          </Section>
 
-          {/* Save bar */}
+          {/* ── Save ── */}
           <div style={{
-            display: "flex",
-            gap: 12,
-            padding: "18px 22px",
-            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 100%)",
-            border: "1px solid rgba(230,57,70,0.15)",
-            borderRadius: 18,
-            marginBottom: 24,
-            alignItems: "center",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            paddingTop: 32, paddingBottom: 32,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 48,
           }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 2 }}>Ready to save?</div>
-              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>Changes apply instantly across the app.</div>
-            </div>
             <Link href={`/profile/${user!.id}`} style={{
-              height: 44, padding: "0 20px", borderRadius: 12,
-              background: "rgba(255,255,255,0.04)",
-              color: "rgba(255,255,255,0.75)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              textDecoration: "none",
               fontSize: 13, fontWeight: 600,
-              display: "inline-flex", alignItems: "center",
+              color: "rgba(255,255,255,0.4)",
+              textDecoration: "none",
             }}>
               Cancel
             </Link>
@@ -365,53 +354,51 @@ export default function EditProfile() {
               onClick={save}
               disabled={saving}
               style={{
-                height: 44, padding: "0 22px", borderRadius: 12,
-                fontSize: 13.5, fontWeight: 700,
-                background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
-                color: "#fff", border: "none",
+                height: 48, padding: "0 32px", borderRadius: 6,
+                fontSize: 14, fontWeight: 700,
+                background: "#fff",
+                color: "#050505",
+                border: "none",
                 cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.6 : 1,
+                opacity: saving ? 0.5 : 1,
                 fontFamily: "inherit",
-                display: "inline-flex", alignItems: "center", gap: 7,
-                boxShadow: "0 6px 24px rgba(230,57,70,0.35)",
+                display: "inline-flex", alignItems: "center", gap: 8,
+                letterSpacing: "-0.01em",
               }}
             >
-              <Save size={14} /> {saving ? "Saving…" : "Save changes"}
+              {saving ? "Saving…" : "Save changes"} <ArrowRight size={15} />
             </button>
           </div>
 
-          {/* Danger zone */}
+          {/* ── Danger Zone ── */}
           <div style={{
-            padding: "22px 24px",
-            background: "rgba(239,68,68,0.04)",
-            border: "1px solid rgba(239,68,68,0.22)",
-            borderRadius: 18,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            paddingTop: 32, paddingBottom: 32,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: "rgba(239,68,68,0.12)",
-                border: "1px solid rgba(239,68,68,0.25)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <AlertTriangle size={16} color="#ef4444" />
-              </div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fca5a5" }}>Danger zone</h2>
+            <div style={{
+              fontSize: 11, color: "rgba(255,255,255,0.25)",
+              textTransform: "uppercase", letterSpacing: "0.15em",
+              marginBottom: 16,
+            }}>
+              Danger Zone
             </div>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 18, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20, lineHeight: 1.6 }}>
               Deleting your account is permanent. Your profile, game history and bookings will be removed. Reviews you&apos;ve written will be anonymised.
             </p>
             {!showDelete ? (
               <button
                 onClick={() => setShowDelete(true)}
                 style={{
-                  height: 40, padding: "0 18px", borderRadius: 10,
+                  padding: "10px 20px", borderRadius: 6,
                   fontSize: 13, fontWeight: 600,
                   background: "transparent",
-                  color: "#ef4444",
-                  border: "1px solid rgba(239,68,68,0.4)",
+                  color: "rgba(255,255,255,0.35)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   cursor: "pointer", fontFamily: "inherit",
+                  transition: "color 200ms ease, border-color 200ms ease",
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.25)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.35)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
               >
                 Delete my account
               </button>
@@ -421,13 +408,12 @@ export default function EditProfile() {
                   onClick={deleteAccount}
                   disabled={deleting}
                   style={{
-                    height: 40, padding: "0 18px", borderRadius: 10,
+                    padding: "10px 20px", borderRadius: 6,
                     fontSize: 13, fontWeight: 700,
-                    background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
-                    color: "#fff", border: "none",
+                    background: "#fff",
+                    color: "#050505", border: "none",
                     cursor: deleting ? "not-allowed" : "pointer",
                     fontFamily: "inherit",
-                    boxShadow: "0 6px 20px rgba(239,68,68,0.3)",
                   }}
                 >
                   {deleting ? "Deleting…" : "Yes, delete everything"}
@@ -435,10 +421,10 @@ export default function EditProfile() {
                 <button
                   onClick={() => setShowDelete(false)}
                   style={{
-                    height: 40, padding: "0 18px", borderRadius: 10,
+                    padding: "10px 20px", borderRadius: 6,
                     fontSize: 13, fontWeight: 600,
-                    background: "rgba(255,255,255,0.04)",
-                    color: "rgba(255,255,255,0.7)",
+                    background: "transparent",
+                    color: "rgba(255,255,255,0.5)",
                     border: "1px solid rgba(255,255,255,0.08)",
                     cursor: "pointer", fontFamily: "inherit",
                   }}
@@ -460,35 +446,19 @@ export default function EditProfile() {
   );
 }
 
-function SectionCard({
-  Icon, title, hint, children,
-}: {
-  Icon: typeof User;
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{
-      padding: "24px 26px",
-      background: "#0b0b0b",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: 18,
-      marginBottom: 16,
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      paddingTop: 32,
+      paddingBottom: 32,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hint ? 6 : 20 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: "rgba(230,57,70,0.1)",
-          border: "1px solid rgba(230,57,70,0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon size={15} color="#e63946" />
-        </div>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h2>
-      </div>
-      {hint && <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 18, paddingLeft: 46 }}>{hint}</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+      <div style={{
+        fontSize: 11, color: "rgba(255,255,255,0.35)",
+        textTransform: "uppercase", letterSpacing: "0.15em",
+        marginBottom: 24,
+      }}>{label}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>{children}</div>
     </div>
   );
 }
@@ -498,7 +468,7 @@ function FieldRow({ label, children, hint }: { label: string; children: React.Re
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       <Label>{label}</Label>
       {children}
-      {hint && <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }

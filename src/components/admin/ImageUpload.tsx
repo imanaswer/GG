@@ -102,8 +102,8 @@ export function ImageUpload({
               border: "none",
               cursor: "pointer",
               fontFamily: "inherit",
-              background: mode === "upload" ? "rgba(230,57,70,0.15)" : "transparent",
-              color: mode === "upload" ? "#e63946" : "#6b7280",
+              background: mode === "upload" ? "rgba(255,255,255,0.15)" : "transparent",
+              color: mode === "upload" ? "#fff" : "#6b7280",
             }}
           >
             <Upload size={11} style={{ marginRight: 4, verticalAlign: "-1px" }} />
@@ -120,8 +120,8 @@ export function ImageUpload({
               border: "none",
               cursor: "pointer",
               fontFamily: "inherit",
-              background: mode === "url" ? "rgba(230,57,70,0.15)" : "transparent",
-              color: mode === "url" ? "#e63946" : "#6b7280",
+              background: mode === "url" ? "rgba(255,255,255,0.15)" : "transparent",
+              color: mode === "url" ? "#fff" : "#6b7280",
             }}
           >
             <LinkIcon size={11} style={{ marginRight: 4, verticalAlign: "-1px" }} />
@@ -163,7 +163,7 @@ export function ImageUpload({
               borderRadius: 7,
               background: "rgba(0,0,0,0.7)",
               border: "1px solid rgba(255,255,255,0.15)",
-              color: "#f87171",
+              color: "#fff",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -194,12 +194,12 @@ export function ImageUpload({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             style={{
-              border: `2px dashed ${dragOver ? "#e63946" : "rgba(255,255,255,0.1)"}`,
+              border: `2px dashed ${dragOver ? "#fff" : "rgba(255,255,255,0.1)"}`,
               borderRadius: 10,
               padding: "24px 16px",
               textAlign: "center",
               cursor: uploading ? "wait" : "pointer",
-              background: dragOver ? "rgba(230,57,70,0.05)" : "#0d0d0d",
+              background: dragOver ? "rgba(255,255,255,0.05)" : "#0d0d0d",
               transition: "all 0.15s",
             }}
           >
@@ -209,8 +209,8 @@ export function ImageUpload({
                   style={{
                     width: 28,
                     height: 28,
-                    border: "3px solid rgba(230,57,70,0.2)",
-                    borderTopColor: "#e63946",
+                    border: "3px solid rgba(255,255,255,0.2)",
+                    borderTopColor: "#fff",
                     borderRadius: "50%",
                     animation: "spin 0.8s linear infinite",
                   }}
@@ -225,16 +225,16 @@ export function ImageUpload({
                     width: 40,
                     height: 40,
                     borderRadius: 10,
-                    background: "rgba(230,57,70,0.1)",
+                    background: "rgba(255,255,255,0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <ImageIcon size={20} color="#e63946" />
+                  <ImageIcon size={20} color="#fff" />
                 </div>
                 <p style={{ fontSize: 13, color: "#d1d5db", margin: 0 }}>
-                  <span style={{ color: "#e63946", fontWeight: 700 }}>Click to upload</span> or drag
+                  <span style={{ color: "#fff", fontWeight: 700 }}>Click to upload</span> or drag
                   and drop
                 </p>
                 <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>
@@ -257,7 +257,7 @@ export function ImageUpload({
             color: "#fff",
             background: "#0d0d0d",
             border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8,
+            borderRadius: 12,
             fontFamily: "inherit",
             outline: "none",
             boxSizing: "border-box",
@@ -266,7 +266,7 @@ export function ImageUpload({
       )}
 
       {error && (
-        <p style={{ fontSize: 12, color: "#f87171", marginTop: 6, marginBottom: 0 }}>{error}</p>
+        <p style={{ fontSize: 12, color: "#fff", marginTop: 6, marginBottom: 0 }}>{error}</p>
       )}
 
       {cropFile && aspect && (

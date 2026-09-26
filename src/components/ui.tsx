@@ -14,9 +14,9 @@ type BtnSize    = "sm" | "md" | "lg" | "icon";
 
 const variantBase: Record<BtnVariant, React.CSSProperties> = {
   primary: {
-    background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)",
+    background: "linear-gradient(135deg, #fff 0%, #fff 100%)",
     color: "#fff", border: "none",
-    boxShadow: "0 2px 14px rgba(230,57,70,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+    boxShadow: "0 2px 14px rgba(255,255,255,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
   },
   outline: {
     background: "rgba(255,255,255,0.03)",
@@ -29,9 +29,9 @@ const variantBase: Record<BtnVariant, React.CSSProperties> = {
     border: "none",
   },
   danger: {
-    background: "linear-gradient(135deg, #ef4444 0%, #b91c2d 100%)",
+    background: "linear-gradient(135deg, #fff 0%, #fff 100%)",
     color: "#fff", border: "none",
-    boxShadow: "0 2px 12px rgba(239,68,68,0.25)",
+    boxShadow: "0 2px 12px rgba(255,255,255,0.25)",
   },
   success: {
     background: "linear-gradient(135deg, #22c55e 0%, #15803d 100%)",
@@ -131,8 +131,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       onMouseEnter={hover ? e => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform     = "translateY(-4px)";
-        el.style.borderColor   = "rgba(230,57,70,0.25)";
-        el.style.boxShadow     = "0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(230,57,70,0.1)";
+        el.style.borderColor   = "rgba(255,255,255,0.25)";
+        el.style.boxShadow     = "0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)";
       } : undefined}
       onMouseLeave={hover ? e => {
         const el = e.currentTarget as HTMLDivElement;
@@ -162,9 +162,9 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
         ...style,
       }}
       onFocus={e => {
-        e.target.style.borderColor = "rgba(230,57,70,0.5)";
-        e.target.style.background  = "rgba(230,57,70,0.03)";
-        e.target.style.boxShadow   = "0 0 0 3px rgba(230,57,70,0.08)";
+        e.target.style.borderColor = "rgba(255,255,255,0.5)";
+        e.target.style.background  = "rgba(255,255,255,0.03)";
+        e.target.style.boxShadow   = "0 0 0 3px rgba(255,255,255,0.08)";
       }}
       onBlur={e => {
         e.target.style.borderColor = "rgba(255,255,255,0.08)";
@@ -193,9 +193,9 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
         ...style,
       }}
       onFocus={e => {
-        e.target.style.borderColor = "rgba(230,57,70,0.5)";
-        e.target.style.background  = "rgba(230,57,70,0.03)";
-        e.target.style.boxShadow   = "0 0 0 3px rgba(230,57,70,0.08)";
+        e.target.style.borderColor = "rgba(255,255,255,0.5)";
+        e.target.style.background  = "rgba(255,255,255,0.03)";
+        e.target.style.boxShadow   = "0 0 0 3px rgba(255,255,255,0.08)";
       }}
       onBlur={e => {
         e.target.style.borderColor = "rgba(255,255,255,0.08)";
@@ -234,10 +234,10 @@ export const Progress = React.forwardRef<
     <ProgressP.Indicator
       style={{
         height: "100%",
-        background: "linear-gradient(90deg, #e63946, #ff4d5a)",
+        background: "linear-gradient(90deg, #fff, #ff4d5a)",
         borderRadius: 99, width: `${value ?? 0}%`,
         transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)",
-        boxShadow: "0 0 8px rgba(230,57,70,0.4)",
+        boxShadow: "0 0 8px rgba(255,255,255,0.4)",
       }}
     />
   </ProgressP.Root>
@@ -317,7 +317,7 @@ export const SelectItem = React.forwardRef<
     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
   >
     <span style={{ position: "absolute", left: 12, display: "flex", alignItems: "center" }}>
-      <SelectP.ItemIndicator><Check size={11} color="#e63946" /></SelectP.ItemIndicator>
+      <SelectP.ItemIndicator><Check size={11} color="#fff" /></SelectP.ItemIndicator>
     </span>
     <SelectP.ItemText>{children}</SelectP.ItemText>
   </SelectP.Item>

@@ -12,24 +12,27 @@ interface StatCardProps {
   href?: string;
 }
 
-export function StatCard({ value, label, sub, icon: Icon, color = "#e63946", accent, href }: StatCardProps) {
-  const rgb = color === "#e63946" ? "230,57,70" : "34,197,94";
-  const baseBorder = accent ? `rgba(${rgb},0.25)` : "rgba(255,255,255,0.07)";
+export function StatCard({ value, label, sub, icon: Icon, color = "#fff", accent, href }: StatCardProps) {
+  const baseBorder = "rgba(255,255,255,0.05)";
   const cardStyle: React.CSSProperties = {
-    background: accent ? `rgba(${rgb},0.08)` : "#141414",
+    background: "rgba(255,255,255,0.02)",
     border: `1px solid ${baseBorder}`,
-    borderRadius: 12,
-    padding: "18px 20px",
-    display: "block",
-    ...(href ? { textDecoration: "none", cursor: "pointer", transition: "border-color 0.15s" } : {}),
+    borderRadius: 16,
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    ...(href ? { textDecoration: "none", cursor: "pointer", transition: "all 0.2s ease" } : {}),
   };
 
   const inner = (
     <>
-      {Icon && <Icon size={18} color={color} style={{ marginBottom: 10 }} />}
-      <div style={{ fontSize: 28, fontWeight: 900, color: accent ? color : "#fff", letterSpacing: "-0.04em", lineHeight: 1 }}>{typeof value === "number" ? value.toLocaleString("en-IN") : value}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginTop: 5 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>{sub}</div>}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        {Icon && <Icon size={16} color="rgba(255,255,255,0.4)" />}
+        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>{label}</div>
+      </div>
+      <div style={{ fontFamily: "var(--font-serif)", fontSize: 40, fontWeight: 400, color: accent ? color : "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>{typeof value === "number" ? value.toLocaleString("en-IN") : value}</div>
+      {sub && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>{sub}</div>}
     </>
   );
 
@@ -38,8 +41,14 @@ export function StatCard({ value, label, sub, icon: Icon, color = "#e63946", acc
       <Link
         href={href}
         style={cardStyle}
-        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = `rgba(${rgb},0.4)`; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = baseBorder; }}
+        onMouseEnter={e => { 
+          (e.currentTarget as HTMLAnchorElement).style.borderColor = "#fff";
+          (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.02)";
+        }}
+        onMouseLeave={e => { 
+          (e.currentTarget as HTMLAnchorElement).style.borderColor = baseBorder;
+          (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+        }}
       >
         {inner}
       </Link>

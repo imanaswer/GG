@@ -16,9 +16,9 @@ const CARDS = [
 
 function Metric({ label, value }: { label: string; value: number | null }) {
   return (
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{value == null ? "—" : value}</div>
-      <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ fontSize: 24, fontWeight: 400, fontFamily: "var(--font-serif)", color: "#fff", lineHeight: 1 }}>{value == null ? "—" : value}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</div>
     </div>
   );
 }
@@ -32,34 +32,55 @@ export default function BookingsLanding() {
   return (
     <AdminGuard>
       <AdminShell>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Bookings</h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>Select a category to manage its bookings.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-            {CARDS.map(({ key, label, icon: Icon }) => {
-              const m = data?.[key];
-              return (
-                <Link key={key} href={`/admin/bookings/${key}`} style={{
-                  textDecoration: "none", background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 14, padding: 18, display: "block", transition: "border-color .15s",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(230,57,70,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Icon size={18} color="#e63946" />
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{label}</div>
-                    <div style={{ marginLeft: "auto", fontSize: 12, color: "#6b7280" }}>{m ? `${m.total} total` : "…"}</div>
+        <div style={{ marginBottom: 40, padding: "0 8px" }}>
+          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 42, fontWeight: 400, color: "#fff", letterSpacing: "-0.02em", margin: 0 }}>Bookings</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: "8px 0 0", letterSpacing: "0.02em" }}>Select a category to manage its bookings.</p>
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
+          {CARDS.map(({ key, label, icon: Icon }) => {
+            const m = data?.[key];
+            return (
+              <Link key={key} href={`/admin/bookings/${key}`} style={{
+                textDecoration: "none", 
+                background: "rgba(255,255,255,0.015)", 
+                border: "1px solid rgba(255,255,255,0.05)",
+                borderRadius: 24, 
+                padding: 24, 
+                display: "block", 
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.015)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 100, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon size={20} color="#fff" />
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <Metric label="Pending" value={m?.pending ?? 0} />
-                    <Metric label="Active" value={m?.active ?? 0} />
-                    <Metric label="Completed" value={m?.completed ?? 0} />
-                    <Metric label="Cancelled" value={m?.cancelled ?? 0} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{label}</div>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 6 }}>
+                     {m ? <span style={{ color: "#fff" }}>{m.total}</span> : "—"} TOTAL
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12, padding: "16px 20px", background: "rgba(0,0,0,0.4)", borderRadius: 16 }}>
+                  <Metric label="Pending" value={m?.pending ?? 0} />
+                  <Metric label="Active" value={m?.active ?? 0} />
+                  <Metric label="Completed" value={m?.completed ?? 0} />
+                  <Metric label="Cancelled" value={m?.cancelled ?? 0} />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </AdminShell>
     </AdminGuard>

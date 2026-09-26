@@ -47,9 +47,9 @@ export function NearMeToggle({ onChange }: { onChange: (c: Coords | null) => voi
         fontSize: 12, fontWeight: 600, fontFamily: "inherit",
         cursor: busy ? "wait" : "pointer",
         border: "1px solid",
-        background: on ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
+        background: on ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.02)",
         color: on ? "#ff6b74" : "rgba(255,255,255,0.6)",
-        borderColor: on ? "rgba(230,57,70,0.35)" : "rgba(255,255,255,0.07)",
+        borderColor: on ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.07)",
         opacity: busy ? 0.65 : 1,
         transition: "all 180ms",
       }}

@@ -110,42 +110,38 @@ export default function CreateGamePage() {
   if (!loading && !user) return <AuthGate />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#050505" }}>
+    <div className="noise" style={{ position: "relative", minHeight: "100vh", background: "#000", color: "#fff" }}>
       <PremiumNav />
 
       {/* Compact header */}
-      <section style={{ position: "relative", paddingTop: 110, paddingBottom: 8 }}>
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 0,
-          background: "radial-gradient(ellipse 60% 60% at 50% 0%, rgba(230,57,70,0.14) 0%, transparent 60%)",
-        }} />
-        <div className="container-lg" style={{ position: "relative", zIndex: 1, maxWidth: 820, margin: "0 auto", padding: "0 24px" }}>
+      <section style={{ position: "relative", paddingTop: 130, paddingBottom: 24 }}>
+        <div className="container-lg" style={{ position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "7px 14px", borderRadius: 100,
-            background: "rgba(230,57,70,0.12)", border: "1px solid rgba(230,57,70,0.3)",
-            fontSize: 11.5, fontWeight: 600, color: "#ff6b7a",
-            letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16,
+            padding: "6px 14px", borderRadius: 100,
+            background: "#111", border: "1px solid rgba(255,255,255,0.15)",
+            fontSize: 11, fontWeight: 700, color: "#fff",
+            letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 24,
           }}>
-            <Sparkles size={12} /> Host a game
+            Host a game
           </div>
-          <h1 style={{
-            fontFamily: "var(--font-serif)", fontSize: "clamp(30px, 4vw, 46px)",
-            lineHeight: 1.05, fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8,
+          <h1 className="display" style={{
+            fontFamily: "var(--font-serif)", fontSize: "clamp(32px, 5vw, 64px)",
+            lineHeight: 1, fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", marginBottom: 8,
           }}>
-            Set the game. <em style={{ fontStyle: "italic", color: "#ff6b7a" }}>Find the people.</em>
+            Set the game. <em style={{ fontStyle: "italic", color: "var(--text3)", paddingRight: "8px" }}>Find the people.</em>
           </h1>
         </div>
       </section>
 
-      <main style={{ maxWidth: 820, margin: "0 auto", padding: "0 24px 80px" }}>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 80px" }}>
         <ProgressSteps step={step} />
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {/* STEP 1 — What & where */}
           {step === 1 && (
             <>
-              <SectionCard Icon={Trophy} title="Sport & skill" hint="Pick the sport first — we'll tune the rest to match.">
+              <SectionCard number="01" title="Sport & skill" hint="Pick the sport first — we'll tune the rest to match.">
                 <FieldRow label="Sport" required>
                   <PillSelect options={SPORTS.map(s => ({ l: s, v: s }))} value={form.sport} onChange={selectSport} />
                 </FieldRow>
@@ -154,7 +150,7 @@ export default function CreateGamePage() {
                 </FieldRow>
               </SectionCard>
 
-              <SectionCard Icon={MapPin} title="Pick a venue" hint="Only GameGround-approved venues for your sport. Address fills in automatically.">
+              <SectionCard number="02" title="Pick a venue" hint="Only GameGround-approved venues for your sport. Address fills in automatically.">
                 {!form.sport ? (
                   <EmptyHint>Choose a sport above to see approved venues.</EmptyHint>
                 ) : venuesFetching && venues.length === 0 ? (
@@ -162,24 +158,40 @@ export default function CreateGamePage() {
                 ) : venues.length === 0 ? (
                   <EmptyHint>No approved {form.sport} venues are available yet. Please check back soon.</EmptyHint>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+                  <div className="venue-grid" style={{ 
+                    display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 
+                  }}>
                     {venues.map(v => {
                       const active = form.venueId === v.id;
                       const open = v.openSlots ?? 0;
                       return (
-                        <button key={v.id} type="button" onClick={() => selectVenue(v.id)} style={{
-                          textAlign: "left", padding: "13px 15px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
-                          background: active ? "rgba(230,57,70,0.12)" : "rgba(255,255,255,0.02)",
-                          border: active ? "1px solid #e63946" : "1px solid rgba(255,255,255,0.08)",
-                          opacity: open === 0 ? 0.6 : 1,
+                        <button key={v.id} type="button" onClick={() => selectVenue(v.id)} className={`venue-card ${active ? "active" : ""}`} style={{
+                          aspectRatio: "1/1",
+                          width: "100%",
+                          padding: 20,
+                          borderRadius: 16,
+                          display: "flex", flexDirection: "column", justifyContent: "space-between",
+                          background: active ? "#fff" : "rgba(255,255,255,0.03)",
+                          border: active ? "1px solid #fff" : "1px solid rgba(255,255,255,0.08)",
+                          color: active ? "#000" : "#fff",
+                          transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                          textAlign: "left",
+                          cursor: open === 0 ? "not-allowed" : "pointer",
+                          opacity: open === 0 ? 0.4 : 1,
                         }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                            <span style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{v.name}</span>
-                            {active && <Check size={15} color="#e63946" />}
+                          <div>
+                            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 20, lineHeight: 1.1, fontWeight: 400, marginBottom: 8, wordBreak: "break-word" }}>{v.name}</h3>
+                            <p style={{ fontSize: 12, color: active ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>{v.address}</p>
                           </div>
-                          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.4 }}>{v.address}</div>
-                          <div style={{ fontSize: 11, fontWeight: 700, marginTop: 8, color: open > 0 ? "#4ade80" : "rgba(255,255,255,0.4)" }}>
-                            {open > 0 ? `${open} open slot${open === 1 ? "" : "s"}` : "No open slots yet"}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%" }}>
+                            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: active ? "#000" : "rgba(255,255,255,0.4)" }}>
+                              {open > 0 ? `${open} slots open` : "Full"}
+                            </div>
+                            {active && (
+                              <div style={{ width: 32, height: 32, background: "#000", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%" }}>
+                                <ArrowRight size={14} />
+                              </div>
+                            )}
                           </div>
                         </button>
                       );
@@ -192,7 +204,7 @@ export default function CreateGamePage() {
 
           {/* STEP 2 — When */}
           {step === 2 && (
-            <SectionCard Icon={CalendarClock} title="Pick an available slot" hint={`Times are set by ${selectedVenue?.name ?? "the venue"}. Blocked or booked slots can't be selected.`}>
+            <SectionCard number="01" title="Pick an available slot" hint={`Times are set by ${selectedVenue?.name ?? "the venue"}. Blocked or booked slots can't be selected.`}>
               {slotsFetching && slots.length === 0 ? (
                 <EmptyHint>Loading available slots…</EmptyHint>
               ) : slots.length === 0 ? (
@@ -216,9 +228,9 @@ export default function CreateGamePage() {
           {/* STEP 3 — Details */}
           {step === 3 && (
             <>
-              <SectionCard Icon={Users} title="Players & cost">
+              <SectionCard number="01" title="Players & cost">
                 <FieldRow label="Max players" required>
-                  <Input type="number" min="2" max="100" placeholder="e.g. 10" value={form.slots} onChange={e => set("slots", e.target.value)} required />
+                  <Input className="awwwards-input" type="number" min="2" max="100" placeholder="e.g. 10" value={form.slots} onChange={e => set("slots", e.target.value)} required />
                 </FieldRow>
                 <FieldRow label="Cost per player">
                   <div style={{ display: "flex", gap: 8, marginBottom: form.paid ? 12 : 0 }}>
@@ -227,8 +239,8 @@ export default function CreateGamePage() {
                   </div>
                   {form.paid && (
                     <div style={{ position: "relative", maxWidth: 200 }}>
-                      <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.5)", fontSize: 14 }}>₹</span>
-                      <Input type="number" min="1" placeholder="100" value={form.costAmount} onChange={e => set("costAmount", e.target.value)} style={{ paddingLeft: 28 }} />
+                      <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", color: "#fff", fontSize: 24, pointerEvents: "none" }}>₹</span>
+                      <Input className="awwwards-input" type="number" min="1" placeholder="100" value={form.costAmount} onChange={e => set("costAmount", e.target.value)} style={{ paddingLeft: 28 }} />
                     </div>
                   )}
                 </FieldRow>
@@ -237,7 +249,7 @@ export default function CreateGamePage() {
               {/* Players pay the host directly — Game Ground never touches this
                   money, so the host has to say how they want to receive it. */}
               {form.paid && (
-                <SectionCard Icon={IndianRupee} title="How players pay you" hint={HOST_PAYMENT_DISCLAIMER}>
+                <SectionCard number="02" title="How players pay you" hint={HOST_PAYMENT_DISCLAIMER}>
                   <FieldRow label="Payment method" required>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {HOST_PAYMENT_METHODS.map(m => (
@@ -276,8 +288,8 @@ export default function CreateGamePage() {
                             <button type="button" onClick={() => set("hostQrUrl", "")}
                               style={{
                                 height: 34, padding: "0 14px", borderRadius: 100,
-                                background: "transparent", color: "#f87171",
-                                border: "1px solid rgba(239,68,68,0.3)",
+                                background: "transparent", color: "#fff",
+                                border: "1px solid rgba(255,255,255,0.3)",
                                 fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
                               }}>
                               Remove
@@ -325,6 +337,7 @@ export default function CreateGamePage() {
 
                   <FieldRow label="Payment instructions (optional)">
                     <Textarea
+                      className="awwwards-input awwwards-textarea"
                       rows={2}
                       maxLength={300}
                       placeholder="e.g. Pay via UPI after joining and send the screenshot on WhatsApp."
@@ -335,6 +348,7 @@ export default function CreateGamePage() {
 
                   <FieldRow label="Venue payment note (optional)" hint="If you're collecting on behalf of a venue. Game Ground is not involved in that transaction.">
                     <Textarea
+                      className="awwwards-input awwwards-textarea"
                       rows={2}
                       maxLength={300}
                       placeholder="e.g. Host collects the fee and pays the venue."
@@ -345,12 +359,13 @@ export default function CreateGamePage() {
                 </SectionCard>
               )}
 
-              <SectionCard Icon={FileText} title="Title & notes" hint="We'll suggest a title — edit it, or add details below.">
+              <SectionCard number={form.paid ? "03" : "02"} title="Title & notes" hint="We'll suggest a title — edit it, or add details below.">
                 <FieldRow label="Game title" hint="Leave blank to use the suggestion.">
-                  <Input placeholder={defaultTitle} value={form.title} onChange={e => set("title", e.target.value)} />
+                  <Input className="awwwards-input" placeholder={defaultTitle} value={form.title} onChange={e => set("title", e.target.value)} />
                 </FieldRow>
                 <FieldRow label="Notes (optional)">
                   <Textarea
+                    className="awwwards-input awwwards-textarea"
                     placeholder="e.g. Friendly 5v5, bring light and dark shirts. Parking available."
                     rows={4}
                     value={form.description}
@@ -360,8 +375,8 @@ export default function CreateGamePage() {
               </SectionCard>
 
               {/* Summary */}
-              <div style={{ padding: "20px 24px", background: "#0b0b0b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 14 }}>Review</div>
+              <div style={{ padding: "48px 0", borderTop: "1px solid rgba(255,255,255,0.15)", marginTop: 40 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 24 }}>Review</div>
                 <SummaryRow label="Game"    value={form.title.trim() || defaultTitle} />
                 <SummaryRow label="Sport"   value={`${form.sport} · ${form.skillLevel}`} />
                 <SummaryRow label="Venue"   value={selectedVenue?.name ?? "—"} />
@@ -388,8 +403,8 @@ export default function CreateGamePage() {
           <div style={{
             display: "flex", alignItems: "center", gap: 14,
             padding: "18px 22px",
-            background: "linear-gradient(135deg, rgba(230,57,70,0.08) 0%, rgba(11,11,11,0.9) 100%)",
-            border: "1px solid rgba(230,57,70,0.2)", borderRadius: 18, marginTop: 8,
+            background: "#000",
+            border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, marginTop: 8,
           }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>
@@ -401,9 +416,9 @@ export default function CreateGamePage() {
             </div>
 
             <Link href="/play" style={{
-              height: 44, padding: "0 18px", borderRadius: 12,
-              background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.75)",
-              border: "1px solid rgba(255,255,255,0.08)", textDecoration: "none",
+              height: 44, padding: "0 18px", borderRadius: 100,
+              background: "transparent", color: "rgba(255,255,255,0.75)",
+              border: "1px solid rgba(255,255,255,0.15)", textDecoration: "none",
               fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center",
             }}>
               Cancel
@@ -411,9 +426,9 @@ export default function CreateGamePage() {
 
             {step > 1 && (
               <button type="button" onClick={() => setStep((step - 1) as 1 | 2 | 3)} style={{
-                height: 44, padding: "0 18px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.85)",
-                border: "1px solid rgba(255,255,255,0.1)", fontFamily: "inherit",
+                height: 44, padding: "0 18px", borderRadius: 100,
+                background: "transparent", color: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(255,255,255,0.15)", fontFamily: "inherit",
                 fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}>
                 Back
@@ -426,14 +441,13 @@ export default function CreateGamePage() {
                 disabled={step === 1 ? !step1Valid : !step2Valid}
                 onClick={() => setStep((step + 1) as 1 | 2 | 3)}
                 style={{
-                  height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
+                  height: 44, padding: "0 22px", borderRadius: 100, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: (step === 1 ? step1Valid : step2Valid) ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
-                  color: (step === 1 ? step1Valid : step2Valid) ? "#fff" : "rgba(255,255,255,0.4)",
-                  border: (step === 1 ? step1Valid : step2Valid) ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  background: (step === 1 ? step1Valid : step2Valid) ? "#fff" : "transparent",
+                  color: (step === 1 ? step1Valid : step2Valid) ? "#000" : "rgba(255,255,255,0.4)",
+                  border: (step === 1 ? step1Valid : step2Valid) ? "1px solid #fff" : "1px solid rgba(255,255,255,0.15)",
                   cursor: (step === 1 ? step1Valid : step2Valid) ? "pointer" : "not-allowed",
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  boxShadow: (step === 1 ? step1Valid : step2Valid) ? "0 6px 24px rgba(230,57,70,0.35)" : "none",
                 }}
               >
                 Next <ArrowRight size={14} />
@@ -443,15 +457,14 @@ export default function CreateGamePage() {
                 type="submit"
                 disabled={createGame.isPending || !canSubmit}
                 style={{
-                  height: 44, padding: "0 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 700,
+                  height: 44, padding: "0 22px", borderRadius: 100, fontSize: 13.5, fontWeight: 700,
                   fontFamily: "inherit",
-                  background: canSubmit ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
-                  color: canSubmit ? "#fff" : "rgba(255,255,255,0.4)",
-                  border: canSubmit ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  background: canSubmit ? "#fff" : "transparent",
+                  color: canSubmit ? "#000" : "rgba(255,255,255,0.4)",
+                  border: canSubmit ? "1px solid #fff" : "1px solid rgba(255,255,255,0.15)",
                   cursor: (createGame.isPending || !canSubmit) ? "not-allowed" : "pointer",
                   opacity: createGame.isPending ? 0.6 : 1,
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  boxShadow: canSubmit ? "0 6px 24px rgba(230,57,70,0.35)" : "none",
                 }}
               >
                 {createGame.isPending ? "Publishing…" : (<>Publish game <ArrowRight size={14} /></>)}
@@ -465,6 +478,52 @@ export default function CreateGamePage() {
         @media (max-width: 780px) {
           .two-col { grid-template-columns: 1fr !important; }
         }
+        @media (min-width: 1024px) {
+          .section-card-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 80px;
+          }
+          .section-card-title {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            position: sticky;
+            top: 140px;
+          }
+        }
+        @media (max-width: 1023px) {
+          .section-card-title {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 48px;
+            align-items: baseline;
+          }
+        }
+        .awwwards-input {
+          background: transparent !important;
+          border: none !important;
+          border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+          border-radius: 0 !important;
+          padding-top: 16px !important;
+          padding-bottom: 16px !important;
+          font-size: 24px !important;
+          color: #fff !important;
+          box-shadow: none !important;
+          outline: none !important;
+          transition: border-color 0.3s ease !important;
+        }
+        .awwwards-input:focus {
+          border-bottom-color: #fff !important;
+        }
+        .awwwards-textarea {
+          font-size: 18px !important;
+          resize: none;
+        }
+        .venue-card:not(.active):hover {
+          background: rgba(255,255,255,0.06) !important;
+          border-color: rgba(255,255,255,0.15) !important;
+        }
       `}</style>
     </div>
   );
@@ -472,29 +531,21 @@ export default function CreateGamePage() {
 
 function ProgressSteps({ step }: { step: 1 | 2 | 3 }) {
   return (
-    <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+    <div style={{ display: "flex", gap: 4, marginBottom: 48 }}>
       {STEPS.map((label, i) => {
         const n = (i + 1) as 1 | 2 | 3;
         const done = n < step;
         const current = n === step;
         const on = done || current;
         return (
-          <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{
-              height: 4, borderRadius: 100,
-              background: on ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.08)",
+              height: 2,
+              background: on ? "#fff" : "rgba(255,255,255,0.15)",
+              transition: "background 0.3s ease",
             }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{
-                width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 800,
-                background: on ? "#e63946" : "rgba(255,255,255,0.06)",
-                color: on ? "#fff" : "rgba(255,255,255,0.4)",
-              }}>
-                {done ? <Check size={11} strokeWidth={3} /> : n}
-              </span>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: current ? "#fff" : "rgba(255,255,255,0.45)" }}>{label}</span>
+            <div style={{ fontSize: 11, fontWeight: 700, color: current ? "#fff" : "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              0{n} · {label}
             </div>
           </div>
         );
@@ -506,12 +557,11 @@ function ProgressSteps({ step }: { step: 1 | 2 | 3 }) {
 function CostToggle({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} style={{
-      padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
-      border: "1px solid",
-      background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
-      color: active ? "#fff" : "rgba(255,255,255,0.6)",
-      borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-      boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
+      padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)", cursor: "pointer",
+      border: active ? "1px solid #fff" : "1px solid rgba(255,255,255,0.2)",
+      background: active ? "#fff" : "transparent",
+      color: active ? "#000" : "rgba(255,255,255,0.7)",
+      transition: "all 0.3s cubic-bezier(0.2, 0.6, 0.2, 1)",
     }}>
       {label}
     </button>
@@ -521,30 +571,30 @@ function CostToggle({ active, label, onClick }: { active: boolean; label: string
 function SummaryRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", gap: 16,
-      padding: "10px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
+      display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center",
+      padding: "16px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.1)",
     }}>
-      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff", textAlign: "right" }}>{value}</span>
+      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 400, color: "#fff", textAlign: "right" }}>{value}</span>
     </div>
   );
 }
 
 function AuthGate() {
   return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", flexDirection: "column" }}>
+    <div className="noise" style={{ position: "relative", minHeight: "100vh", background: "#000", display: "flex", flexDirection: "column" }}>
       <PremiumNav />
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "96px 24px 48px" }}>
         <div style={{
           maxWidth: 480, width: "100%", padding: "40px 36px",
-          background: "#0b0b0b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 24, textAlign: "center",
+          background: "#111", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 16, textAlign: "center",
         }}>
           <div style={{
             width: 64, height: 64, borderRadius: 18, margin: "0 auto 24px",
-            background: "rgba(230,57,70,0.1)", border: "1px solid rgba(230,57,70,0.25)",
+            background: "transparent", border: "1px solid rgba(255,255,255,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <Lock size={26} color="#e63946" />
+            <Lock size={26} color="#fff" />
           </div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 30, fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", marginBottom: 10 }}>
             Sign in to host a game.
@@ -554,17 +604,17 @@ function AuthGate() {
           </p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/login" style={{
-              height: 44, padding: "0 22px", borderRadius: 12,
-              background: "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)", color: "#fff", textDecoration: "none",
+              height: 44, padding: "0 22px", borderRadius: 100,
+              background: "#fff", color: "#000", textDecoration: "none",
               fontSize: 13.5, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 7,
-              boxShadow: "0 6px 24px rgba(230,57,70,0.3)",
+              border: "1px solid #fff",
             }}>
               Sign in <ArrowRight size={14} />
             </Link>
             <Link href="/register" style={{
-              height: 44, padding: "0 22px", borderRadius: 12,
-              background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.85)",
-              border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none",
+              height: 44, padding: "0 22px", borderRadius: 100,
+              background: "transparent", color: "rgba(255,255,255,0.85)",
+              border: "1px solid rgba(255,255,255,0.15)", textDecoration: "none",
               fontSize: 13.5, fontWeight: 600, display: "inline-flex", alignItems: "center",
             }}>
               Create account
@@ -576,52 +626,46 @@ function AuthGate() {
   );
 }
 
-function SectionCard({ Icon, title, hint, children }: { Icon: typeof Trophy; title: string; hint?: string; children: React.ReactNode }) {
+function SectionCard({ number, title, hint, children }: { number?: string; title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div style={{ padding: "24px 26px", background: "#0b0b0b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hint ? 6 : 20 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: "rgba(230,57,70,0.1)", border: "1px solid rgba(230,57,70,0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon size={15} color="#e63946" />
+    <div className="section-card-layout" style={{ padding: "80px 0", borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+      <div className="section-card-title">
+        {number && <span style={{ fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 400, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{number}</span>}
+        <div>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 400, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>{title}</h2>
+          {hint && <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", marginTop: 24, maxWidth: 400, lineHeight: 1.5 }}>{hint}</p>}
         </div>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h2>
       </div>
-      {hint && <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 18, paddingLeft: 46 }}>{hint}</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+      <div className="section-card-content" style={{ display: "flex", flexDirection: "column", gap: 48, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
 
 function FieldRow({ label, children, hint, required }: { label: string; children: React.ReactNode; hint?: string; required?: boolean }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-      <Label>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
         {label}
-        {required && <span style={{ color: "#e63946", marginLeft: 4 }}>*</span>}
-      </Label>
+        {required && <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 4 }}>*</span>}
+      </div>
       {children}
-      {hint && <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>{hint}</p>}
     </div>
   );
 }
 
 function PillSelect({ options, value, onChange }: { options: { l: string; v: string | number }[]; value: string; onChange: (v: string) => void }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
       {options.map(o => {
         const active = value === String(o.v);
         return (
           <button key={String(o.v)} type="button" onClick={() => onChange(String(o.v))} style={{
-            padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: "pointer",
-            border: "1px solid", fontFamily: "inherit",
-            background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.02)",
-            color: active ? "#fff" : "rgba(255,255,255,0.6)",
-            borderColor: active ? "transparent" : "rgba(255,255,255,0.08)",
-            boxShadow: active ? "0 4px 14px rgba(230,57,70,0.3)" : "none",
-            transition: "all 160ms ease",
+            padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: "pointer",
+            border: active ? "1px solid #fff" : "1px solid rgba(255,255,255,0.2)", fontFamily: "var(--font-sans)",
+            background: active ? "#fff" : "transparent",
+            color: active ? "#000" : "rgba(255,255,255,0.7)",
+            transition: "all 0.3s cubic-bezier(0.2, 0.6, 0.2, 1)",
           }}>
             {o.l}
           </button>
@@ -671,13 +715,14 @@ function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; 
                   onClick={() => !disabled && onChange(s.id)}
                   title={disabled ? (s.reason === "blocked" ? `Blocked${s.blockReason ? `: ${s.blockReason}` : ""}` : "Unavailable") : undefined}
                   style={{
-                    padding: "8px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit",
+                    padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)",
                     cursor: disabled ? "not-allowed" : "pointer",
-                    background: active ? "linear-gradient(135deg, #e63946 0%, #b91c2d 100%)" : "rgba(255,255,255,0.04)",
-                    color: active ? "#fff" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.8)",
-                    border: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
+                    background: active ? "#fff" : "transparent",
+                    color: active ? "#000" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.7)",
+                    border: active ? "1px solid #fff" : "1px solid rgba(255,255,255,0.2)",
                     textDecoration: disabled ? "line-through" : "none",
                     opacity: disabled ? 0.6 : 1,
+                    transition: "all 0.3s cubic-bezier(0.2, 0.6, 0.2, 1)",
                   }}
                 >
                   {time(s.startTime)}–{time(s.endTime)}

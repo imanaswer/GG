@@ -59,11 +59,11 @@ export default function Terms() {
         </Section>
 
         <Section title="10. Contact">
-          <p>For questions about these Terms, contact us at <a href="mailto:hello@gameground.net" style={{ color: "#e63946" }}>hello@gameground.net</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
+          <p>For questions about these Terms, contact us at <a href="mailto:hello@gameground.net" style={{ color: "#fff" }}>hello@gameground.net</a> or write to: Game Ground, Kozhikode, Kerala 673001, India.</p>
         </Section>
 
         <p style={{ fontSize: 13, color: "#4b5563", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 24, marginTop: 8 }}>
-          Also read our <Link href="/privacy" style={{ color: "#e63946", textDecoration: "none", fontWeight: 600 }}>Privacy Policy</Link>
+          Also read our <Link href="/privacy" style={{ color: "#fff", textDecoration: "underline", fontWeight: 600 }}>Privacy Policy</Link>
         </p>
       </main>
     </div>

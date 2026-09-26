@@ -42,23 +42,23 @@ export default function Offline() {
         @keyframes ggBlink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
         @keyframes ggSpin { to { transform: rotate(360deg); } }
         .gg-link:hover { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.18) !important; color:#fff !important; }
-        .gg-cta:hover { box-shadow: 0 12px 36px rgba(230,57,70,0.5); transform: translateY(-1px); }
+        .gg-cta:hover { box-shadow: 0 12px 36px rgba(255,255,255,0.5); transform: translateY(-1px); }
       `}</style>
 
       {/* ambient brand glow */}
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 45% at 50% -5%, rgba(230,57,70,0.18) 0%, transparent 60%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 50% 40% at 50% 110%, rgba(230,57,70,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255,255,255,0.18) 0%, transparent 60%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 50% 40% at 50% 110%, rgba(255,255,255,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
 
       <div style={{ width: "100%", maxWidth: 440, textAlign: "center", position: "relative" }}>
         {/* monogram with pulsing rings + offline badge */}
         <div style={{ position: "relative", width: 112, height: 112, margin: "0 auto 30px" }}>
-          <span style={{ position: "absolute", inset: 0, borderRadius: 26, border: "1px solid rgba(230,57,70,0.5)", animation: "ggRing 2.4s ease-out infinite" }} />
-          <span style={{ position: "absolute", inset: 0, borderRadius: 26, border: "1px solid rgba(230,57,70,0.5)", animation: "ggRing 2.4s ease-out infinite", animationDelay: "1.2s" }} />
+          <span style={{ position: "absolute", inset: 0, borderRadius: 26, border: "1px solid rgba(255,255,255,0.5)", animation: "ggRing 2.4s ease-out infinite" }} />
+          <span style={{ position: "absolute", inset: 0, borderRadius: 26, border: "1px solid rgba(255,255,255,0.5)", animation: "ggRing 2.4s ease-out infinite", animationDelay: "1.2s" }} />
           <div style={{
             position: "absolute", inset: 0, borderRadius: 26,
-            background: "linear-gradient(135deg, #E63946 0%, #b91c2d 100%)",
+            background: "linear-gradient(135deg, #E63946 0%, #fff 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 12px 44px rgba(230,57,70,0.4)",
+            boxShadow: "0 12px 44px rgba(255,255,255,0.4)",
             animation: "ggFloat 4s ease-in-out infinite",
           }}>
             <span style={{ fontSize: 46, fontWeight: 900, letterSpacing: "-0.05em", color: "#fff" }}>GG</span>
@@ -69,7 +69,7 @@ export default function Offline() {
             background: "#141414", border: "3px solid #080808",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 1l22 22" />
               <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
               <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
@@ -110,9 +110,9 @@ export default function Offline() {
           <button onClick={retry} disabled={retrying} className="gg-cta" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9,
             height: 48, padding: "0 26px", borderRadius: 12, fontSize: 14.5, fontWeight: 700,
-            background: "linear-gradient(135deg, #E63946 0%, #b91c2d 100%)", color: "#fff",
+            background: "linear-gradient(135deg, #E63946 0%, #fff 100%)", color: "#fff",
             border: "none", cursor: retrying ? "wait" : "pointer", fontFamily: "inherit",
-            boxShadow: "0 8px 28px rgba(230,57,70,0.4)", transition: "transform .15s, box-shadow .15s",
+            boxShadow: "0 8px 28px rgba(255,255,255,0.4)", transition: "transform .15s, box-shadow .15s",
           }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
               style={{ animation: retrying ? "ggSpin .8s linear infinite" : "none" }}>

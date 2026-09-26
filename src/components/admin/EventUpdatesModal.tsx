@@ -60,11 +60,11 @@ export function EventUpdatesModal({ eventId, eventTitle, open, onClose }: {
         <FormInput label="Title (optional)" value={title} onChange={setTitle} placeholder="e.g. Venue changed" />
         <FormTextarea label="Update" value={body} onChange={setBody} rows={3} placeholder="What do participants need to know?" />
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d1d5db", cursor: "pointer", marginBottom: 14 }}>
-          <input type="checkbox" checked={pinned} onChange={e => setPinned(e.target.checked)} style={{ accentColor: "#e63946" }} />
+          <input type="checkbox" checked={pinned} onChange={e => setPinned(e.target.checked)} style={{ accentColor: "#fff" }} />
           Pin this update to the top
         </label>
-        {error && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 8 }}>{error}</p>}
-        <button type="submit" disabled={post.isPending} style={{ height: 40, borderRadius: 9, background: "#e63946", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, padding: "0 18px", cursor: "pointer", fontFamily: "inherit", opacity: post.isPending ? 0.6 : 1 }}>
+        {error && <p style={{ fontSize: 13, color: "#fff", marginBottom: 8 }}>{error}</p>}
+        <button type="submit" disabled={post.isPending} style={{ height: 40, borderRadius: 9, background: "#fff", color: "#000", border: "none", fontSize: 13, fontWeight: 700, padding: "0 18px", cursor: "pointer", fontFamily: "inherit", opacity: post.isPending ? 0.6 : 1 }}>
           {post.isPending ? "Posting…" : "Post update"}
         </button>
       </form>
@@ -78,7 +78,7 @@ export function EventUpdatesModal({ eventId, eventTitle, open, onClose }: {
                 {u.pinned && <Pin size={12} color="#eab308" />}
                 <span style={{ fontSize: 11, color: "#6b7280" }}>{new Date(u.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
               </div>
-              <button type="button" onClick={() => remove.mutate(u.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }} title="Delete"><Trash2 size={13} color="#f87171" /></button>
+              <button type="button" onClick={() => remove.mutate(u.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }} title="Delete"><Trash2 size={13} color="#ef4444" /></button>
             </div>
             {u.title && <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", marginBottom: 2 }}>{u.title}</div>}
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", whiteSpace: "pre-line" }}>{u.body}</div>
