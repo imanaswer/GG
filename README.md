@@ -1,6 +1,6 @@
 # Game Ground
 
-A hyperlocal sports platform for Kozhikode — book coaches, join pickup games, register for camps and tournaments, and run the operation from a live admin console.
+A premium, highly interactive hyperlocal sports platform for Kozhikode — book coaches, join pickup games, register for camps and tournaments, and run the operation from a live admin console.
 
 **Learn. Play. Connect.**
 
@@ -12,41 +12,28 @@ A hyperlocal sports platform for Kozhikode — book coaches, join pickup games, 
 npm install
 cp .env.example .env.local        # fill AUTH_SECRET, DATABASE_URL, DIRECT_URL
 npm run db:deploy                 # apply Prisma migrations
-npm run db:seed                   # optional — sample data
 npm run dev
 ```
 
 - App: <http://localhost:3000>
-- Admin: <http://localhost:3000/admin> (password `admin123` unless `ADMIN_PASSWORD` is set)
-
-### Seeded accounts
-
-All player passwords are `password123`.
-
-| Email                   | Role   |
-| ----------------------- | ------ |
-| `test@gameground.net`   | Player (Dummy Account) |
-| `admin@gameground.com`  | Admin (Real Database)  |
-| `testadmin@gameground.com` | Admin (Dummy Account) |
-
-> **Tip:** Clicking the "Demo" button or using the demo flow anywhere in the application will automatically log you into the dummy account (`test@gameground.net`) without needing a password. This account is specially configured to load the rich dummy data for testing!
+- Admin: <http://localhost:3000/admin>
 
 ---
 
 ## Stack
 
-| Layer          | Tech                                                                          |
-| -------------- | ----------------------------------------------------------------------------- |
-| Framework      | **Next.js 16** (App Router, React 19, TypeScript)                             |
-| Database       | **Prisma 7** on **Supabase/PostgreSQL** (pooled + direct URLs)                |
-| Auth           | **jose** JWT — httpOnly cookie, 7-day player session, 60-min admin session   |
-| Data fetching  | **@tanstack/react-query** — caching, mutations, live admin refresh            |
-| Payments       | **Razorpay** popup — camps, events, paid games; slot gated on verification   |
-| Rate limiting  | **Upstash Redis** + `@upstash/ratelimit` — auth, AI, and mutation buckets     |
-| AI             | **Claude** via `@anthropic-ai/sdk` at `/api/ai/recommend`                     |
-| Analytics      | **PostHog** — user event tracking, session replay, and page views             |
-| Media / email  | **Cloudinary** (uploads) · **Resend** (transactional)                         |
-| Styling        | Inline styles throughout — no Tailwind utility classes                        |
+| Layer         | Tech                                                                       |
+| ------------- | -------------------------------------------------------------------------- |
+| Framework     | **Next.js 16** (App Router, React 19, TypeScript)                          |
+| Database      | **Prisma 7** on **Supabase/PostgreSQL** (pooled + direct URLs)             |
+| Auth          | **jose** JWT — httpOnly cookie, 7-day player session, 60-min admin session |
+| Data fetching | **@tanstack/react-query** — caching, mutations, live admin refresh         |
+| Payments      | **Razorpay** popup — camps, events, paid games; slot gated on verification |
+| Animations    | **GSAP**, custom scroll-reveals, kinetic text, marquee, WebGL/Vanta        |
+| Rate limiting | **Upstash Redis** + `@upstash/ratelimit` — auth, AI, and mutation buckets  |
+| AI            | **Claude** via `@anthropic-ai/sdk` at `/api/ai/recommend`                  |
+| Analytics     | **PostHog** — user event tracking, session replay, and page views          |
+| Media / email | **Cloudinary** (uploads) · **Resend** (transactional)                      |
 
 > **Note:** Next.js 16 renamed the `middleware` convention to `proxy`. The rate-limit logic lives in `src/proxy.ts`.
 
@@ -60,53 +47,51 @@ src/
     (auth)/            # login, register, forgot-password, reset-password
     admin/             # dashboard + admin login
     api/               # route handlers
-  components/          # shared UI
+  components/          # shared UI & premium animation components
   context/             # AuthContext, Providers
   hooks/               # useData — React Query wrappers
   lib/                 # prisma, auth, adminAuth, api (zod), razorpay, ratelimit
   proxy.ts             # Next 16 proxy — rate limiting
-prisma/                # schema.prisma, migrations, seed.ts
+prisma/                # schema.prisma, migrations
 ```
 
 ---
 
 ## Features
 
-### Player-facing
-- Home · login / register (player + 5-step coach flow) · forgot & reset password
+### Player-facing (Premium Experience)
+
+- Immersive, cinematic UI with custom cursors, smooth scrolling, and scroll-triggered animations.
 - **Learn** — coach directory, coach profile (Overview / Batches / Photos / Reviews tabs with lightbox gallery), coach dashboard (bookings, edit)
 - **Play** — pickup games list & detail, create-game, join / leave, attendance, tier badge per player
 - **Camps** — directory, detail, registration with Razorpay checkout
 - **Workshops** — directory, detail (audience-adaptive registration), Razorpay checkout
 - **Events** — directory, detail, team registration with Razorpay checkout
 - **Leaderboard** — top 100 players / organizers, all-time or last-30-days, podium for top 3
-- **Profile** — view, edit (with avatar picker — 12 presets + initials fallback), delete (GDPR with cookie clear + identifier rotation), reviews, reliability score, tier + reputation
+- **Profile** — view, edit, delete (GDPR compliant), reviews, reliability score, tier + reputation
 - Global ⌘K search, WhatsApp share
 
 ### Admin (`/admin`)
-- Overview — metrics, alerts, **reputation distribution widget** (per-tier counts), live activity feed (15s auto-refresh, includes workshop sign-ups)
-- Bookings · Games · Camps · **Workshops** · Events · Users · Coaches · Revenue tabs
-- Full CRUD for coaches (with **facility photo gallery** — multi-image upload, reorder, remove), camps, events, and workshops
-- Cover photo upload (drag-and-drop / file picker) with live preview on all entities
-- Per-user **reputation override** with auto-recompute (sticky until cleared)
+
+- Overview — metrics, alerts, **reputation distribution widget** (per-tier counts), live activity feed (15s auto-refresh)
+- Bookings · Games · Camps · Workshops · Events · Users · Coaches · Revenue tabs
+- Full CRUD for coaches, camps, events, and workshops with rich image uploading
 - Approve / reject pending coach applications
 - CSV export on bookings, camp registrations, transactions
 
 ### Reputation & tiers
+
 - **Bronze → Silver → Gold → Elite → Pro** ladder, driven by a composite reputation score
 - Score factors: games played, games organized, attendance rate (multiplier), reviews given (capped at 10), camps / events / workshops completed, account age, decay after 30+ idle days
-- Pure formula in `src/lib/reputation.ts`; DB-aware service in `src/lib/reputationService.ts`
-- Recompute fires on every relevant mutation (game join / complete / organize, registration, review) **and** nightly via `/api/cron/recompute-reputation` as a safety net
-- Override column on `User.reputationOverride` lets admins pin a score; recompute respects it
+- Recompute fires on every relevant mutation **and** nightly via `/api/cron/recompute-reputation` as a safety net
 
 ### Cron jobs (`vercel.json`)
-| Path | Schedule | Purpose |
-| ---- | -------- | ------- |
-| `/api/cron/complete-games`        | `0 2 * * *`  | Mark past games / events / camps as completed, archive after 24h |
-| `/api/cron/recompute-reputation`  | `0 3 * * *`  | Re-rank every active user, catch any drift from event-driven updates |
-| `/api/cron/send-reminders`        | `0 18 * * *` | Player notifications for upcoming bookings / games |
 
-All three require the `Authorization: Bearer $CRON_SECRET` header in production (Vercel sends this automatically).
+| Path                             | Schedule     | Purpose                                                              |
+| -------------------------------- | ------------ | -------------------------------------------------------------------- |
+| `/api/cron/complete-games`       | `0 2 * * *`  | Mark past games / events / camps as completed, archive after 24h     |
+| `/api/cron/recompute-reputation` | `0 3 * * *`  | Re-rank every active user, catch any drift from event-driven updates |
+| `/api/cron/send-reminders`       | `0 18 * * *` | Player notifications for upcoming bookings / games                   |
 
 ---
 
@@ -114,11 +99,11 @@ All three require the `Authorization: Bearer $CRON_SECRET` header in production 
 
 Applied in `src/proxy.ts` (auth + generic mutations) and inline in `src/app/api/ai/recommend/route.ts` (per-user):
 
-| Bucket   | Limit     | Key                     | Scope                                                          |
-| -------- | --------- | ----------------------- | -------------------------------------------------------------- |
-| auth     | 5 / min   | IP                      | `/api/auth/{login,register,forgot-password,reset-password}`    |
-| ai       | 10 / hr   | user id (IP fallback)   | `/api/ai/recommend`                                            |
-| mutation | 100 / min | IP                      | All other `POST`/`PATCH`/`PUT`/`DELETE` under `/api`           |
+| Bucket   | Limit     | Key                   | Scope                                                       |
+| -------- | --------- | --------------------- | ----------------------------------------------------------- |
+| auth     | 5 / min   | IP                    | `/api/auth/{login,register,forgot-password,reset-password}` |
+| ai       | 10 / hr   | user id (IP fallback) | `/api/ai/recommend`                                         |
+| mutation | 100 / min | IP                    | All other `POST`/`PATCH`/`PUT`/`DELETE` under `/api`        |
 
 On rate-limit hit the proxy returns **429** with a `Retry-After` header.
 
@@ -158,18 +143,15 @@ Always unwrap from `data` on the client. Validation errors return **422** with f
 
 ## Scripts
 
-| Command              | What it does                              |
-| -------------------- | ----------------------------------------- |
-| `npm run dev`        | Next dev server                           |
-| `npm run build`      | Production build                          |
-| `npm run start`      | Serve the production build                |
-| `npm run lint`       | ESLint                                    |
-| `npm run db:generate`| Regenerate the Prisma client              |
-| `npm run db:migrate` | Create + apply a new migration (dev)      |
-| `npm run db:deploy`  | Apply migrations (prod / CI)              |
-| `npm run db:seed`    | Seed the database                         |
-| `npm run db:reset`   | Drop, re-migrate, re-seed                 |
-| `npm run db:studio`  | Open Prisma Studio                        |
+| Command               | What it does                         |
+| --------------------- | ------------------------------------ |
+| `npm run dev`         | Next dev server                      |
+| `npm run build`       | Production build                     |
+| `npm run start`       | Serve the production build           |
+| `npm run lint`        | ESLint                               |
+| `npm run db:generate` | Regenerate the Prisma client         |
+| `npm run db:migrate`  | Create + apply a new migration (dev) |
+| `npm run db:deploy`   | Apply migrations (prod / CI)         |
 
 ---
 
@@ -212,9 +194,6 @@ Turbopack caches the Prisma client module. Run `npx prisma generate` and **resta
 **"Delete account" looks like it didn't work.**
 Make sure you're on the latest commit. Account delete now (a) clears the `gg_token` cookie, (b) rotates `email` / `username` to free those identifiers, and (c) returns 404 from `/api/users/[id]` for the deleted row. If you have an older build, the JWT cookie can survive the row-level delete and the user still appears logged in.
 
-**Re-seed didn't restore the documented passwords.**
-The seed used to copy `passwordHash` straight from `data/db.json`. It now hashes a fixed `password123` for every player. After a fresh `npm run db:seed`, all three sample accounts (`demo`, `priya`, `rahul@gameground.com`) accept `password123`. To rehash without re-seeding, run `node --env-file=.env.local node_modules/.bin/tsx scripts/reset-seeded-passwords.ts`.
-
 ---
 
 ## Future roadmap
@@ -222,6 +201,7 @@ The seed used to copy `passwordHash` straight from `data/db.json`. It now hashes
 Below are planned features and improvements, roughly grouped by area.
 
 ### Platform & discovery
+
 - **Venue / turf booking** — reserve courts, turfs, and indoor facilities with time-slot calendar and payment
 - **Map-based discovery** — interactive map view for coaches, games, events, and venues with radius filters
 - **Advanced search & filters** — filter by sport, distance, price range, rating, availability, and age group
@@ -229,6 +209,7 @@ Below are planned features and improvements, roughly grouped by area.
 - **Multi-city expansion** — location selector and city-scoped content beyond Kozhikode
 
 ### Player experience
+
 - **In-app chat / messaging** — direct messages between players, coaches, and organizers
 - **Team management** — create persistent teams, invite members, track win/loss record
 - **Achievements & badges** — streaks, milestones, sport-specific tiers (global tier ladder is shipped; per-sport rankings and badges are next)
@@ -237,6 +218,7 @@ Below are planned features and improvements, roughly grouped by area.
 - **Waitlist auto-promotion** — automatically move waitlisted players into open slots with notification
 
 ### Coach & organizer tools
+
 - **Coach availability calendar** — interactive weekly calendar for setting open slots
 - **Batch management UI** — coaches can add, edit, and remove training batches from their dashboard
 - **Earnings dashboard** — detailed payout history, pending settlements, and tax invoices
@@ -244,6 +226,7 @@ Below are planned features and improvements, roughly grouped by area.
 - **Review replies** — let coaches respond publicly to player reviews
 
 ### Admin & operations
+
 - **Role-based admin access** — multiple admin users with granular permissions (view-only, editor, super-admin)
 - **Bulk operations** — multi-select and batch-update bookings, registrations, and user statuses
 - **Audit log** — track every admin action (who changed what, when) for accountability
@@ -252,6 +235,7 @@ Below are planned features and improvements, roughly grouped by area.
 - **Cloud image storage** — migrate uploaded images from local disk to Cloudinary or Vercel Blob for production persistence
 
 ### Payments & monetization
+
 - **Subscription plans** — monthly coaching packages with recurring Razorpay billing
 - **Refund management** — admin-initiated partial / full refunds with Razorpay integration
 - **Coupon & promo codes** — discount codes for camps, events, and coaching sessions
@@ -259,6 +243,7 @@ Below are planned features and improvements, roughly grouped by area.
 - **GST invoice generation** — auto-generate tax-compliant invoices for all paid transactions
 
 ### Technical improvements
+
 - **Automated testing** — unit tests for API routes, integration tests for payment flows, E2E with Playwright
 - **i18n / localization** — Malayalam and Hindi translations
 - **Offline PWA support** — cache-first strategy for game listings and profile pages
