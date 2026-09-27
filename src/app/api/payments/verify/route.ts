@@ -55,7 +55,10 @@ export async function POST(req: NextRequest) {
       const expected = crypto.createHmac("sha256", keySecret!)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest("hex");
-      if (expected !== razorpay_signature) return fail("Invalid payment signature", 400);
+      const sig = typeof razorpay_signature === "string" ? razorpay_signature : "";
+      if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+        return fail("Invalid payment signature", 400);
+      }
 
       // Reject replays of an already-recorded gateway payment (DB @unique is the
       // authoritative guard; this returns a clean 409 for the common case).
@@ -103,10 +106,15 @@ export async function POST(req: NextRequest) {
           const claim = await tx.coach.updateMany({ where: { id: entityId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
           if (claim.count === 0) throw new ApiError("No seats available", 409);
           if (batchId) {
-            const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
-            if (batch && batch.coachId === entityId && batch.seats > 0) {
-              await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
-            }
+            // Mirrors the free path: a full, foreign or unknown batch is refused,
+            // not silently attached. Silently attaching meant the booking held no
+            // batch seat but cancelling it later handed one back — a paid+refund
+            // cycle could inflate any coach's capacity. The claim is a conditional
+            // updateMany so two buyers cannot both take the last seat.
+            const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { coachId: true } });
+            if (!batch || batch.coachId !== entityId) throw new ApiError("That batch is not available", 400);
+            const taken = await tx.batch.updateMany({ where: { id: batchId, seats: { gt: 0 } }, data: { seats: { decrement: 1 } } });
+            if (taken.count === 0) throw new ApiError("That batch is full", 409);
           }
           const created = await tx.booking.create({
             data: {

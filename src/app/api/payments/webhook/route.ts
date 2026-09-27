@@ -67,9 +67,14 @@ export async function POST(req: NextRequest) {
           data: { capturedAt: new Date(), razorpayPaymentId },
         });
 
+        // Only rows still waiting on the gateway. `!== "paid"` also matched
+        // refund_pending/refunded, so a late or retried capture after a
+        // cancellation flipped the row back to paid and erased the refund debt.
+        // ("created" is the schema default, kept out of PAYMENT_STATUSES on purpose.)
+        const OPEN = ["created", "pending", "failed"];
         const existing = await prisma.payment.findFirst({ where: { razorpayOrderId } });
         if (existing) {
-          if (existing.status !== "paid") {
+          if (OPEN.includes(existing.status)) {
             await prisma.payment.update({
               where: { id: existing.id },
               data: { status: "paid" satisfies PaymentStatus, paidAt: new Date(), razorpayPaymentId },
@@ -106,8 +111,10 @@ export async function POST(req: NextRequest) {
       }
 
       case "payment.failed": {
+        // A failed attempt must never overwrite a settled row — nor its
+        // razorpayPaymentId, which admins paste into the Razorpay dashboard.
         const existing = await prisma.payment.findFirst({ where: { razorpayOrderId } });
-        if (existing && existing.status !== "paid") {
+        if (existing && (existing.status === "created" || existing.status === "pending")) {
           await prisma.payment.update({
             where: { id: existing.id },
             data: { status: "failed" satisfies PaymentStatus, razorpayPaymentId },

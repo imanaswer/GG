@@ -36,13 +36,13 @@ describe("events approval actions", () => {
     expect(prismaMock.eventRegistration.update).not.toHaveBeenCalled();
   });
 
-  it("reject: releases the seat and refunds a paid Payment row", async () => {
+  it("reject: releases the seat and flags a paid Payment row as refund due (money moves by hand)", async () => {
     prismaMock.eventRegistration.findUnique.mockResolvedValue({ status: "pending", eventId: "e1", userId: "u1" });
     prismaMock.payment.findFirst.mockResolvedValue({ id: "p1" });
     prismaMock.sportEvent.findUnique.mockResolvedValue({ status: "Full" });
     await applyAction("events", "r1", "reject", { rejectionReason: "no spots" });
-    expect(prismaMock.payment.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "refunded" } }));
-    expect(prismaMock.eventRegistration.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "rejected", rejectionReason: "no spots", paymentStatus: "refunded" }) }));
+    expect(prismaMock.payment.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: "refund_pending" } }));
+    expect(prismaMock.eventRegistration.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: "rejected", rejectionReason: "no spots", paymentStatus: "refund_pending" }) }));
     expect(prismaMock.sportEvent.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ participants: { decrement: 1 }, status: "Registration Open" }) }));
   });
 

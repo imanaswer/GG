@@ -64,6 +64,15 @@ describe("POST /payments/webhook", () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
+  it("a late capture after a cancellation leaves a refund_pending row alone", async () => {
+    prismaMock.paymentOrder.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.payment.findFirst.mockResolvedValue({ id: "p9", status: "refund_pending", entityType: "camp", entityId: "c1", userId: "u1" });
+    const res = await POST(makeReq(capturedEvent("order_9", "pay_9")));
+    expect(res.status).toBe(200);
+    expect(prismaMock.payment.update).not.toHaveBeenCalled();
+    expect(prismaMock.campRegistration?.updateMany ?? vi.fn()).not.toHaveBeenCalled();
+  });
+
   it("capture WITH an unpaid Payment row marks it paid, syncs registration, and does not warn", async () => {
     prismaMock.paymentOrder.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.payment.findFirst.mockResolvedValue({ id: "p1", status: "created", entityType: "event", entityId: "e1", userId: "u1" });

@@ -5,7 +5,7 @@ const { prismaMock, txMock, sessionMock } = vi.hoisted(() => {
   const txMock: any = {
     user:    { update: vi.fn() },
     coach:   { updateMany: vi.fn() },
-    batch:   { findUnique: vi.fn(), update: vi.fn() },
+    batch:   { findUnique: vi.fn(), updateMany: vi.fn() },
     booking: { create: vi.fn() },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,22 +40,26 @@ describe("POST /api/bookings — the coach seat is always claimed", () => {
   });
 
   it("claims a seat AND the batch seat for a batch booking", async () => {
-    txMock.batch.findUnique.mockResolvedValue({ seats: 4, coachId: "c1" });
+    txMock.batch.findUnique.mockResolvedValue({ coachId: "c1" });
+    txMock.batch.updateMany.mockResolvedValue({ count: 1 });
     expect((await post({ coachId: "c1", batchId: "bt1" })).status).toBe(200);
     expect(txMock.coach.updateMany).toHaveBeenCalledOnce();
-    expect(txMock.batch.update).toHaveBeenCalledWith({ where: { id: "bt1" }, data: { seats: { decrement: 1 } } });
+    // Conditional claim: the seats>0 guard lives in the WHERE, so two concurrent
+    // bookers cannot both take the last batch seat.
+    expect(txMock.batch.updateMany).toHaveBeenCalledWith({ where: { id: "bt1", seats: { gt: 0 } }, data: { seats: { decrement: 1 } } });
   });
 
   // The bug: an unusable batch used to skip the whole claim and still create the
   // booking, so cancelling it later handed back a seat that was never taken.
   it("rejects a full batch instead of booking a seatless booking", async () => {
-    txMock.batch.findUnique.mockResolvedValue({ seats: 0, coachId: "c1" });
+    txMock.batch.findUnique.mockResolvedValue({ coachId: "c1" });
+    txMock.batch.updateMany.mockResolvedValue({ count: 0 });
     expect((await post({ coachId: "c1", batchId: "bt1" })).status).toBe(409);
     expect(txMock.booking.create).not.toHaveBeenCalled();
   });
 
   it("rejects a batch belonging to another coach", async () => {
-    txMock.batch.findUnique.mockResolvedValue({ seats: 5, coachId: "other" });
+    txMock.batch.findUnique.mockResolvedValue({ coachId: "other" });
     expect((await post({ coachId: "c1", batchId: "bt1" })).status).toBe(400);
     expect(txMock.booking.create).not.toHaveBeenCalled();
   });

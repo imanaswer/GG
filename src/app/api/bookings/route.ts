@@ -90,10 +90,11 @@ export async function POST(req: NextRequest) {
         const claim = await tx.coach.updateMany({ where: { id: coachId, seatsLeft: { gt: 0 } }, data: { seatsLeft: { decrement: 1 } } });
         if (claim.count === 0) throw new ApiError("No seats available", 409);
         if (batchId) {
-          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { seats: true, coachId: true } });
+          const batch = await tx.batch.findUnique({ where: { id: batchId }, select: { coachId: true } });
           if (!batch || batch.coachId !== coachId) throw new ApiError("That batch is not available", 400);
-          if (batch.seats <= 0) throw new ApiError("That batch is full", 409);
-          await tx.batch.update({ where: { id: batchId }, data: { seats: { decrement: 1 } } });
+          // Conditional claim: two concurrent bookers cannot both take the last batch seat.
+          const taken = await tx.batch.updateMany({ where: { id: batchId, seats: { gt: 0 } }, data: { seats: { decrement: 1 } } });
+          if (taken.count === 0) throw new ApiError("That batch is full", 409);
         }
         return tx.booking.create({
           data: { userId: session.id, coachId, batchId: batchId ?? null, status: "pending", note },

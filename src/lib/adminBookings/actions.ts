@@ -132,7 +132,10 @@ async function applyActionInner(
           where: { entityType: "event", entityId: reg.eventId, userId: reg.userId, status: "paid" },
           select: { id: true },
         });
-        if (paid) await tx.payment.update({ where: { id: paid.id }, data: { status: "refunded" satisfies PaymentStatus } });
+        // refund_pending, like every other cancel path: the transfer happens by
+        // hand in Razorpay and "mark-refunded" closes the loop. Marking it
+        // refunded here hid the outstanding transfer from the ops inbox.
+        if (paid) await tx.payment.update({ where: { id: paid.id }, data: { status: "refund_pending" satisfies PaymentStatus } });
       }
 
       await tx.eventRegistration.update({
@@ -142,7 +145,7 @@ async function applyActionInner(
           ...(action === "reject"
             ? { rejectedAt: new Date(), rejectionReason: meta?.rejectionReason ?? null }
             : { cancelledAt: new Date() }),
-          ...(paid ? { paymentStatus: "refunded" satisfies PaymentStatus } : {}),
+          ...(paid ? { paymentStatus: "refund_pending" satisfies PaymentStatus } : {}),
         },
       });
 
