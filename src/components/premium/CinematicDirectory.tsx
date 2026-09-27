@@ -279,7 +279,7 @@ export function CinematicDirectory() {
           text-decoration: none;
           border-radius: 20px;
           background: #0D0D0D;
-          border: 1px solid rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.2);
           overflow: hidden;
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
           position: relative;
@@ -288,7 +288,7 @@ export function CinematicDirectory() {
 
         .pathway-card:hover {
           transform: translateY(-8px);
-          border-color: rgba(255,255,255,0.2);
+          border-color: rgba(255,255,255,0.4);
         }
 
         .pathway-card-inner {
