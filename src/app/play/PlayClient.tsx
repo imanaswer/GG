@@ -518,7 +518,7 @@ function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
           flexDirection: "column",
           aspectRatio: "3/4",
           background: "#000",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.2)",
           borderRadius: 20,
           overflow: "hidden",
           transition: "border-color 300ms, box-shadow 300ms, transform 300ms",
@@ -599,9 +599,10 @@ function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
           <h3
             className="game-card-title"
             style={{
-              fontFamily: "var(--font-serif)",
+              fontFamily: "var(--font-sans)",
               lineHeight: 1.05,
-              fontWeight: 400,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
               color: "#fff",
               textShadow: "0 2px 10px rgba(0,0,0,0.5)",
             }}
@@ -682,16 +683,19 @@ function GameCard({ game, origin }: { game: Game; origin: Coords | null }) {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
               <Star size={12} fill="#eab308" color="#eab308" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                 {game.organizerRating?.toFixed(1) ?? "—"}
               </span>
               <span
+                className="game-card-org-name"
                 style={{
                   fontSize: 12,
                   color: "rgba(255,255,255,0.5)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
+                  minWidth: 0,
+                  display: "block",
                 }}
               >
                 {game.organizerName}
@@ -1055,6 +1059,9 @@ function PlayContent({ initialGames }: { initialGames?: Game[] }) {
               }
               .game-card-footer {
                 padding-top: 10px;
+              }
+              .game-card-org-name {
+                display: none !important;
               }
               .game-card-badge {
                 font-size: 9px !important;

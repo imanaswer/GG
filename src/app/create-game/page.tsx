@@ -166,7 +166,6 @@ export default function CreateGamePage() {
                       const open = v.openSlots ?? 0;
                       return (
                         <button key={v.id} type="button" onClick={() => selectVenue(v.id)} className={`venue-card ${active ? "active" : ""}`} style={{
-                          aspectRatio: "1/1",
                           width: "100%",
                           padding: 20,
                           borderRadius: 16,
@@ -267,6 +266,7 @@ export default function CreateGamePage() {
                     <>
                       <FieldRow label="Your UPI ID" hint="Players can copy this to pay you. Add a QR instead if you prefer.">
                         <Input
+                          className="awwwards-input"
                           placeholder="yourname@bank"
                           value={form.hostUpiId}
                           onChange={e => set("hostUpiId", e.target.value)}
@@ -400,13 +400,13 @@ export default function CreateGamePage() {
           )}
 
           {/* Nav bar */}
-          <div style={{
+          <div className="create-game-navbar" style={{
             display: "flex", alignItems: "center", gap: 14,
             padding: "18px 22px",
             background: "#000",
             border: "1px solid rgba(255,255,255,0.15)", borderRadius: 18, marginTop: 8,
           }}>
-            <div style={{ flex: 1 }}>
+            <div className="create-game-nav-text" style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>
                 {step === 3 ? (canSubmit ? "Ready to publish?" : "A few more details") : `Step ${step} of 3 · ${STEPS[step - 1]}`}
               </div>
@@ -415,21 +415,21 @@ export default function CreateGamePage() {
               </div>
             </div>
 
-            <Link href="/play" style={{
+            <Link href="/play" className="create-game-nav-btn create-game-nav-btn-secondary" style={{
               height: 44, padding: "0 18px", borderRadius: 100,
               background: "transparent", color: "rgba(255,255,255,0.75)",
               border: "1px solid rgba(255,255,255,0.15)", textDecoration: "none",
-              fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center",
+              fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center"
             }}>
               Cancel
             </Link>
 
             {step > 1 && (
-              <button type="button" onClick={() => setStep((step - 1) as 1 | 2 | 3)} style={{
+              <button type="button" className="create-game-nav-btn create-game-nav-btn-secondary" onClick={() => setStep((step - 1) as 1 | 2 | 3)} style={{
                 height: 44, padding: "0 18px", borderRadius: 100,
                 background: "transparent", color: "rgba(255,255,255,0.85)",
                 border: "1px solid rgba(255,255,255,0.15)", fontFamily: "inherit",
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center"
               }}>
                 Back
               </button>
@@ -438,6 +438,7 @@ export default function CreateGamePage() {
             {step < 3 ? (
               <button
                 type="button"
+                className="create-game-nav-btn create-game-nav-btn-primary"
                 disabled={step === 1 ? !step1Valid : !step2Valid}
                 onClick={() => setStep((step + 1) as 1 | 2 | 3)}
                 style={{
@@ -447,7 +448,7 @@ export default function CreateGamePage() {
                   color: (step === 1 ? step1Valid : step2Valid) ? "#000" : "rgba(255,255,255,0.4)",
                   border: (step === 1 ? step1Valid : step2Valid) ? "1px solid #fff" : "1px solid rgba(255,255,255,0.15)",
                   cursor: (step === 1 ? step1Valid : step2Valid) ? "pointer" : "not-allowed",
-                  display: "inline-flex", alignItems: "center", gap: 8,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
                 Next <ArrowRight size={14} />
@@ -455,6 +456,7 @@ export default function CreateGamePage() {
             ) : (
               <button
                 type="submit"
+                className="create-game-nav-btn create-game-nav-btn-primary"
                 disabled={createGame.isPending || !canSubmit}
                 style={{
                   height: 44, padding: "0 22px", borderRadius: 100, fontSize: 13.5, fontWeight: 700,
@@ -464,7 +466,7 @@ export default function CreateGamePage() {
                   border: canSubmit ? "1px solid #fff" : "1px solid rgba(255,255,255,0.15)",
                   cursor: (createGame.isPending || !canSubmit) ? "not-allowed" : "pointer",
                   opacity: createGame.isPending ? 0.6 : 1,
-                  display: "inline-flex", alignItems: "center", gap: 8,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
                 {createGame.isPending ? "Publishing…" : (<>Publish game <ArrowRight size={14} /></>)}
@@ -475,8 +477,40 @@ export default function CreateGamePage() {
       </main>
 
       <style>{`
+        .slot-grid {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .slot-btn {
+          padding: 12px 24px;
+          font-size: 14px;
+        }
         @media (max-width: 780px) {
           .two-col { grid-template-columns: 1fr !important; }
+          .slot-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+          }
+          .slot-btn {
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+            width: 100%;
+          }
+          .create-game-navbar[style] {
+            flex-wrap: wrap !important;
+            padding: 16px !important;
+            gap: 12px !important;
+          }
+          .create-game-nav-text[style] {
+            flex: 1 1 100% !important;
+            margin-bottom: 8px;
+          }
+          .create-game-nav-btn-secondary {
+            flex: 1 !important;
+          }
+          .create-game-nav-btn-primary {
+            flex: 1 1 100% !important;
+          }
         }
         @media (min-width: 1024px) {
           .section-card-layout {
@@ -621,6 +655,18 @@ function AuthGate() {
             </Link>
           </div>
         </div>
+        <style>{`
+          .venue-card {
+            aspect-ratio: 1/1;
+          }
+          @media (max-width: 768px) {
+            .venue-card {
+              aspect-ratio: auto !important;
+              min-height: 180px;
+              gap: 40px;
+            }
+          }
+        `}</style>
       </main>
     </div>
   );
@@ -703,7 +749,7 @@ function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; 
       {groups.map(g => (
         <div key={g.day}>
           <div style={{ fontSize: 11.5, fontWeight: 700, color: "#9ca3af", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>{g.label}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <div className="slot-grid" style={{ gap: 8 }}>
             {g.items.map(s => {
               const active = value === s.id;
               const disabled = !s.available;
@@ -714,8 +760,9 @@ function SlotPicker({ slots, value, onChange }: { slots: Slot[]; value: string; 
                   disabled={disabled}
                   onClick={() => !disabled && onChange(s.id)}
                   title={disabled ? (s.reason === "blocked" ? `Blocked${s.blockReason ? `: ${s.blockReason}` : ""}` : "Unavailable") : undefined}
+                  className="slot-btn"
                   style={{
-                    padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)",
+                    borderRadius: 100, fontWeight: 500, fontFamily: "var(--font-sans)",
                     cursor: disabled ? "not-allowed" : "pointer",
                     background: active ? "#fff" : "transparent",
                     color: active ? "#000" : disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.7)",
