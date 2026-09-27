@@ -192,6 +192,9 @@ export function CinematicDirectory() {
           background-color: #000000;
           padding: 120px 5vw;
           min-height: 100vh;
+          margin-top: -2px;
+          position: relative;
+          z-index: 10;
         }
 
         .directory-header {
