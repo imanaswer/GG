@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { GraduationCap, Users, Trophy, Target, Lightbulb } from "lucide-react";
+import { GraduationCap, Users, Trophy, Target, Lightbulb, Medal } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
@@ -24,6 +24,7 @@ const CARDS = [
     image: "/cinematic/coaches_v2.jpg",
     themeColor: "#fff", // Red
     icon: GraduationCap,
+    mobileOnly: false,
   },
   {
     id: "play",
@@ -73,6 +74,19 @@ const CARDS = [
     themeColor: "#06b6d4", // Cyan
     icon: Lightbulb,
   },
+  {
+    id: "leaderboard",
+    tag: "06 — RANK",
+    title: "Leaderboard",
+    desc: "Track your stats and climb the local ranks.",
+    bullets: ["City rankings", "Player stats", "Monthly rewards"],
+    linkText: "View Leaderboard ↗",
+    link: "/leaderboard",
+    image: "/cinematic/leaderboard_hero.jpg",
+    themeColor: "#eab308", // Yellow
+    icon: Medal,
+    mobileOnly: true,
+  },
 ];
 
 function PathwayCard({ card, index }: { card: typeof CARDS[0], index: number }) {
@@ -82,7 +96,7 @@ function PathwayCard({ card, index }: { card: typeof CARDS[0], index: number }) 
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
       viewport={{ once: true, margin: "-50px" }}
-      className="pathway-card-wrapper"
+      className={`pathway-card-wrapper ${card.mobileOnly ? 'mobile-only-card' : ''}`}
     >
       <Link href={card.link} className="pathway-card">
         <div className="pathway-card-inner">
@@ -139,65 +153,7 @@ export function CinematicDirectory() {
     return () => trigger.kill();
   }, []);
 
-  useEffect(() => {
-    if (inView && gridRef.current && window.innerWidth <= 768) {
-      const grid = gridRef.current;
-      
-      let isInteracted = false;
-      const handleInteraction = () => {
-        isInteracted = true;
-        grid.style.scrollSnapType = ''; // ensure snapping is restored
-      };
-      
-      // Stop repeating if user touches or scrolls manually
-      grid.addEventListener('touchstart', handleInteraction, { once: true });
-      grid.addEventListener('mousedown', handleInteraction, { once: true });
-      grid.addEventListener('wheel', handleInteraction, { once: true });
-      
-      const playPeek = () => {
-        if (isInteracted) return;
-        grid.style.scrollSnapType = 'none';
-        
-        gsap.to(grid, {
-          scrollLeft: window.innerWidth * 0.45,
-          duration: 0.8,
-          ease: "power3.inOut",
-          onComplete: () => {
-            if (isInteracted) return;
-            gsap.to(grid, {
-              scrollLeft: 0,
-              duration: 0.7,
-              delay: 0.2,
-              ease: "power3.out",
-              onComplete: () => {
-                if (!isInteracted) grid.style.scrollSnapType = '';
-              }
-            });
-          }
-        });
-      };
 
-      const timeout = setTimeout(() => {
-        playPeek();
-        const interval = setInterval(() => {
-          if (isInteracted) {
-            clearInterval(interval);
-          } else {
-            playPeek();
-          }
-        }, 4000);
-        
-        return () => clearInterval(interval);
-      }, 1500);
-
-      return () => {
-        clearTimeout(timeout);
-        grid.removeEventListener('touchstart', handleInteraction);
-        grid.removeEventListener('mousedown', handleInteraction);
-        grid.removeEventListener('wheel', handleInteraction);
-      };
-    }
-  }, [inView]);
 
   return (
     <section className="directory-section" ref={containerRef}>
@@ -218,7 +174,7 @@ export function CinematicDirectory() {
             >
               Master every aspect of the game.
             </ScrollReveal>
-            <div className="mobile-swipe-hint">Swipe to explore →</div>
+
           </div>
         )}
       </div>
@@ -272,6 +228,10 @@ export function CinematicDirectory() {
         .pathway-card-wrapper {
           display: block;
           height: 100%;
+        }
+        
+        .mobile-only-card {
+          display: none;
         }
 
         .pathway-card {
@@ -397,10 +357,6 @@ export function CinematicDirectory() {
           align-items: center;
         }
 
-        .mobile-swipe-hint {
-          display: none;
-        }
-
         @media (max-width: 1400px) {
           .pathways-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -409,42 +365,56 @@ export function CinematicDirectory() {
         }
 
         @media (max-width: 768px) {
-          .mobile-swipe-hint {
-            display: block;
-            font-family: var(--font-sans), sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: -8px;
-            animation: pulse-swipe 2s infinite ease-in-out;
-          }
-          @keyframes pulse-swipe {
-            0%, 100% { opacity: 0.4; transform: translateX(0); }
-            50% { opacity: 0.8; transform: translateX(4px); }
-          }
           .directory-section {
-            padding: 80px 24px;
+            padding: 60px 12px;
           }
           .pathways-grid {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 16px;
-            padding-bottom: 24px;
-            scrollbar-width: none; /* Firefox */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
           }
-          .pathways-grid::-webkit-scrollbar {
-            display: none; /* Safari and Chrome */
-          }
-          
           .pathway-card-wrapper {
-            flex: 0 0 85vw;
-            scroll-snap-align: center;
+            height: auto;
+          }
+          .mobile-only-card {
+            display: block;
           }
           .pathway-image-wrapper {
-            height: 200px;
+            height: 140px;
+          }
+          .pathway-tag {
+            font-size: 8px;
+            padding: 4px 8px;
+            top: 12px;
+            left: 12px;
+          }
+          .pathway-icon {
+            width: 28px;
+            height: 28px;
+            top: 12px;
+            right: 12px;
+          }
+          .pathway-content {
+            padding: 0 16px 20px 16px;
+            margin-top: -8px;
+          }
+          .pathway-title {
+            font-size: 22px;
+            margin-bottom: 8px;
+          }
+          .pathway-desc {
+            font-size: 11px;
+            margin-bottom: 16px;
+          }
+          .pathway-bullets {
+            margin-bottom: 20px;
+            gap: 10px;
+          }
+          .pathway-bullets li {
+            font-size: 10px;
+            gap: 8px;
+          }
+          .pathway-link {
+            font-size: 11px;
           }
         }
       `}</style>
