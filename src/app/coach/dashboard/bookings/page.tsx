@@ -27,7 +27,7 @@ export default function CoachBookings() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("pending");
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== "coach")) router.push("/login");
+    if (!loading && (!user || user.role !== "coach")) router.push("/coach/login");
   }, [user, loading, router]);
 
   useEffect(() => {

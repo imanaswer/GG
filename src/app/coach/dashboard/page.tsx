@@ -14,7 +14,7 @@ export default function CoachDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== "coach")) router.push("/login");
+    if (!loading && (!user || user.role !== "coach")) router.push("/coach/login");
   }, [user, loading, router]);
 
   useEffect(() => {
@@ -31,6 +31,24 @@ export default function CoachDashboard() {
     enabled: !!user,
   });
 
+  type Me = {
+    id: string; name: string; sport: string; type: string; skillLevel: string; price: string; timing: string;
+    location: string; address: string; phone: string; email: string; status: string; rating: number; reviewCount: number;
+    totalSeats: number; seatsLeft: number; imageUrl: string;
+    batches: { id: string; day: string; time: string; level: string; seats: number }[];
+    stats: { pending: number; approved: number; completed: number; reviews: number; totalBookings: number };
+  };
+  const { data: me, isError: noProfile } = useQuery<Me>({
+    queryKey: ["coach-me"],
+    queryFn: async () => {
+      const r = await fetch("/api/coach/me");
+      if (!r.ok) throw new Error("no profile");
+      return (await r.json()).data;
+    },
+    enabled: !!user && user.role === "coach",
+    retry: false,
+  });
+
   const { data: agreement } = useQuery<{ signed: boolean; currentVersion: string; agreement: { id: string; agreementNumber: string; agreementVersion: string; acceptedAt: string; status: string } | null }>({
     queryKey: ["coach-agreement"],
     queryFn: () => fetch("/api/coach/agreements").then(r => r.json()).then(d => d.data ?? d),
@@ -40,11 +58,13 @@ export default function CoachDashboard() {
   if (loading || !user) return <div style={{ minHeight: "100vh", background: "#080808" }}><PremiumNav /></div>;
 
   const stats = [
-    { icon: Calendar, label: "Pending Requests",  value: bookings?.pending ?? "—",   color: "#eab308" },
-    { icon: Users,    label: "Approved Students", value: bookings?.approved ?? "—", color: "#4ade80" },
-    { icon: Star,     label: "Your Rating",        value: "4.8",  color: "#fff" },
-    { icon: Clock,    label: "Active Batches",     value: "3",    color: "#60a5fa" },
+    { icon: Calendar, label: "Pending Requests",  value: me?.stats.pending ?? bookings?.pending ?? "—",   color: "#eab308" },
+    { icon: Users,    label: "Approved Students", value: me?.stats.approved ?? bookings?.approved ?? "—", color: "#4ade80" },
+    { icon: Star,     label: "Your Rating",        value: me ? (me.reviewCount ? me.rating.toFixed(1) : "New") : "—",  color: "#fff" },
+    { icon: Clock,    label: "Active Batches",     value: me?.batches.length ?? "—",    color: "#60a5fa" },
   ];
+
+  const statusLabel: Record<string, string> = { active: "Live on Game Ground", pending_approval: "Awaiting approval", inactive: "Paused by admin" };
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808" }}>
@@ -65,6 +85,12 @@ export default function CoachDashboard() {
           </div>
         </div>
 
+        {noProfile && (
+          <div style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.3)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, color: "#eab308", fontSize: 13 }}>
+            No coach profile is linked to this account yet. If the Game Ground team created your profile, ask them to send your portal invite to <strong>{user.email}</strong>.
+          </div>
+        )}
+
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 32 }}>
           {stats.map(({ icon: Icon, label, value, color }) => (
@@ -75,6 +101,42 @@ export default function CoachDashboard() {
             </div>
           ))}
         </div>
+
+        {me && (
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "18px 20px", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Your Profile</h2>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 100, background: me.status === "active" ? "rgba(74,222,128,0.12)" : "rgba(234,179,8,0.12)", color: me.status === "active" ? "#4ade80" : "#eab308", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {statusLabel[me.status] ?? me.status}
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+              {[
+                ["Sport", me.sport], ["Type", me.type], ["Level", me.skillLevel], ["Price", me.price],
+                ["Timing", me.timing || "—"], ["Location", me.location], ["Seats left", `${me.seatsLeft} / ${me.totalSeats}`],
+                ["Phone", me.phone || "—"], ["Email", me.email], ["Completed sessions", String(me.stats.completed)],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>{k}</div>
+                  <div style={{ fontSize: 13, color: "#fff", fontWeight: 600, wordBreak: "break-word" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {me.batches.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Batches</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {me.batches.map(b => (
+                    <div key={b.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#d1d5db", padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
+                      <span>{b.day} · {b.time} · {b.level}</span>
+                      <span style={{ color: b.seats > 0 ? "#4ade80" : "#ef4444", fontWeight: 700 }}>{b.seats} seats</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "18px 20px" }}>
@@ -102,7 +164,7 @@ export default function CoachDashboard() {
             {[
               { href: "/coach/dashboard/bookings", label: "Review Pending Requests", desc: "Track booking requests & their status" },
               { href: "/coach/profile/edit",       label: "Update Your Profile",      desc: "Edit bio, pricing, timings" },
-              { href: `/coach/${user.id}`,          label: "View Public Profile",      desc: "See how players see you" },
+              { href: me ? `/coach/${me.id}` : "/learn", label: "View Public Profile",  desc: "See how players see you" },
             ].map(({ href, label, desc }) => (
               <Link key={href} href={href} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", textDecoration: "none" }}>
                 <div>

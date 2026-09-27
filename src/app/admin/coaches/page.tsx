@@ -9,7 +9,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Link2, ArrowRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Link2, ArrowRight, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { COACH_TYPES, SKILL_LEVELS, formatPrice } from "@/lib/taxonomy";
 
@@ -25,6 +25,7 @@ type Coach = {
   status: string; totalBookings: number; confirmedBookings: number; revenue: number;
   agreement?: { id: string; acceptedAt: string; version: string } | null;
   batches?: BatchRow[];
+  userId?: string | null;
 };
 
 const EMPTY: Partial<Coach> = {
@@ -92,6 +93,16 @@ export default function AdminCoaches() {
       await navigator.clipboard.writeText(d.signLink);
       toast.success("Agreement signing link copied to clipboard");
     } catch { toast.error("Could not copy signing link"); }
+  };
+  const invite = async (c: Coach) => {
+    if (!confirm(`Send ${c.name} a portal login link at ${c.email || "(no email set)"}?`)) return;
+    try {
+      const r = await fetch(`/api/admin/coaches/${c.id}/invite`, { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) { toast.error(d.error ?? "Could not send invite"); return; }
+      toast.success(d.emailSent ? `Invite sent to ${d.email}` : `Account linked, but the email could not be sent to ${d.email}`);
+      qc.invalidateQueries({ queryKey: ["admin-coaches"] });
+    } catch { toast.error("Could not send invite"); }
   };
   const openDelete = (c: Coach) => { setDeleteTarget(c); setModal("delete"); };
   const closeModal = () => { setModal(null); setDeleteTarget(null); };
@@ -223,6 +234,9 @@ export default function AdminCoaches() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                       <Badge status={c.status} />
+                      <span title={c.userId ? "Has a coach portal login" : "No portal login yet — use the invite button"} style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: c.userId ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.05)", color: c.userId ? "#60a5fa" : "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
+                        {c.userId ? "Portal" : "No login"}
+                      </span>
                       {c.agreement ? (
                         <div style={{ display: "flex", gap: 6, alignItems: "center", background: "rgba(34,197,94,0.1)", padding: "3px 10px", borderRadius: 100 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", textTransform: "uppercase", letterSpacing: "0.05em" }}>Signed</span>
@@ -260,7 +274,8 @@ export default function AdminCoaches() {
                   <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 16 }}>
                     <div style={{ display: "flex", gap: 4 }}>
                       <button onClick={() => openEdit(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }} title="Edit"><Pencil size={14} color="#fff" /></button>
-                      <button onClick={() => copySignLink(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }} title="Copy link"><Link2 size={14} color="#fff" /></button>
+                      <button onClick={() => copySignLink(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }} title="Copy agreement link"><Link2 size={14} color="#fff" /></button>
+                      <button onClick={() => invite(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: c.userId ? "rgba(255,255,255,0.03)" : "rgba(96,165,250,0.12)" }} title={c.userId ? "Resend portal login link" : "Invite to coach portal"}><UserPlus size={14} color={c.userId ? "#fff" : "#60a5fa"} /></button>
                       <button onClick={() => openDelete(c)} style={{ ...iconBtn, padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)" }} title="Delete"><Trash2 size={14} color="#ef4444" /></button>
                     </div>
                     <Link href={`/coach/${c.id}`} target="_blank" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#60a5fa", textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.05em" }} title="View Profile">

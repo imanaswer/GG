@@ -92,9 +92,10 @@ export function PremiumNav({ variant = "solid" }: Props) {
                 </button>
                 <div className="pn-profile-dropdown">
                   <div className="pn-profile-dropdown-inner">
+                    {user.role === "coach" && <Link href="/coach/dashboard" className="pn-dropdown-item">Coach dashboard</Link>}
                     <Link href="/profile" className="pn-dropdown-item">View profile</Link>
                     <Link href="/profile/edit" className="pn-dropdown-item">Edit profile</Link>
-                    <button onClick={logout} className="pn-dropdown-item pn-dropdown-item-danger" style={{ width: "100%", textAlign: "left" }}>Log out</button>
+                    <button onClick={() => logout()} className="pn-dropdown-item pn-dropdown-item-danger" style={{ width: "100%", textAlign: "left" }}>Log out</button>
                   </div>
                 </div>
               </div>

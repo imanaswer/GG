@@ -54,7 +54,7 @@ export async function proxy(req: NextRequest) {
   if (isProtectedPage(pathname)) {
     if (await requireSession(req)) return NextResponse.next();
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = pathname.startsWith("/coach/") ? "/coach/login" : "/login";
     url.search = `?redirect=${encodeURIComponent(pathname + req.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }

@@ -5,6 +5,13 @@
  */
 import { logger } from "@/lib/logger";
 
+/** Escape user-supplied text before it is interpolated into email HTML. */
+export function escapeHtml(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 interface EmailPayload {
   to: string;
   subject: string;
@@ -160,6 +167,18 @@ export const emails = {
       <p style="color:#9ca3af;margin-top:12px">Agreement Number: <strong style="color:#fff">${agreementNumber}</strong><br/>
          Version: ${version}<br/>Signed: ${signedDate}</p>
       <a href="${pdfUrl}" style="display:inline-block;margin-top:16px;background:#fff;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Download PDF</a>
+    </div>${footer}`,
+  }),
+
+  coachInvite: (name: string, setPasswordUrl: string) => ({
+    subject: "Your Game Ground coach portal login",
+    html: `${brand}<div style="padding:28px">
+      <h2 style="color:#fff;margin:0 0 12px">Your coach portal is ready, ${escapeHtml(name)}</h2>
+      <p style="color:#9ca3af">Set a password to sign in and see your profile, batches and booking requests.</p>
+      <div style="margin-top:24px;text-align:center">
+        <a href="${setPasswordUrl}" style="display:inline-block;padding:13px 32px;background:#fff;color:#000;border-radius:9px;font-weight:700;text-decoration:none;font-size:15px">Set my password</a>
+      </div>
+      <p style="color:#6b7280;font-size:12px;margin-top:20px;text-align:center">This link expires in 72 hours. After that, use “Forgot password” on the coach sign-in page.</p>
     </div>${footer}`,
   }),
 

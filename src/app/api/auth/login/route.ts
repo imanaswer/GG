@@ -15,8 +15,12 @@ export async function POST(req: NextRequest) {
     const input = LoginSchema.parse(body);
     const user = await prisma.user.findUnique({ where: { email: input.email } });
     if (!user) return fail("Invalid email or password", 401);
-    // Google-only accounts have no password — guide them to the right flow.
-    if (!user.passwordHash) return fail("This account uses Google sign-in — continue with Google.", 401);
+    // No password: a social-only account, or a coach invited by admin who has not
+    // set one yet. Guide each to the flow that works for them.
+    if (!user.passwordHash) {
+      if (user.googleId || user.appleId) return fail("This account uses Google or Apple sign-in — continue with that.", 401);
+      return fail("This account has no password yet. Use “Forgot password” to set one.", 401);
+    }
     if (!await bcrypt.compare(input.password, user.passwordHash))
       return fail("Invalid email or password", 401);
 
