@@ -96,7 +96,7 @@ export default function AdminAgreementsPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* Header Row */}
-            <div style={{ display: "flex", alignItems: "center", padding: "0 32px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
+            <div className="admin-agreements-header" style={{ display: "flex", alignItems: "center", padding: "0 32px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
               <div style={{ width: 160, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Agreement #</div>
               <div style={{ flex: 1, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Coach Info</div>
               <div style={{ width: 160, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Details</div>
@@ -109,10 +109,10 @@ export default function AdminAgreementsPage() {
             ) : rows.length === 0 ? (
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 24 }}>No agreements found.</div>
             ) : rows.map(r => (
-              <div key={r.id} style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, padding: "16px 32px", gap: 16, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}>
+              <div key={r.id} className="admin-agreement-row" style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, padding: "16px 32px", gap: 16, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}>
                 
                 {/* Agreement # */}
-                <div style={{ width: 160, display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="admin-agreement-number" style={{ width: 160, display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <FileText size={16} color="#9ca3af" />
                   </div>
@@ -120,13 +120,13 @@ export default function AdminAgreementsPage() {
                 </div>
 
                 {/* Coach Info */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                <div className="admin-agreement-coach" style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{r.fullName}</span>
                   <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>{r.email}</span>
                 </div>
 
                 {/* Details (Version & Date) */}
-                <div style={{ width: 160, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="admin-agreement-details" style={{ width: 160, display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9ca3af", fontWeight: 700 }}>
                     <Tag size={12} color="#6b7280" /> {r.agreementVersion}
                   </div>
@@ -136,12 +136,12 @@ export default function AdminAgreementsPage() {
                 </div>
 
                 {/* Status */}
-                <div style={{ width: 140 }}>
+                <div className="admin-agreement-status" style={{ width: 140 }}>
                   <AgreementStatusBadge status={r.status} />
                 </div>
 
                 {/* Actions */}
-                <div style={{ width: 140, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                <div className="admin-agreement-actions" style={{ width: 140, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                   <a href={`/api/coach/agreements/${r.id}/pdf`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "#fff", textDecoration: "none", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} title="Download PDF">
                     <Download size={14} />
                   </a>
@@ -153,6 +153,51 @@ export default function AdminAgreementsPage() {
             ))}
           </div>
         </div>
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-agreements-header { display: none !important; }
+            .admin-agreement-row[style] {
+              display: grid !important;
+              grid-template-columns: 1fr auto !important;
+              grid-template-areas:
+                "coach number"
+                "details details"
+                "status actions" !important;
+              border-radius: 24px !important;
+              padding: 20px !important;
+              gap: 20px !important;
+            }
+            .admin-agreement-number[style] {
+              grid-area: number;
+              width: auto !important;
+            }
+            .admin-agreement-coach[style] {
+              grid-area: coach;
+              width: 100% !important;
+              flex: none !important;
+            }
+            .admin-agreement-details[style] {
+              grid-area: details;
+              width: 100% !important;
+              background: rgba(0,0,0,0.2) !important;
+              padding: 16px !important;
+              border-radius: 16px !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+            }
+            .admin-agreement-status[style] {
+              grid-area: status;
+              width: auto !important;
+              display: flex !important;
+              align-items: center !important;
+            }
+            .admin-agreement-actions[style] {
+              grid-area: actions;
+              width: auto !important;
+              justify-content: flex-end !important;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

@@ -165,8 +165,44 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Page content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "40px 40px" }}>
-          {children}
+        <div className="admin-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+          <div className="admin-content-inner">
+            {children}
+          </div>
+          <style>{`
+            .admin-content-inner {
+              padding: 40px;
+              max-width: 100%;
+            }
+            @media (max-width: 768px) {
+              .admin-content-inner {
+                padding: 24px 16px;
+                /* Removed overflow-x: auto here because it caused the entire page (including headers) to scroll off-screen */
+              }
+              /* Mobile optimized stat cards */
+              .admin-stat-card {
+                padding: 16px !important;
+              }
+              .admin-stat-val {
+                font-size: 28px !important;
+              }
+              .admin-stat-label {
+                font-size: 10px !important;
+              }
+              .admin-stat-sub {
+                font-size: 11px !important;
+                margin-top: 4px !important;
+              }
+              .admin-stat-icon {
+                width: 14px !important;
+                height: 14px !important;
+              }
+              /* Force grids to single column on mobile */
+              .admin-content-inner [style*="grid-template-columns"] {
+                 grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
         </div>
       </div>
     </div>

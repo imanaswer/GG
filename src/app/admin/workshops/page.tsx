@@ -200,11 +200,11 @@ export default function AdminWorkshops() {
                   </button>
                 )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 24 }}>
+              <div className="admin-workshops-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 24 }}>
                 {activeWorkshops.map(w => {
                   const pct = w.maxParticipants ? Math.round((w.participants / w.maxParticipants) * 100) : 0;
                   return (
-                    <div key={w.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(w.id) ? "rgba(96,165,250,0.5)" : workshopFilter === w.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
+                    <div key={w.id} className="admin-workshop-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(w.id) ? "rgba(96,165,250,0.5)" : workshopFilter === w.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
                       <div style={{ position: "absolute", top: 24, right: 24 }} onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(w.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(w.id); else next.delete(w.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                       </div>
@@ -257,11 +257,11 @@ export default function AdminWorkshops() {
                   </button>
                 )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 32, opacity: 0.6 }}>
+              <div className="admin-workshops-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 32, opacity: 0.6 }}>
                 {pastWorkshops.map(w => {
                   const pct = w.maxParticipants ? Math.round((w.participants / w.maxParticipants) * 100) : 0;
                   return (
-                    <div key={w.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(w.id) ? "rgba(96,165,250,0.5)" : workshopFilter === w.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
+                    <div key={w.id} className="admin-workshop-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(w.id) ? "rgba(96,165,250,0.5)" : workshopFilter === w.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setWorkshopFilter(f => f === w.title ? "all" : w.title)}>
                       <div style={{ position: "absolute", top: 24, right: 24 }} onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(w.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(w.id); else next.delete(w.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                       </div>
@@ -388,6 +388,33 @@ export default function AdminWorkshops() {
         <AdminModal open={modal === "delete"} onClose={closeModal} title="Delete Workshop" width={420}>
           <DeleteConfirm name={deleteTarget?.title ?? ""} onConfirm={() => deleteTarget && remove.mutate(deleteTarget.id)} onCancel={closeModal} loading={remove.isPending} />
         </AdminModal>
+
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-workshops-grid[style] {
+              display: flex !important;
+              overflow-x: auto;
+              scroll-snap-type: x mandatory;
+              margin-right: -16px;
+              padding-right: 16px;
+              padding-bottom: 8px;
+              -webkit-overflow-scrolling: touch;
+            }
+            .admin-workshops-grid::-webkit-scrollbar {
+              display: none;
+            }
+            .admin-workshops-grid > .admin-workshop-card {
+              flex: 0 0 280px !important;
+              scroll-snap-align: start;
+            }
+            .admin-workshop-card {
+              padding: 20px !important;
+            }
+            .admin-workshop-card h3 {
+              font-size: 16px !important;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

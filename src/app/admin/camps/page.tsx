@@ -163,11 +163,11 @@ export default function AdminCamps() {
                   </button>
                 )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 24 }}>
+              <div className="admin-camps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 24 }}>
                 {activeCamps.map(c => {
                   const pct = c.maxParticipants ? Math.round((c.participants / c.maxParticipants) * 100) : 0;
                   return (
-                    <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : campFilter === c.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
+                    <div key={c.id} className="admin-camp-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : campFilter === c.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
                       <div style={{ position: "absolute", top: 24, right: 24 }} onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                       </div>
@@ -219,11 +219,11 @@ export default function AdminCamps() {
                   </button>
                 )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 32, opacity: 0.6 }}>
+              <div className="admin-camps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 32, opacity: 0.6 }}>
                 {pastCamps.map(c => {
                   const pct = c.maxParticipants ? Math.round((c.participants / c.maxParticipants) * 100) : 0;
                   return (
-                    <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : campFilter === c.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
+                    <div key={c.id} className="admin-camp-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : campFilter === c.title ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, cursor: "pointer", position: "relative" }} onClick={() => setCampFilter(f => f === c.title ? "all" : c.title)}>
                       <div style={{ position: "absolute", top: 24, right: 24 }} onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                       </div>
@@ -347,6 +347,33 @@ export default function AdminCamps() {
         <AdminModal open={modal === "delete"} onClose={closeModal} title="Delete Camp" width={420}>
           <DeleteConfirm name={deleteTarget?.title ?? ""} onConfirm={() => deleteTarget && remove.mutate(deleteTarget.id)} onCancel={closeModal} loading={remove.isPending} />
         </AdminModal>
+
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-camps-grid[style] {
+              display: flex !important;
+              overflow-x: auto;
+              scroll-snap-type: x mandatory;
+              margin-right: -16px;
+              padding-right: 16px;
+              padding-bottom: 8px;
+              -webkit-overflow-scrolling: touch;
+            }
+            .admin-camps-grid::-webkit-scrollbar {
+              display: none;
+            }
+            .admin-camps-grid > .admin-camp-card {
+              flex: 0 0 280px !important;
+              scroll-snap-align: start;
+            }
+            .admin-camp-card {
+              padding: 20px !important;
+            }
+            .admin-camp-card h3 {
+              font-size: 16px !important;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

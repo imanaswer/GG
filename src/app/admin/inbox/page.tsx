@@ -95,19 +95,19 @@ export default function AdminInbox() {
             : (
               <>
                 {data?.refundsDue.map(r => (
-                  <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
-                    <div style={{ minWidth: 100 }}>
+                  <div key={r.id} className="admin-inbox-row" style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div className="admin-inbox-col-1" style={{ minWidth: 100 }}>
                       <div style={{ fontSize: 10, fontWeight: 800, color: r.ageDays >= 7 ? "#ef4444" : "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>WAITING</div>
                       <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(r.ageDays)}</div>
                     </div>
                     
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div className="admin-inbox-col-main" style={{ flex: 1 }}>
+                      <div className="admin-inbox-meta-flex" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                         <span style={{ fontSize: 18, fontWeight: 400, fontFamily: "var(--font-serif)", color: "#fff" }}>{rupees(r.amount)}</span>
                         <Badge status={r.entityType} />
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{r.entityName}</span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                      <div className="admin-inbox-meta-flex" style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
                         <span>{r.userName} · {r.userEmail}</span>
                         <span>ID: {r.razorpayPaymentId ?? "—"}</span>
                       </div>
@@ -127,19 +127,19 @@ export default function AdminInbox() {
             : (
               <>
                 {data?.orphanedCharges.map(o => (
-                  <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
-                    <div style={{ minWidth: 100 }}>
+                  <div key={o.id} className="admin-inbox-row" style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div className="admin-inbox-col-1" style={{ minWidth: 100 }}>
                       <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>CAPTURED</div>
                       <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(o.ageDays)} ago</div>
                     </div>
                     
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div className="admin-inbox-col-main" style={{ flex: 1 }}>
+                      <div className="admin-inbox-meta-flex" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                         <span style={{ fontSize: 18, fontWeight: 400, fontFamily: "var(--font-serif)", color: "#fff" }}>{rupees(o.amount)}</span>
                         <Badge status={o.entityType} />
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{o.entityName}</span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                      <div className="admin-inbox-meta-flex" style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
                         <span>Order: {o.id}</span>
                         <span>Razorpay: {o.razorpayPaymentId ?? "—"}</span>
                       </div>
@@ -159,16 +159,16 @@ export default function AdminInbox() {
             : (
               <>
                 {data?.needsAction.map(a => (
-                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 20, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
-                    <div style={{ minWidth: 100 }}>
+                  <div key={a.id} className="admin-inbox-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "20px 24px", background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20 }}>
+                    <div className="admin-inbox-col-1" style={{ minWidth: 100 }}>
                       <div style={{ fontSize: 10, fontWeight: 800, color: a.ageDays >= 2 ? "#eab308" : "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em" }}>WAITING</div>
                       <div style={{ fontSize: 16, fontFamily: "var(--font-serif)", color: "#fff", marginTop: 4 }}>{age(a.ageDays)}</div>
                     </div>
                     
-                    <div style={{ flex: 1 }}>
+                    <div className="admin-inbox-col-main" style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{a.title}</div>
                       {a.body && <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>{a.body}</div>}
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+                      <div className="admin-inbox-meta-flex" style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
                         {a.link && (
                           <a href={a.link} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#60a5fa", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
                             Open details <ExternalLink size={12} />
@@ -180,7 +180,7 @@ export default function AdminInbox() {
                       </div>
                     </div>
                     
-                    <div style={{ minWidth: 140, padding: "0 20px", borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div className="admin-inbox-col-meta" style={{ minWidth: 140, padding: "0 20px", borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
                       <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>HANDLED BY</div>
                       {a.claimedByName
                         ? <div style={{ fontSize: 13, color: a.claimStale ? "#eab308" : "#fff", fontWeight: 700 }}>
@@ -190,7 +190,7 @@ export default function AdminInbox() {
                         : <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Unassigned</div>}
                     </div>
 
-                    <div style={{ display: "flex", gap: 8, paddingLeft: 12 }}>
+                    <div className="admin-inbox-col-actions" style={{ display: "flex", gap: 8, paddingLeft: 12 }}>
                       {a.claimedById
                         ? <button style={ghostBtn} onClick={() => act.mutate({ id: a.id, action: "unclaim" })}>Release</button>
                         : <button style={primaryBtn} onClick={() => act.mutate({ id: a.id, action: "claim" })}>Claim</button>}
@@ -201,6 +201,44 @@ export default function AdminInbox() {
               </>
             )}
         </Section>
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-inbox-row[style] {
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 16px !important;
+            }
+            .admin-inbox-col-1[style] {
+              min-width: auto !important;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+            .admin-inbox-col-1 > div:last-child {
+              margin-top: 0 !important;
+            }
+            .admin-inbox-col-main[style] {
+              flex: none !important;
+            }
+            .admin-inbox-meta-flex[style] {
+              flex-wrap: wrap !important;
+            }
+            .admin-inbox-col-meta[style] {
+              min-width: auto !important;
+              padding: 16px 0 0 0 !important;
+              border-left: none !important;
+              border-top: 1px solid rgba(255,255,255,0.1) !important;
+            }
+            .admin-inbox-col-actions[style] {
+              padding-left: 0 !important;
+              padding-top: 8px !important;
+            }
+            .admin-inbox-col-actions button {
+              flex: 1;
+              justify-content: center;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

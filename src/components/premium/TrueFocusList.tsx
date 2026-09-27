@@ -27,25 +27,33 @@ export function TrueFocusList({ items, className, style }: TrueFocusListProps) {
 
         return (
           <motion.span
-            key={item.text}
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            animate={{
-              x: item.x,
-              color: isHovered ? "#FFFFFF" : isOtherHovered ? "#222222" : item.defaultColor,
-              filter: isOtherHovered ? "blur(12px)" : "blur(0px)",
-              opacity: isOtherHovered ? 0.3 : 1,
-              scale: isHovered ? 1.05 : isOtherHovered ? 0.95 : 1,
-            }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} // smooth expo-like ease out
-            style={{
-              display: "block",
-              transform: `translateX(${item.x})`, // initial transform fallback
-              cursor: "pointer",
-              willChange: "transform, filter, opacity, color"
-            }}
+            key={item.text + "-wrapper"}
+            initial={{ opacity: 0, filter: "blur(24px)", y: 40 }}
+            whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 1.4, delay: i * 0.25, ease: [0.16, 1, 0.3, 1] }}
+            style={{ display: "block" }}
           >
-            {item.text}
+            <motion.span
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              animate={{
+                x: item.x,
+                color: isHovered ? "#FFFFFF" : isOtherHovered ? "#222222" : item.defaultColor,
+                filter: isOtherHovered ? "blur(12px)" : "blur(0px)",
+                opacity: isOtherHovered ? 0.3 : 1,
+                scale: isHovered ? 1.05 : isOtherHovered ? 0.95 : 1,
+              }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                display: "block",
+                transform: `translateX(${item.x})`,
+                cursor: "pointer",
+                willChange: "transform, filter, opacity, color"
+              }}
+            >
+              {item.text}
+            </motion.span>
           </motion.span>
         );
       })}

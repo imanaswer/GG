@@ -286,7 +286,7 @@ function CoachCard({ coach, origin }: { coach: Coach; origin: Coords | null }) {
           height: "100%",
           display: "flex", flexDirection: "column",
           background: "#0D0D0D",
-          border: "1px solid rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.2)",
           borderRadius: 20,
           overflow: "hidden",
           transition: "border-color 300ms, box-shadow 300ms, transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -294,13 +294,13 @@ function CoachCard({ coach, origin }: { coach: Coach; origin: Coords | null }) {
         onHoverStart={(e) => {
           const el = e.currentTarget as HTMLElement | null;
           if (!el) return;
-          el.style.borderColor = "rgba(255,255,255,0.2)";
+          el.style.borderColor = "rgba(255,255,255,0.4)";
           el.style.transform = "translateY(-8px)";
         }}
         onHoverEnd={(e) => {
           const el = e.currentTarget as HTMLElement | null;
           if (!el) return;
-          el.style.borderColor = "rgba(255,255,255,0.06)";
+          el.style.borderColor = "rgba(255,255,255,0.2)";
           el.style.transform = "translateY(0)";
         }}
       >
@@ -345,8 +345,8 @@ function CoachCard({ coach, origin }: { coach: Coach; origin: Coords | null }) {
 
         {/* Content Section */}
         <div className="coach-card-content" style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
-          <h3 className="coach-card-title" style={{ fontFamily: "'Instrument Serif', serif", color: "white", margin: "0 0 8px 0", lineHeight: 1.1 }}>
-            {coach.name}
+          <h3 className="coach-card-title" style={{ fontFamily: "var(--font-sans)", fontWeight: 700, letterSpacing: "-0.02em", color: "white", margin: "0 0 8px 0", lineHeight: 1.1, textTransform: "capitalize" }}>
+            {coach.name.toLowerCase()}
           </h3>
           <p className="coach-card-type" style={{ color: "#A3A3A3", fontSize: 14, lineHeight: 1.5, margin: "0 0 24px 0" }}>
             {coach.type} • {coach.skillLevel}

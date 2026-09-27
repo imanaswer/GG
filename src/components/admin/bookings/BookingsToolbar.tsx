@@ -20,7 +20,8 @@ export function BookingsToolbar({
   // be silent no-ops — hide them. They reappear on the booking-date axis (real createdAt).
   const weekdayMode = dateMode === "weekday" && state.by === "session";
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16, alignItems: "center" }}>
+    <>
+      <div className="admin-bookings-toolbar" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16, alignItems: "center", WebkitOverflowScrolling: "touch" }}>
       <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
         <Search size={15} style={{ position: "absolute", left: 11, top: 10, color: "#6b7280" }} />
         <input value={state.q} onChange={e => set({ q: e.target.value })} placeholder="Search name, email, ID, entity…"
@@ -73,5 +74,23 @@ export function BookingsToolbar({
         <Download size={14} /> Export CSV
       </button>
     </div>
+    <style>{`
+      @media (max-width: 768px) {
+        .admin-bookings-toolbar {
+          flex-wrap: nowrap !important;
+          overflow-x: auto;
+          margin-right: -16px;
+          padding-right: 16px;
+          padding-bottom: 4px;
+        }
+        .admin-bookings-toolbar::-webkit-scrollbar {
+          display: none;
+        }
+        .admin-bookings-toolbar > div:first-child {
+          min-width: 140px !important;
+        }
+      }
+    `}</style>
+    </>
   );
 }

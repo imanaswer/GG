@@ -126,6 +126,7 @@ function PathwayCard({ card, index }: { card: typeof CARDS[0], index: number }) 
 export function CinematicDirectory() {
   const containerRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
@@ -137,6 +138,66 @@ export function CinematicDirectory() {
     });
     return () => trigger.kill();
   }, []);
+
+  useEffect(() => {
+    if (inView && gridRef.current && window.innerWidth <= 768) {
+      const grid = gridRef.current;
+      
+      let isInteracted = false;
+      const handleInteraction = () => {
+        isInteracted = true;
+        grid.style.scrollSnapType = ''; // ensure snapping is restored
+      };
+      
+      // Stop repeating if user touches or scrolls manually
+      grid.addEventListener('touchstart', handleInteraction, { once: true });
+      grid.addEventListener('mousedown', handleInteraction, { once: true });
+      grid.addEventListener('wheel', handleInteraction, { once: true });
+      
+      const playPeek = () => {
+        if (isInteracted) return;
+        grid.style.scrollSnapType = 'none';
+        
+        gsap.to(grid, {
+          scrollLeft: window.innerWidth * 0.45,
+          duration: 0.8,
+          ease: "power3.inOut",
+          onComplete: () => {
+            if (isInteracted) return;
+            gsap.to(grid, {
+              scrollLeft: 0,
+              duration: 0.7,
+              delay: 0.2,
+              ease: "power3.out",
+              onComplete: () => {
+                if (!isInteracted) grid.style.scrollSnapType = '';
+              }
+            });
+          }
+        });
+      };
+
+      const timeout = setTimeout(() => {
+        playPeek();
+        const interval = setInterval(() => {
+          if (isInteracted) {
+            clearInterval(interval);
+          } else {
+            playPeek();
+          }
+        }, 4000);
+        
+        return () => clearInterval(interval);
+      }, 1500);
+
+      return () => {
+        clearTimeout(timeout);
+        grid.removeEventListener('touchstart', handleInteraction);
+        grid.removeEventListener('mousedown', handleInteraction);
+        grid.removeEventListener('wheel', handleInteraction);
+      };
+    }
+  }, [inView]);
 
   return (
     <section className="directory-section" ref={containerRef}>
@@ -163,7 +224,7 @@ export function CinematicDirectory() {
       </div>
 
       <div className="pathways-container">
-        <div className="pathways-grid">
+        <div className="pathways-grid" ref={gridRef}>
           {CARDS.map((card, i) => (
             <PathwayCard key={card.id} card={card} index={i} />
           ))}
@@ -218,7 +279,7 @@ export function CinematicDirectory() {
           text-decoration: none;
           border-radius: 20px;
           background: #0D0D0D;
-          border: 1px solid rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.2);
           overflow: hidden;
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
           position: relative;
@@ -227,7 +288,7 @@ export function CinematicDirectory() {
 
         .pathway-card:hover {
           transform: translateY(-8px);
-          border-color: rgba(255,255,255,0.2);
+          border-color: rgba(255,255,255,0.4);
         }
 
         .pathway-card-inner {
@@ -377,6 +438,7 @@ export function CinematicDirectory() {
           .pathways-grid::-webkit-scrollbar {
             display: none; /* Safari and Chrome */
           }
+          
           .pathway-card-wrapper {
             flex: 0 0 85vw;
             scroll-snap-align: center;
