@@ -150,7 +150,7 @@ function ConversionClose() {
         background: "linear-gradient(180deg, #000000 0%, rgba(0,0,0,0.6) 30%, #000000 100%)",
       }} />
 
-      <div ref={contentRef} style={{ position: "relative", zIndex: 10, padding: "240px 0 200px" }} className="close-pad">
+      <div ref={contentRef} className="conversion-content" style={{ position: "relative", zIndex: 10 }}>
         <div className="container-lg" style={{ textAlign: "center" }}>
           
           <div className="awwwards-reveal">
@@ -199,7 +199,7 @@ function ConversionClose() {
             `}</style>
           </div>
 
-          <div className="close-stats awwwards-reveal" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6vw", marginBottom: 120 }}>
+          <div className="close-stats awwwards-reveal">
             {CLOSE_STATS.map(s => (
               <div key={s.label} className="close-stat" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <div style={{
@@ -241,6 +241,16 @@ function ConversionClose() {
             </Magnetic>
           </div>
           <style>{`
+            .conversion-content {
+              padding: 240px 0 200px;
+            }
+            .close-stats {
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: center;
+              gap: 6vw;
+              margin-bottom: 120px;
+            }
             .conversion-btn-wrapper {
               display: flex;
               gap: 24px;
@@ -272,6 +282,12 @@ function ConversionClose() {
             }
 
             @media (max-width: 768px) {
+              .conversion-content {
+                padding: 120px 0 20px;
+              }
+              .close-stats {
+                margin-bottom: 48px;
+              }
               .conversion-btn-wrapper {
                 flex-direction: column;
                 gap: 12px;
@@ -307,21 +323,25 @@ function Footer() {
         gsap.registerPlugin(ScrollTrigger);
         if (!footerRef.current || !contentRef.current) return;
 
-        // Parallax curtain reveal for the footer content
-        gsap.fromTo(contentRef.current,
-          { yPercent: -40, scale: 0.95 },
-          {
-            yPercent: 0,
-            scale: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: footerRef.current,
-              start: "top bottom",
-              end: "top 20%",
-              scrub: true,
+        // Parallax curtain reveal for the footer content (desktop only)
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        
+        if (!isMobile) {
+          gsap.fromTo(contentRef.current,
+            { yPercent: -40, scale: 0.95 },
+            {
+              yPercent: 0,
+              scale: 1,
+              ease: "none",
+              scrollTrigger: {
+                trigger: footerRef.current,
+                start: "top bottom",
+                end: "top 20%",
+                scrub: true,
+              }
             }
-          }
-        );
+          );
+        }
       });
     });
   }, []);
@@ -436,16 +456,16 @@ function Footer() {
 
         @media (max-width: 768px) {
           .footer-section {
-            padding: 80px 0 48px;
+            padding: 40px 0 48px;
           }
           .footer-cta-wrapper {
-            padding-bottom: 48px;
-            margin-bottom: 48px;
+            padding-bottom: 32px;
+            margin-bottom: 40px;
           }
           .footer-grid {
             grid-template-columns: 1fr;
-            gap: 48px;
-            margin-bottom: 48px;
+            gap: 40px;
+            margin-bottom: 40px;
           }
           .footer-links-container {
             display: grid;

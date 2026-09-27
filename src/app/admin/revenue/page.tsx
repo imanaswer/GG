@@ -4,7 +4,7 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell }  from "@/components/admin/AdminShell";
 import { StatCard }    from "@/components/admin/StatCard";
 import { useQuery }    from "@tanstack/react-query";
-import { IndianRupee, Download } from "lucide-react";
+import { IndianRupee, Download, TrendingUp, Clock, CreditCard } from "lucide-react";
 
 type Summary   = { total:number; thisMonth:number; thisWeek:number; avgPerTransaction:number };
 type Breakdown = { category:string; transactions:number; total:number; avg:number };
@@ -37,11 +37,11 @@ export default function AdminRevenue() {
           </div>
 
           {/* Top summary */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14, marginBottom: 24 }}>
+          <div className="admin-revenue-stats" style={{ display: "grid", gap: 14, marginBottom: 24 }}>
             <StatCard value={`₹\u2009${(s?.total ?? 0).toLocaleString("en-IN")}`}          label="Total Revenue"   sub="All time"    icon={IndianRupee} accent />
-            <StatCard value={`₹\u2009${(s?.thisMonth ?? 0).toLocaleString("en-IN")}`}       label="Last 30 Days"    sub="Rolling window"  />
-            <StatCard value={`₹\u2009${(s?.thisWeek ?? 0).toLocaleString("en-IN")}`}        label="This Week"                         />
-            <StatCard value={`₹\u2009${(s?.avgPerTransaction ?? 0).toLocaleString("en-IN")}`} label="Avg per Booking" sub="Paid only"  />
+            <StatCard value={`₹\u2009${(s?.thisMonth ?? 0).toLocaleString("en-IN")}`}       label="Last 30 Days"    sub="Rolling window"  icon={TrendingUp} />
+            <StatCard value={`₹\u2009${(s?.thisWeek ?? 0).toLocaleString("en-IN")}`}        label="This Week"                         icon={Clock} />
+            <StatCard value={`₹\u2009${(s?.avgPerTransaction ?? 0).toLocaleString("en-IN")}`} label="Avg per Booking" sub="Paid only"  icon={CreditCard} />
           </div>
 
           {/* Breakdown table */}
@@ -49,7 +49,8 @@ export default function AdminRevenue() {
             <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Revenue by Category</h2>
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead style={{ background: "#111" }}>
                 <tr>{["Category","Transactions","Total Revenue","Avg per Transaction"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
               </thead>
@@ -63,13 +64,14 @@ export default function AdminRevenue() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
 
           {/* Transaction log */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Transaction Log</h2>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div className="admin-revenue-filters" style={{ display: "flex", gap: 6 }}>
               {["all","Camp","Event","Game","Coach"].map(f => (
                 <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", borderRadius: 100, fontSize: 12, fontWeight: filter === f ? 700 : 500, border: "1px solid", cursor: "pointer", fontFamily: "inherit", background: filter === f ? "#fff" : "transparent", color: filter === f ? "#000" : "#9ca3af", borderColor: filter === f ? "#fff" : "rgba(255,255,255,0.1)" }}>
                   {f === "all" ? "All" : f}
@@ -79,7 +81,7 @@ export default function AdminRevenue() {
           </div>
 
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead style={{ background: "#111" }}>
                   <tr>{["Type","Description","Player","Amount","Status","Date"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
@@ -102,6 +104,28 @@ export default function AdminRevenue() {
             </div>
           </div>
         </div>
+        <style>{`
+          .admin-revenue-stats {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          }
+          @media (max-width: 768px) {
+            .admin-revenue-stats {
+              grid-template-columns: 1fr 1fr;
+            }
+            .admin-revenue-filters {
+              overflow-x: auto;
+              width: 100%;
+              padding-bottom: 4px;
+              -webkit-overflow-scrolling: touch;
+            }
+            .admin-revenue-filters::-webkit-scrollbar {
+              display: none;
+            }
+            .admin-revenue-filters button {
+              white-space: nowrap;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

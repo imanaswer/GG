@@ -3,7 +3,7 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { StatCard }   from "@/components/admin/StatCard";
 import { useQuery }   from "@tanstack/react-query";
-import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock, Lightbulb, Trophy, CheckCircle2, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Users, Star, CalendarCheck, Gamepad2, Tent, IndianRupee, AlertTriangle, Clock, Lightbulb, Trophy, CheckCircle2, ArrowUpRight, TrendingUp, PieChart as PieChartIcon, Activity, XCircle } from "lucide-react";
 import { TIERS, TIER_META, type Tier } from "@/lib/reputation";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 
@@ -39,7 +39,7 @@ export default function AdminOverview() {
           </div>
 
           {/* Top 6 metric cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 40 }}>
+          <div className="admin-overview-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 40 }}>
             <StatCard value={m?.totalUsers ?? "—"} label="Total Users" sub="Registered players" icon={Users} href="/admin/users" />
             <StatCard value={m?.totalCoaches ?? "—"} label="Active Coaches" sub="On the platform" icon={Star} href="/admin/coaches" />
             <StatCard value={m?.activeBookings ?? "—"} label="Active Bookings" sub="Pending + approved" icon={CalendarCheck} href="/admin/bookings/coaches?status=active" />
@@ -52,18 +52,14 @@ export default function AdminOverview() {
           </div>
 
           {/* Health row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
+          <div className="admin-overview-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
             {[
-              { v: `${h?.slotFillRate ?? 0}%`, l: "Slots Filled", sub: "Across all games" },
-              { v: `${h?.confirmRate ?? 0}%`,  l: "Booking Confirm Rate", sub: "Pending → Confirmed" },
-              { v: h?.avgReliability ?? "—",   l: "Avg Reliability", sub: "All players" },
-              { v: `${h?.cancelRate ?? 0}%`,   l: "Cancellation Rate", sub: "Of all bookings" },
-            ].map(({ v, l, sub }) => (
-              <div key={l} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <div style={{ fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 400, color: "#fff", letterSpacing: "-0.02em" }}>{v}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: 8 }}>{l}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{sub}</div>
-              </div>
+              { v: `${h?.slotFillRate ?? 0}%`, l: "Slots Filled", sub: "Across all games", i: PieChartIcon },
+              { v: `${h?.confirmRate ?? 0}%`,  l: "Confirm Rate", sub: "Pending → Confirmed", i: CheckCircle2 },
+              { v: h?.avgReliability ?? "—",   l: "Reliability", sub: "All players", i: Activity },
+              { v: `${h?.cancelRate ?? 0}%`,   l: "Cancel Rate", sub: "Of all bookings", i: XCircle },
+            ].map(({ v, l, sub, i: Icon }) => (
+              <StatCard key={l} value={v} label={l} sub={sub} icon={Icon} />
             ))}
           </div>
 
@@ -76,7 +72,7 @@ export default function AdminOverview() {
                 {Object.values(data?.tierDistribution ?? {}).reduce((a, b) => a + b, 0)} TOTAL USERS
               </span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24, alignItems: "center" }}>
+            <div className="admin-overview-grid" style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24, alignItems: "center" }}>
               {/* Donut Chart */}
               <div style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 24, height: 280, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
                 {pieData.length > 0 ? (
@@ -104,14 +100,14 @@ export default function AdminOverview() {
               </div>
 
               {/* Stat Cards */}
-              <div style={{ display: "grid", gridTemplateColumns: `repeat(${TIERS.length}, 1fr)`, gap: 16 }}>
+              <div className="admin-tier-list" style={{ display: "grid", gridTemplateColumns: `repeat(${TIERS.length}, 1fr)`, gap: 16 }}>
                 {TIERS.map(t => {
                   const count = data?.tierDistribution?.[t] ?? 0;
                   const total = Object.values(data?.tierDistribution ?? {}).reduce((a, b) => a + b, 0) || 1;
                   const pct = (count / total) * 100;
                   const meta = TIER_META[t as Tier];
                   return (
-                    <div key={t} style={{ 
+                    <div className="admin-tier-card" key={t} style={{ 
                       background: "rgba(255,255,255,0.015)", 
                       border: "1px solid rgba(255,255,255,0.05)", 
                       borderRadius: 20, 
@@ -126,14 +122,14 @@ export default function AdminOverview() {
                       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: meta.color, opacity: 0.9 }} />
                       <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 120, height: 120, background: meta.color, filter: "blur(40px)", opacity: 0.15, borderRadius: "50%", pointerEvents: "none" }} />
                       
-                      <div style={{ fontSize: 24, marginBottom: 16 }}>{meta.icon}</div>
-                      <div style={{ fontFamily: "var(--font-serif)", fontSize: 40, fontWeight: 400, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 12 }}>
+                      <div className="admin-tier-icon" style={{ fontSize: 24, marginBottom: 16 }}>{meta.icon}</div>
+                      <div className="admin-tier-val" style={{ fontFamily: "var(--font-serif)", fontSize: 40, fontWeight: 400, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 12 }}>
                         {count}
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: meta.color, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>
+                      <div className="admin-tier-label" style={{ fontSize: 11, fontWeight: 800, color: meta.color, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>
                         {meta.label}
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>
+                      <div className="admin-tier-sub" style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>
                         {pct.toFixed(0)}%
                       </div>
                     </div>
@@ -176,7 +172,7 @@ export default function AdminOverview() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 40 }}>
+          <div className="admin-overview-grid" style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 40 }}>
             {/* Alerts */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
@@ -213,7 +209,7 @@ export default function AdminOverview() {
 
               {/* Quick links grid */}
               <h2 style={{ fontSize: 13, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 40, marginBottom: 16 }}>Quick Actions</h2>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div className="admin-quick-actions" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {[
                   { href: "/admin/bookings",  label: "Manage Bookings" },
                   { href: "/admin/coaches",   label: "Approve Coaches"  },
@@ -221,7 +217,7 @@ export default function AdminOverview() {
                   { href: "/admin/workshops", label: "Manage Workshops" },
                   { href: "/admin/revenue",   label: "Revenue Report"   },
                 ].map(({ href, label }) => (
-                  <a key={href} href={href} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, textDecoration: "none", fontSize: 11, color: "#fff", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
+                  <a key={href} className="admin-quick-action-btn" href={href} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, textDecoration: "none", fontSize: 11, color: "#fff", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
                     onMouseEnter={e => {
                       e.currentTarget.style.background = "#fff";
                       e.currentTarget.style.color = "#000";
@@ -260,6 +256,57 @@ export default function AdminOverview() {
               </div>
             </div>
           </div>
+          <style>{`
+            @media (max-width: 768px) {
+              .admin-content-inner .admin-overview-grid[style] {
+                grid-template-columns: 1fr !important;
+              }
+              .admin-content-inner .admin-overview-grid-2[style] {
+                grid-template-columns: 1fr 1fr !important;
+              }
+              .admin-overview-grid-2 .admin-stat-card {
+                padding: 16px !important;
+              }
+              .admin-content-inner .admin-tier-list[style] {
+                display: flex !important;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 16px;
+                margin-right: -16px; /* offset the shell padding to allow edge-to-edge scroll */
+                padding-right: 16px; 
+              }
+              .admin-tier-card {
+                min-width: 140px;
+                scroll-snap-align: start;
+                padding: 24px 16px !important;
+              }
+              .admin-tier-icon {
+                font-size: 20px !important;
+                margin-bottom: 12px !important;
+              }
+              .admin-tier-val {
+                font-size: 32px !important;
+                margin-bottom: 8px !important;
+              }
+              .admin-tier-label {
+                font-size: 10px !important;
+                margin-bottom: 4px !important;
+              }
+              /* Quick actions mobile grid */
+              .admin-content-inner .admin-quick-actions[style] {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+              }
+              .admin-quick-action-btn {
+                width: 100%;
+                padding: 12px 8px !important; /* Slightly smaller padding to fit long text */
+                font-size: 10px !important;
+              }
+              .admin-quick-action-btn:last-child:nth-child(odd) {
+                grid-column: 1 / -1;
+              }
+            }
+          `}</style>
         </div>
       </AdminShell>
     </AdminGuard>

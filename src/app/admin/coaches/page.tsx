@@ -140,7 +140,7 @@ export default function AdminCoaches() {
     <AdminGuard>
       <AdminShell>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 32 }}>
             <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 400, color: "#fff" }}>Coaches Manager</h1>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <a href="/api/admin/export?type=coaches" download style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 100, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", transition: "all 0.2s ease" }}
@@ -160,9 +160,9 @@ export default function AdminCoaches() {
                 <h2 style={{ fontSize: 16, fontWeight: 700, color: "#eab308" }}>Pending Approval</h2>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 100, background: "rgba(234,179,8,0.15)", color: "#eab308" }}>{pending.length}</span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+              <div className="admin-coaches-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
                 {pending.map(c => (
-                  <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(234,179,8,0.25)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
+                  <div key={c.id} className="admin-coach-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(234,179,8,0.25)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
                     <div style={{ position: "absolute", top: 24, right: 24 }}>
                       <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                     </div>
@@ -171,7 +171,9 @@ export default function AdminCoaches() {
                         <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.01em" }}>{c.name}</h3>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.sport}</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.type}</span>
+                          {c.type.split(",").map(t => (
+                            <span key={t} style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{t.trim()}</span>
+                          ))}
                         </div>
                       </div>
                       <Badge status="pending_approval" />
@@ -179,7 +181,7 @@ export default function AdminCoaches() {
                     
                     <div style={{ fontSize: 14, color: "#9ca3af", fontWeight: 600 }}>{formatPrice(c.priceMin, c.priceMax)}/session</div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: "auto" }}>
+                    <div className="admin-coach-actions" style={{ display: "grid", gap: 12, marginTop: "auto" }}>
                       <button onClick={() => approve.mutate({ id: c.id, action: "approve" })} style={{ padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, background: "#4ade80", color: "#000", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Approve</button>
                       <button onClick={() => approve.mutate({ id: c.id, action: "reject" })}  style={{ padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer", fontFamily: "inherit" }}>Reject</button>
                     </div>
@@ -197,13 +199,13 @@ export default function AdminCoaches() {
               </button>
             )}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 40 }}>
+          <div className="admin-coaches-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20, marginBottom: 40 }}>
             {!coaches.length ? (
               <div style={{ padding: "40px", textAlign: "center", color: "#6b7280", gridColumn: "1 / -1", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 24 }}>No coaches found</div>
             ) : coaches.map(c => {
               const pct = c.totalSeats ? Math.round(((c.totalSeats - c.seatsLeft) / c.totalSeats) * 100) : 0;
               return (
-                <div key={c.id} style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
+                <div key={c.id} className="admin-coach-card" style={{ display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.015)", border: `1px solid ${selectedIds.has(c.id) ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.05)"}`, borderRadius: 24, padding: 24, gap: 20, position: "relative" }}>
                   <div style={{ position: "absolute", top: 24, right: 24 }}>
                     <input type="checkbox" checked={selectedIds.has(c.id)} onChange={e => { const next = new Set(selectedIds); if (e.target.checked) next.add(c.id); else next.delete(c.id); setSelectedIds(next); }} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#60a5fa" }} />
                   </div>
@@ -214,7 +216,9 @@ export default function AdminCoaches() {
                       <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8, letterSpacing: "-0.01em" }}>{c.name}</h3>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.sport}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.type}</span>
+                        {c.type.split(",").map(t => (
+                          <span key={t} style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{t.trim()}</span>
+                        ))}
                       </div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
@@ -231,7 +235,7 @@ export default function AdminCoaches() {
                   </div>
 
                   {/* Middle Stats Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, background: "rgba(0,0,0,0.3)", padding: 16, borderRadius: 16, marginTop: "auto" }}>
+                  <div className="admin-coach-stats" style={{ display: "grid", gap: 16, background: "rgba(0,0,0,0.3)", padding: 16, borderRadius: 16, marginTop: "auto" }}>
                     <div>
                       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Seats</div>
                       <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-serif)" }}>{c.seatsLeft} <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-sans)" }}>/ {c.totalSeats}</span></div>
@@ -366,6 +370,23 @@ export default function AdminCoaches() {
         <AdminModal open={modal === "delete"} onClose={closeModal} title="Delete Coach" width={420}>
           <DeleteConfirm name={deleteTarget?.name ?? ""} onConfirm={() => deleteTarget && remove.mutate(deleteTarget.id)} onCancel={closeModal} loading={remove.isPending} />
         </AdminModal>
+
+        <style>{`
+            .admin-coach-stats {
+              grid-template-columns: 1fr 1fr;
+            }
+            .admin-coach-actions {
+              grid-template-columns: 1fr 1fr;
+            }
+          @media (max-width: 768px) {
+            .admin-coach-card {
+              padding: 20px !important;
+            }
+            .admin-coach-card h3 {
+              font-size: 16px !important;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

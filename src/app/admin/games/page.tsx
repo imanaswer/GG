@@ -8,7 +8,7 @@ import { AdminShell }  from "@/components/admin/AdminShell";
 import { StatCard }    from "@/components/admin/StatCard";
 import { Badge }       from "@/components/admin/Badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Unlock, Lock, Clock, CheckCircle2, Ban, ListPlus } from "lucide-react";
 import { bucketForCalendar, BUCKET_ORDER, BUCKET_LABELS } from "@/lib/adminBookings/grouping";
 
 type Player = { userId:string; name:string; joinedAt:string; attended:boolean|null; reliabilityScore:number };
@@ -132,15 +132,35 @@ function AdminGamesInner() {
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+          <div className="admin-games-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
             <StatCard value={st?.total ?? 0}     label="Total Games"        icon={Gamepad2} />
-            <StatCard value={st?.open ?? 0}      label="Open Now"     sub="Accepting players" />
-            <StatCard value={st?.full ?? 0}      label="Full"         sub="No slots left" />
-            <StatCard value={st?.awaitingReview ?? 0} label="Awaiting Review" sub="Completed, not finalized" />
-            <StatCard value={st?.completed ?? 0} label="Completed" />
-            <StatCard value={st?.cancelled ?? 0} label="Cancelled" />
-            <StatCard value={st?.waitlisted ?? 0} label="Waitlisted"  sub="Across all games" />
+            <StatCard value={st?.open ?? 0}      label="Open Now"     sub="Accepting players" icon={Unlock} />
+            <StatCard value={st?.full ?? 0}      label="Full"         sub="No slots left" icon={Lock} />
+            <StatCard value={st?.awaitingReview ?? 0} label="Awaiting Review" sub="Completed, not finalized" icon={Clock} />
+            <StatCard value={st?.completed ?? 0} label="Completed" icon={CheckCircle2} />
+            <StatCard value={st?.cancelled ?? 0} label="Cancelled" icon={Ban} />
+            <StatCard value={st?.waitlisted ?? 0} label="Waitlisted"  sub="Across all games" icon={ListPlus} />
           </div>
+          <style>{`
+            @media (max-width: 768px) {
+              .admin-games-stats[style] {
+                display: flex !important;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                margin-right: -16px;
+                padding-right: 16px;
+                padding-bottom: 8px;
+                -webkit-overflow-scrolling: touch;
+              }
+              .admin-games-stats::-webkit-scrollbar {
+                display: none;
+              }
+              .admin-games-stats > .admin-stat-card {
+                flex: 0 0 140px;
+                scroll-snap-align: start;
+              }
+            }
+          `}</style>
 
           {!games.length ? (
             <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "40px", textAlign: "center", color: "#6b7280" }}>No games found</div>
@@ -183,7 +203,7 @@ function AdminGamesInner() {
         {selected && (
           <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex" }} onClick={() => setSelectedId(null)}>
             <div style={{ flex: 1, background: "rgba(0,0,0,0.6)" }} />
-            <div style={{ width: 400, background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.1)", padding: "24px", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: "100%", maxWidth: 400, background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.1)", padding: "24px", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Game Detail</h2>
                 <button onClick={() => setSelectedId(null)} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 18 }}>✕</button>

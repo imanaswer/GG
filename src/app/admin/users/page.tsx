@@ -61,7 +61,7 @@ export default function AdminUsers() {
 
           {/* Filters & Search */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.03)", borderRadius: 100, padding: 4 }}>
+            <div className="admin-users-segments" style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.03)", borderRadius: 100, padding: 4 }}>
               {SEGMENTS.map(s => (
                 <button key={s.val} onClick={() => setSegment(s.val)} style={{ padding: "8px 20px", borderRadius: 100, fontSize: 13, fontWeight: segment === s.val ? 700 : 600, border: "none", cursor: "pointer", fontFamily: "inherit", background: segment === s.val ? "#fff" : "transparent", color: segment === s.val ? "#000" : "#9ca3af", transition: "all 0.2s" }}>
                   {s.label}
@@ -79,7 +79,7 @@ export default function AdminUsers() {
           {/* Users List */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* Header Row */}
-            <div style={{ display: "flex", alignItems: "center", padding: "0 32px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
+            <div className="admin-users-header" style={{ display: "flex", alignItems: "center", padding: "0 32px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
               <div style={{ flex: 1.5, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>User Info</div>
               <div style={{ flex: 1, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Engagement</div>
               <div style={{ width: 140, fontSize: 11, fontWeight: 800, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reputation</div>
@@ -89,19 +89,19 @@ export default function AdminUsers() {
             {!filtered.length ? (
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 24 }}>No users found</div>
             ) : filtered.map(u => (
-              <div key={u.id} style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, padding: "16px 32px", gap: 16, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}>
+              <div key={u.id} className="admin-user-row" style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 100, padding: "16px 32px", gap: 16, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}>
                 
                 {/* User Info */}
-                <div style={{ flex: 1.5, display: "flex", alignItems: "center", gap: 16 }}>
+                <div className="admin-user-info" style={{ flex: 1.5, display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
                     {u.name[0]}
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{u.name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}>@{u.username}</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", wordBreak: "break-word" }}>{u.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(255,255,255,0.05)", color: "#9ca3af", wordBreak: "break-all" }}>@{u.username}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "rgba(96,165,250,0.12)", color: "#60a5fa", textTransform: "capitalize" }}>{u.role}</span>
                       <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Joined {new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
                     </div>
@@ -109,7 +109,7 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Engagement */}
-                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 24 }}>
+                <div className="admin-user-engagement" style={{ flex: 1, display: "flex", alignItems: "center", gap: 24 }}>
                   <div>
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Games</div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{u.gamesPlayed}</div>
@@ -121,7 +121,7 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Reputation */}
-                <div style={{ width: 140, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                <div className="admin-user-reputation" style={{ width: 140, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
                   <TierBadge tier={u.tier} size="xs" />
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
@@ -134,7 +134,7 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ width: 60, display: "flex", justifyContent: "flex-end" }}>
+                <div className="admin-user-actions" style={{ width: 60, display: "flex", justifyContent: "flex-end" }}>
                   <button onClick={() => openOverride(u)} title="Override reputation" style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
                     <Pencil size={14} color="#60a5fa" />
                   </button>
@@ -174,6 +174,66 @@ export default function AdminUsers() {
             </form>
           )}
         </AdminModal>
+
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-users-segments[style] {
+              overflow-x: auto;
+              -webkit-overflow-scrolling: touch;
+              width: 100%;
+              justify-content: flex-start;
+            }
+            .admin-users-segments::-webkit-scrollbar { display: none; }
+            .admin-users-segments button {
+              white-space: nowrap;
+            }
+            
+            .admin-users-header { display: none !important; }
+
+            .admin-user-row[style] {
+              display: grid !important;
+              grid-template-columns: 1fr auto !important;
+              grid-template-areas: 
+                "info info"
+                "engagement engagement"
+                "reputation actions" !important;
+              border-radius: 24px !important;
+              padding: 20px !important;
+              gap: 20px !important;
+            }
+
+            .admin-user-info[style] {
+              grid-area: info;
+              width: 100% !important;
+              flex: none !important;
+            }
+
+            .admin-user-engagement[style] {
+              grid-area: engagement;
+              width: 100% !important;
+              flex: none !important;
+              justify-content: flex-start !important;
+              background: rgba(0,0,0,0.2) !important;
+              padding: 16px !important;
+              border-radius: 16px !important;
+            }
+
+            .admin-user-reputation[style] {
+              grid-area: reputation;
+              width: auto !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              gap: 16px !important;
+            }
+
+            .admin-user-actions[style] {
+              grid-area: actions;
+              width: auto !important;
+              align-self: center !important;
+              justify-content: flex-end !important;
+            }
+          }
+        `}</style>
       </AdminShell>
     </AdminGuard>
   );

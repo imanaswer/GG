@@ -85,7 +85,7 @@ export default function AdminVenues() {
           {err && <div style={errBox}>{err}</div>}
 
           {/* Analytics */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+          <div className="admin-venues-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
             <StatCard value={a?.totalVenues ?? 0} label="Total venues" icon={Building2} />
             <StatCard value={a?.activeVenues ?? 0} label="Active venues" icon={MapPin} accent color="#22c55e" />
             <StatCard value={a?.upcomingGames ?? 0} label="Upcoming games" icon={CalendarClock} />
@@ -97,7 +97,7 @@ export default function AdminVenues() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {venues.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#6b7280", fontSize: 14, background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>No venues yet. Add your first one.</div>}
             {venues.map((v) => (
-              <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16 }}>
+              <div key={v.id} className="admin-venue-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{v.name}</span>
@@ -117,11 +117,11 @@ export default function AdminVenues() {
                     ))}
                   </div>
                 </div>
-                <div style={{ textAlign: "right", fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap" }}>
+                <div className="admin-venue-stats" style={{ textAlign: "right", fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap" }}>
                   <div>{v.slotCount} slots · {v.blockedSlots} blocked</div>
                   <div>{v.upcomingGames} upcoming · {v.occupancyRate}% full</div>
                 </div>
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <div className="admin-venue-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button onClick={() => setSlotsFor(v)} style={iconBtn} title="Manage Slots"><CalendarClock size={16} color="#e5e7eb" /></button>
                   <button onClick={() => setEditing(v)} style={iconBtn} title="Edit Venue"><Pencil size={16} color="#60a5fa" /></button>
                   {v.status !== "ACTIVE" && <button onClick={() => setStatus(v, "ACTIVE")} style={iconBtn} title="Enable Venue"><CheckCircle2 size={16} color="#4ade80" /></button>}
@@ -132,6 +132,39 @@ export default function AdminVenues() {
               </div>
             ))}
           </div>
+          <style>{`
+            @media (max-width: 768px) {
+              .admin-venues-stats[style] {
+                display: flex !important;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                margin-right: -16px;
+                padding-right: 16px;
+                padding-bottom: 8px;
+                -webkit-overflow-scrolling: touch;
+              }
+              .admin-venues-stats::-webkit-scrollbar {
+                display: none;
+              }
+              .admin-venues-stats > .admin-stat-card {
+                flex: 0 0 140px;
+                scroll-snap-align: start;
+              }
+              .admin-venue-row[style] {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 16px !important;
+              }
+              .admin-venue-stats[style] {
+                text-align: left !important;
+              }
+              .admin-venue-actions[style] {
+                justify-content: space-between !important;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255,255,255,0.05);
+              }
+            }
+          `}</style>
         </div>
 
         {(creating || editing) && (
