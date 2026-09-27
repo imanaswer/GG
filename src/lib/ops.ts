@@ -20,7 +20,7 @@
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { notifyAdmin } from "@/lib/notifyAdmin";
-import { sendEmail, emails } from "@/lib/email";
+import { sendEmail, emails, escapeHtml } from "@/lib/email";
 
 /** Feed item, work item, or audit row. Only "info" and "action" are ever notified. */
 export type OpsSeverity = "info" | "action" | "audit";
@@ -229,7 +229,7 @@ function adminBody(row: { title: string; body: string | null; link: string | nul
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net";
   const link = row.link ? `<p style="margin:16px 0 0"><a href="${base}${row.link}" style="color:#fff">Open in admin</a></p>` : "";
   return `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:520px">
-    <h2 style="margin:0 0 8px;font-size:17px;color:#111">${row.title}</h2>
-    ${row.body ? `<p style="margin:0;color:#374151;font-size:14px">${row.body}</p>` : ""}${link}
+    <h2 style="margin:0 0 8px;font-size:17px;color:#111">${escapeHtml(row.title)}</h2>
+    ${row.body ? `<p style="margin:0;color:#374151;font-size:14px">${escapeHtml(row.body)}</p>` : ""}${link}
   </div>`;
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { COACH_PUBLIC_SELECT } from "@/lib/coachPublic";
 import { okCached, handleErr } from "@/lib/api";
 
 export async function GET(req: NextRequest) {
@@ -34,7 +35,8 @@ export async function GET(req: NextRequest) {
     ] });
     if (and.length) where.AND = and;
 
-    const coaches = await prisma.coach.findMany({ where });
+    // Public + CDN-cached: never the contact columns (see coachPublic.ts).
+    const coaches = await prisma.coach.findMany({ where, select: COACH_PUBLIC_SELECT });
     // SEMI_STATIC: curated content, changes on admin edit. 60s fresh + 5m stale.
     return okCached(coaches, 60);
   } catch (e) { return handleErr(e); }

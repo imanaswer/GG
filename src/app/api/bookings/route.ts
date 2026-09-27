@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, fail, handleErr, ApiError } from "@/lib/api";
+import { BookingSchema } from "@/lib/api";
+import { z } from "zod";
 import { cancelBooking, BookingTransitionError, BILLABLE_STATUSES } from "@/lib/bookings";
 import { coachAdmission } from "@/lib/checkout";
 import { logOpsSafe } from "@/lib/ops";
@@ -58,7 +60,13 @@ export async function POST(req: NextRequest) {
     const session = await getSessionFromRequest(req);
     if (!session) return fail("Authentication required", 401);
 
-    const { coachId, batchId, note, phone } = await req.json();
+    // Typed: `note` reaches coach emails and admin CSVs; `batchId` reaches a
+    // Prisma lookup. Both must be plain strings (or absent), never objects.
+    const { coachId, batchId, note, phone } = BookingSchema.extend({
+      batchId: z.string().min(1).nullish(),
+      note: z.string().max(500).nullish(),
+      phone: z.string().max(20).nullish(),
+    }).parse(await req.json());
 
     const coach = await prisma.coach.findUnique({ where: { id: coachId }, select: { id: true, seatsLeft: true, status: true, name: true, email: true } });
     if (!coach) return fail("Coach not found", 404);

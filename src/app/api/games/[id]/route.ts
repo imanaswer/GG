@@ -49,7 +49,11 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       organizerRating: game.organizer?.reliabilityScore,
       organizerGames: game.organizer?.gamesOrganized,
       organizerAvatar: game.organizer?.avatarUrl,
-      organizerPhone: session ? game.organizer?.phone ?? null : null,
+      // "Only shown to organisers and participants" — any session used to do,
+      // which let one account harvest every host's number.
+      organizerPhone: session && (game.organizerId === session.id || game.players.some(p => p.userId === session.id))
+        ? game.organizer?.phone ?? null
+        : null,
       players: game.players.map(gp => ({
         id: gp.id, userId: gp.userId,
         name: gp.user?.name ?? "Unknown",

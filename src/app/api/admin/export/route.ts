@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
+import { csvSafe } from "@/lib/coachPublic";
 
 export async function GET(req: NextRequest) {
   if (!await getAdminSessionFromRequest(req)) {
@@ -113,7 +114,7 @@ export async function GET(req: NextRequest) {
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(","),
-      ...data.map(row => headers.map(h => `"${String(row[h] ?? "").replace(/"/g, '""')}"`).join(","))
+      ...data.map(row => headers.map(h => `"${csvSafe(String(row[h] ?? "")).replace(/"/g, '""')}"`).join(","))
     ].join("\n");
 
     return new NextResponse(csvContent, {

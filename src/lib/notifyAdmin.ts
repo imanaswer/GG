@@ -6,7 +6,7 @@
  * distribution list to maintain. Unset means no-op, matching sendEmail's behaviour
  * without RESEND_API_KEY: a missing env var must never break a booking.
  */
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 import { logger } from "@/lib/logger";
 
 export function adminRecipients(): string[] {
@@ -45,14 +45,14 @@ export function adminAlertHtml(opts: {
   link?: { href: string; label: string };
 }): string {
   const rows = opts.lines
-    .map(l => `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;font-size:13px">${l.label}</td>`
-            + `<td style="padding:4px 0;color:#111;font-size:13px;font-weight:600">${l.value}</td></tr>`)
+    .map(l => `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;font-size:13px">${escapeHtml(l.label)}</td>`
+            + `<td style="padding:4px 0;color:#111;font-size:13px;font-weight:600">${escapeHtml(l.value)}</td></tr>`)
     .join("");
   const cta = opts.link
     ? `<p style="margin:18px 0 0"><a href="${opts.link.href}" style="background:#fff;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">${opts.link.label}</a></p>`
     : "";
   return `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:520px">
-    <h2 style="margin:0 0 12px;font-size:17px;color:#111">${opts.heading}</h2>
+    <h2 style="margin:0 0 12px;font-size:17px;color:#111">${escapeHtml(opts.heading)}</h2>
     <table style="border-collapse:collapse">${rows}</table>${cta}
   </div>`;
 }

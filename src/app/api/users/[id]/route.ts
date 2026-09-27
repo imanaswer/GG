@@ -165,7 +165,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     return ok({
       ...user, passwordHash: undefined, passwordResetToken: undefined, passwordResetExpiry: undefined,
-      googleId: undefined, reputationOverride: undefined,
+      googleId: undefined, appleId: undefined, reputationOverride: undefined,
+      lastActivityAt: undefined, tierUpdatedAt: undefined, updatedAt: undefined, deletedAt: undefined,
       email: isOwner ? user.email : undefined, phone: isOwner ? user.phone : undefined,
       gamesPlayed, gamesOrganized, sportActivity, playerRank, playerCount,
       games: gameList, upcoming, bookings: isOwner ? bookings : undefined, registrations, profileCompletion,
@@ -193,6 +194,13 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     if (session.role === "coach") await requireSignedAgreement(session.id);
 
     const { name, bio, location, sports, phone, username, avatarUrl, lookingFor } = await req.json();
+    // Free text that lands in emails, CSVs and other users' screens: bounded here,
+    // escaped at render. Objects must never reach Prisma as filters.
+    for (const [k, v, max] of [["name", name, 60], ["bio", bio, 1000], ["location", location, 100], ["username", username, 20], ["phone", phone, 20], ["avatarUrl", avatarUrl, 500]] as const) {
+      if (v !== undefined && v !== null && (typeof v !== "string" || v.length > max)) return fail(`Invalid ${k}`, 400);
+    }
+    if (typeof name === "string" && name.trim().length < 2) return fail("Name is too short", 400);
+    if (sports !== undefined && (!Array.isArray(sports) || sports.some(s => typeof s !== "string" || s.length > 40))) return fail("Invalid sports", 400);
 
     let nextLookingFor: string | null | undefined;
     if (lookingFor === undefined) {

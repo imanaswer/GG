@@ -13,6 +13,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/notifyAdmin", () => ({ notifyAdmin: notifyAdminMock }));
 vi.mock("@/lib/email", () => ({
   sendEmail: sendEmailMock,
+  escapeHtml: (v: unknown) => String(v ?? ""),
   emails: { bookingMade: () => ({ subject: "s", html: "h" }) },
 }));
 

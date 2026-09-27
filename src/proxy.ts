@@ -89,6 +89,16 @@ export async function proxy(req: NextRequest) {
     return res;
   };
 
+  // Browsers send Origin on every cross-site POST. A mismatch is a cross-site
+  // form/fetch (e.g. login CSRF that signs the victim into an attacker account);
+  // native apps and server-to-server callers (Razorpay) send no Origin at all.
+  if (MUTATION_METHODS.has(req.method)) {
+    const origin = req.headers.get("origin");
+    if (origin && origin !== req.nextUrl.origin) {
+      return NextResponse.json({ ok: false, error: "Cross-site request blocked" }, { status: 403 });
+    }
+  }
+
   const ip = clientIp(req);
 
   if (AUTH_PATHS.has(pathname)) {

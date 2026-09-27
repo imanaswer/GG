@@ -45,14 +45,23 @@ describe("GET — organiser phone privacy", () => {
     players: [],
   };
 
-  it("returns the host phone to authenticated requests", async () => {
+  it("returns the host phone to a joined player, never via the nested organizer object", async () => {
     sessionMock.mockResolvedValue({ id: "viewer" });
-    prismaMock.game.findUnique.mockResolvedValue(gameWithHostPhone);
+    prismaMock.game.findUnique.mockResolvedValue({ ...gameWithHostPhone, players: [{ id: "gp1", userId: "viewer", user: null }] });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await GET(req as any, ctx("g1"));
     const j = (await res.json()) as { data: { organizerPhone?: string | null; organizer?: { phone?: string } } };
     expect(j.data.organizerPhone).toBe("+91 98765 43210");
     expect(j.data.organizer?.phone).toBeUndefined(); // never leaked via the nested object
+  });
+
+  it("hides the host phone from a signed-in user who has not joined (no enumerating every host)", async () => {
+    sessionMock.mockResolvedValue({ id: "viewer" });
+    prismaMock.game.findUnique.mockResolvedValue(gameWithHostPhone);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await GET(req as any, ctx("g1"));
+    const j = (await res.json()) as { data: { organizerPhone?: string | null } };
+    expect(j.data.organizerPhone).toBeNull();
   });
 
   it("hides the host phone from logged-out requests", async () => {

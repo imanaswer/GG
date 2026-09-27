@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { COACH_PUBLIC_SELECT } from "@/lib/coachPublic";
 import { getSessionFromRequest } from "@/lib/auth";
 import { ok, handleErr } from "@/lib/api";
 import { aiLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
@@ -18,10 +19,13 @@ export async function POST(req: NextRequest) {
         where: { status: "open", slotsLeft: { gt: 0 } },
         take: 15,
       }).then(rows => rows.map(({ description: _d, rules: _r, ...g }) => g)),
+      // Public columns only: these rows go to a third-party model and back to
+      // an unauthenticated caller.
       prisma.coach.findMany({
         where: { status: "active", seatsLeft: { gt: 0 } },
         take: 15,
-      }).then(rows => rows.map(({ description: _d, features: _f, ...c }) => c)),
+        select: { ...COACH_PUBLIC_SELECT, description: false, features: false },
+      }),
     ]);
 
     let userCtx = "New user, no history.";

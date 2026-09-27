@@ -4,6 +4,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { getAdminSessionFromRequest } from "@/lib/adminAuth";
 import { ok, fail, handleErr } from "@/lib/api";
 import { refundPolicy } from "@/lib/refundPolicy";
+import { COACH_PUBLIC_SELECT } from "@/lib/coachPublic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -12,7 +13,9 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const coach = await prisma.coach.findUnique({
       where: { id },
-      include: {
+      select: {
+        ...COACH_PUBLIC_SELECT,
+        userId: true, email: true, phone: true,
         batches: true,
         reviews: { orderBy: { createdAt: "desc" } },
       },
@@ -28,11 +31,9 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     // to see their own profile while they wait, and an admin must be able to
     // review what they are approving.
     const session = await getSessionFromRequest(req);
-    if (coach.status !== "active") {
-      const isOwner = !!coach.userId && coach.userId === session?.id;
-      const isAdmin = await getAdminSessionFromRequest(req);
-      if (!isOwner && !isAdmin) return fail("Coach not found", 404);
-    }
+    const isOwner = !!coach.userId && coach.userId === session?.id;
+    const isAdmin = !!(await getAdminSessionFromRequest(req));
+    if (coach.status !== "active" && !isOwner && !isAdmin) return fail("Coach not found", 404);
 
     let userBooking: { id: string; status: string } | null = null;
     if (session) {
@@ -44,8 +45,13 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (booking) userBooking = booking;
     }
 
+    // Contact details go to the coach, an admin, or a player with a live
+    // booking — not to anonymous visitors, and never `userId`.
+    const { email, phone, userId: _userId, ...coachPublic } = coach;
+    const canContact = isOwner || isAdmin || !!userBooking;
     return ok({
-      ...coach,
+      ...coachPublic,
+      ...(canContact ? { email, phone } : {}),
       userBooking,
       // Instant-pay coaching is sold by Game Ground, so the merchant terms apply.
       refundPolicy: refundPolicy("coach", coach.priceMin),
