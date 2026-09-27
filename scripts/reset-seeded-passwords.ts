@@ -10,6 +10,10 @@ const ACCOUNTS: { email: string; name: string; username: string; location?: stri
 const PASSWORD = "password123";
 
 async function main() {
+  const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "";
+  if (/supabase\.co|pooler\.supabase/i.test(url) && process.env.SEED_ALLOW_WIPE !== "yes-wipe-hosted-db") {
+    throw new Error("Refusing to rewrite demo passwords on a hosted database. Set SEED_ALLOW_WIPE=yes-wipe-hosted-db to override.");
+  }
   const hash = await bcrypt.hash(PASSWORD, 10);
 
   for (const acct of ACCOUNTS) {

@@ -35,9 +35,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       };
     }
 
+    // Registrations carry other participants' names and ages — strip them
+    // before the spread. Only the caller's own row is echoed back.
+    const { registrations, ...workshopPublic } = workshop;
     return ok({
-      ...workshop,
-      registeredCount: workshop.registrations.length,
+      ...workshopPublic,
+      registeredCount: registrations.length,
       userRegistration,
       refundPolicy: refundPolicy("workshop", workshop.price),
     });

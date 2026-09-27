@@ -16,8 +16,11 @@ export async function GET(req: NextRequest) {
     const role = new URL(req.url).searchParams.get("role");
 
     if (role === "coach") {
+      // Linked account only. The old email fallback let anyone who registered
+      // with a coach's (public) email read that coach's bookings and notes.
+      // Admin-created coaches get a linked account via the portal invite.
       const coach = await prisma.coach.findFirst({
-        where: { OR: [{ userId: session.id }, { email: session.email }] },
+        where: { userId: session.id },
         select: { id: true },
       });
       if (!coach) return ok({ pending: 0, approved: 0, list: [] });

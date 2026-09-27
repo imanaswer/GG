@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { createHash } from "crypto";
 
 // Resolved lazily (per call), NOT at module import. `next build` evaluates every
 // route module with NODE_ENV=production and no AUTH_SECRET in the CI env — an eager
@@ -63,6 +64,14 @@ export function cookieOpts(token: string) {
     sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 7,
   };
 }
+/**
+ * Password-reset / invite tokens are stored hashed, so a DB read cannot mint a
+ * working reset link. The raw token only ever lives in the email.
+ */
+export function hashResetToken(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex");
+}
+
 export function clearCookie() {
   return { name: COOKIE, value: "", httpOnly: true, path: "/", maxAge: 0 };
 }

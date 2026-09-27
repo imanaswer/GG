@@ -28,9 +28,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       if (reg) userRegistration = { id: reg.id, paymentStatus: reg.paymentStatus, childName: reg.childName, childAge: reg.childAge };
     }
 
+    // Registrations carry other families' children's names and ages — strip
+    // them before the spread. Only the caller's own row is echoed back.
+    const { registrations, ...campPublic } = camp;
     return ok({
-      ...camp,
-      registeredCount: camp.registrations.length,
+      ...campPublic,
+      registeredCount: registrations.length,
       userRegistration,
       refundPolicy: refundPolicy("camp", camp.price),
     });

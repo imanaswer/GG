@@ -335,6 +335,16 @@ async function seedVenues() {
 }
 
 async function main() {
+  // Every prisma command here targets whatever .env.local points at, which has
+  // been the live Supabase database. wipe() ran BEFORE the data file was read,
+  // so a missing data/db.json meant "delete everything, then crash". Read first,
+  // and never wipe a hosted database without an explicit opt-in.
+  loadDb();
+  const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "";
+  const hosted = /supabase\.co|pooler\.supabase|neon\.tech|amazonaws\.com|vercel-storage/i.test(url) || process.env.NODE_ENV === "production";
+  if (hosted && process.env.SEED_ALLOW_WIPE !== "yes-wipe-hosted-db") {
+    throw new Error("Refusing to wipe a hosted database. Set SEED_ALLOW_WIPE=yes-wipe-hosted-db to override.");
+  }
   console.log("Wiping existing data…");
   await wipe();
   await seed();
