@@ -1,0 +1,45 @@
+name: Deploy migrations
+
+# Applies pending Prisma migrations to the production database whenever main
+# turns green. Nothing else does: CI only validates the schema and the Vercel
+# build only generates the client, so a merged schema change with a forgotten
+# `npm run db:deploy` shipped code that queried columns that did not exist.
+#
+# Needs the DIRECT_URL secret (the non-pooled Supabase connection string) under
+# Settings -> Secrets and variables -> Actions. It fails loudly until it is set.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      DATABASE_URL: ${{ secrets.DIRECT_URL }}
+    steps:
+      - name: Require DIRECT_URL
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::error::DIRECT_URL is not set in this repository's Actions secrets. Add the non-pooled Supabase connection string so migrations deploy automatically."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Apply pending migrations (prisma migrate deploy never resets or seeds)
+        run: npx prisma migrate deploy

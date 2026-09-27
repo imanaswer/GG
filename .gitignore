@@ -48,3 +48,6 @@ graphify-out/
 
 # Point-in-time validation/scan artifacts (regenerable)
 release-evidence/
+
+# Personal Claude Code permissions (machine-specific paths)
+.claude/settings.local.json

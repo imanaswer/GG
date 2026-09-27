@@ -24,7 +24,7 @@ export function adminRecipients(): string[] {
 export async function notifyAdmin(subject: string, html: string): Promise<boolean> {
   const to = adminRecipients();
   if (to.length === 0) {
-    console.log(`[ADMIN ALERT — no ADMIN_EMAIL] ${subject}`);
+    logger.warn("admin alert not sent: ADMIN_EMAIL unset", { subject });
     return true; // graceful no-op, same contract as sendEmail in dev
   }
   try {

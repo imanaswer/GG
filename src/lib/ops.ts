@@ -21,6 +21,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { notifyAdmin } from "@/lib/notifyAdmin";
 import { sendEmail, emails, escapeHtml } from "@/lib/email";
+import { siteUrl } from "@/lib/siteUrl";
 
 /** Feed item, work item, or audit row. Only "info" and "action" are ever notified. */
 export type OpsSeverity = "info" | "action" | "audit";
@@ -226,7 +227,7 @@ async function sendCustomerEmail(row: {
 }
 
 function adminBody(row: { title: string; body: string | null; link: string | null }): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net";
+  const base = siteUrl();
   const link = row.link ? `<p style="margin:16px 0 0"><a href="${base}${row.link}" style="color:#fff">Open in admin</a></p>` : "";
   return `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:520px">
     <h2 style="margin:0 0 8px;font-size:17px;color:#111">${escapeHtml(row.title)}</h2>

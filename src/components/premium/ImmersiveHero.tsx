@@ -66,11 +66,13 @@ export function ImmersiveHero() {
     }}>
       
       <div style={{ position: "absolute", inset: -5, zIndex: 1 }}>
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          poster="/awwwards_hero_bg.jpg"
           src="/video.mp4" 
           style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.05)" }} 
         />

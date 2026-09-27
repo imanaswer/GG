@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSessionFromRequest } from "@/lib/adminAuth";
+import { getAdminSessionFromRequest, getAdminActor } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { getAgreement } from "@/lib/coachAgreement/content";
 import { clientIp } from "@/lib/ratelimit";
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
   // Audit every admin view of an agreement.
   await prisma.coachAgreementAuditLog.create({
-    data: { agreementId: agreement.id, action: "VIEW", actorId: "admin", actorRole: "admin", ipAddress: clientIp(req) },
+    data: { agreementId: agreement.id, action: "VIEW", actorId: (await getAdminActor(req))?.id ?? "admin", actorRole: "admin", ipAddress: clientIp(req) },
   });
 
   // Always render the EXACT accepted version, never the latest.

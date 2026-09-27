@@ -431,15 +431,11 @@ export function EntryScrollytelling() {
     
     // We have 5 panels (indexes 0 to 4), so the scroll distance is divided into 4 segments.
     const targetY = startY + totalScrollable * (idx / 4);
-    
-    console.log(`scrollToIdx(${idx}) -> targetY: ${targetY}, startY: ${startY}, rect.top: ${rect.top}`);
 
     const lenis = window.__lenis;
     if (lenis) {
-      console.log("Using lenis.scrollTo");
       lenis.scrollTo(targetY, { duration: 1.2, force: true });
     } else {
-      console.log("Using window.scrollTo");
       window.scrollTo({
         top: targetY,
         behavior: "smooth"

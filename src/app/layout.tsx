@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif, Dela_Gothic_One, Geist } from "next/font/google";
+import { Instrument_Serif, Dela_Gothic_One, Geist } from "next/font/google";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { Providers } from "@/context/Providers";
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fff",
+  themeColor: "#080808",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

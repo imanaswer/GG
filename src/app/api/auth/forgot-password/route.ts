@@ -4,6 +4,7 @@ import { sendEmail, emails } from "@/lib/email";
 import { ok, handleErr } from "@/lib/api";
 import crypto from "crypto";
 import { hashResetToken } from "@/lib/auth";
+import { siteUrl } from "@/lib/siteUrl";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,8 +21,7 @@ export async function POST(req: NextRequest) {
         data: { passwordResetToken: hashResetToken(token), passwordResetExpiry: expiry },
       });
 
-      const baseUrl  = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-      const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+      const resetUrl = `${siteUrl()}/reset-password?token=${token}`;
       await sendEmail({ to: user.email, ...emails.passwordReset(user.name, resetUrl) });
     }
 

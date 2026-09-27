@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { siteUrl } from "@/lib/siteUrl";
 import { prisma } from "@/lib/prisma";
 
 const DEFAULT_TTL_DAYS = 30;
@@ -38,6 +39,5 @@ export async function markSigningTokenUsed(token: string): Promise<void> {
 
 /** Absolute /onboarding-terms link carrying the token (for emails / admin copy / WhatsApp). */
 export function buildSignLink(token: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  return `${base}/onboarding-terms?token=${encodeURIComponent(token)}`;
+  return `${siteUrl()}/onboarding-terms?token=${encodeURIComponent(token)}`;
 }

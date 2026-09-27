@@ -40,6 +40,11 @@ function isUsableUrl(u: string | undefined): u is string {
 }
 
 const redis = isUsableUrl(url) && token ? new Redis({ url, token }) : null;
+// The in-memory fallback is per-lambda on Vercel — effectively no limit at all.
+// Say so on every cold start rather than let brute-force protection vanish quietly.
+if (!redis && process.env.NODE_ENV === "production") {
+  logger.error("UPSTASH_REDIS_REST_URL/TOKEN not configured: rate limiting is per-instance memory only (auth brute-force protection is effectively off)");
+}
 
 function make(limit: number, window: `${number} ${"s" | "m" | "h" | "d"}`, prefix: string): Limiter {
   if (redis) {

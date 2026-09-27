@@ -24,7 +24,7 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
   const from = process.env.FROM_EMAIL ?? "hello@gameground.net";
 
   if (!apiKey) {
-    console.log(`[EMAIL — no RESEND_API_KEY] To: ${payload.to} | Subject: ${payload.subject}`);
+    logger.warn("email not sent: RESEND_API_KEY unset", { subject: payload.subject });
     return true; // Graceful no-op in dev
   }
 

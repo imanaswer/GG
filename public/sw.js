@@ -1,7 +1,7 @@
 // Game Ground service worker — offline-first app shell, network-first for API.
 // Versioned caches let us invalidate cleanly when we ship a new worker.
 
-const VERSION = "gg-v2";
+const VERSION = "gg-v3";
 const SHELL   = `gg-shell-${VERSION}`;
 const RUNTIME = `gg-runtime-${VERSION}`;
 
@@ -10,7 +10,6 @@ const PRECACHE_URLS = [
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
-  "/logo.png",
 ];
 
 self.addEventListener("install", (event) => {

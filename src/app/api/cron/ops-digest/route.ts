@@ -5,12 +5,13 @@ import { notifyAdmin, adminAlertHtml } from "@/lib/notifyAdmin";
 import { PAYMENT_REVENUE_WHERE } from "@/lib/paymentStatus";
 import { MAX_ATTEMPTS } from "@/lib/ops";
 import { cronUnauthorized } from "@/lib/cron";
+import { siteUrl } from "@/lib/siteUrl";
 
 export const maxDuration = 60;
 
 /**
- * The daily ops summary, at 09:00 IST (30 3 * * * UTC in vercel.json — daily is safe
- * there; only sub-daily breaks the Hobby plan).
+ * The daily ops summary, at 09:00 IST (30 3 * * * UTC, run from
+ * .github/workflows/cron-daily-ops.yml — it is NOT in vercel.json).
  *
  * This is the safety net. It reads durable database state rather than replaying what
  * was sent, so it still tells the truth on a day when every individual alert failed
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
   const html = adminAlertHtml({
     heading: "Game Ground — daily ops digest",
     lines,
-    link: { href: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.gameground.net"}/admin`, label: "Open admin" },
+    link: { href: `${siteUrl()}/admin`, label: "Open admin" },
   });
 
   const delivered = await notifyAdmin("[GG] Daily ops digest", html);

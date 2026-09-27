@@ -16,9 +16,9 @@ const csp = [
   "frame-ancestors 'self'",
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.razorpay.com https://maps.googleapis.com https://*.posthog.com",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://lh3.googleusercontent.com https://api.dicebear.com https://maps.gstatic.com https://*.googleapis.com https://*.posthog.com",
-  "font-src 'self' data:",
+  "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https://*.razorpay.com https://api.cloudinary.com https://maps.googleapis.com https://*.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com",
   "frame-src 'self' https://*.razorpay.com",
   "worker-src 'self' blob:",
@@ -37,7 +37,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['172.30.10.236', '192.168.1.9', 'gg-demo-2026.loca.lt'],
+  poweredByHeader: false,
+  allowedDevOrigins: ['172.30.10.236', '192.168.1.9'],
   images: {
     qualities: [75, 80, 85],
     remotePatterns: [

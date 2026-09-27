@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { ArrowUpRight, ArrowRight, ArrowDown, MapPin } from "lucide-react";
@@ -13,7 +12,6 @@ import { EntryScrollytelling } from "@/components/premium/EntryScrollytelling";
 import { CinematicDirectory } from "@/components/premium/CinematicDirectory";
 import { SmoothScroll } from "@/components/premium/SmoothScroll";
 import { Preloader } from "@/components/premium/Preloader";
-import { LiquidImage } from "@/components/premium/LiquidImage";
 import { Magnetic } from "@/components/premium/Magnetic";
 import { SplitText } from "@/components/premium/SplitText";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";

@@ -11,6 +11,7 @@ const AUTH_PATHS = new Set([
   "/api/auth/register",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
+  "/api/coaches/register",
 ]);
 
 const MUTATION_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);

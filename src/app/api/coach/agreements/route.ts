@@ -10,6 +10,7 @@ import { computeAgreementHash } from "@/lib/coachAgreement/hash";
 import { generateAgreementPdf } from "@/lib/coachAgreement/pdf";
 import { uploadAgreementPdf } from "@/lib/coachAgreement/storage";
 import { sendEmail, emails } from "@/lib/email";
+import { siteUrl } from "@/lib/siteUrl";
 import { resolveSigningToken, markSigningTokenUsed, type TokenState } from "@/lib/coachAgreement/signingToken";
 
 export const runtime = "nodejs";
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Email the signed PDF to the coach (non-fatal; reuse the bytes we just made).
     const pdfBase64 = Buffer.from(pdfBytes).toString("base64");
-    const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/coach/agreements/${record.id}/pdf`;
+    const pdfUrl = `${siteUrl()}/api/coach/agreements/${record.id}/pdf`;
     await sendEmail({
       to: input.email,
       ...emails.agreementSigned(input.fullName, agreementNumber, version, input.signedDate, pdfUrl),

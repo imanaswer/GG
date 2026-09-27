@@ -14,7 +14,7 @@ const REDACTED = "[REDACTED]";
 
 // Case-insensitive: matches password, passwordHash, passwordResetToken, secret,
 // *_SECRET, token, authorization, cookie, signature, jwt, apiKey/api_key, razorpay_*.
-const SENSITIVE_KEY = /pass(word)?|secret|token|auth(orization)?|cookie|signature|jwt|api[-_]?key|razorpay_/i;
+const SENSITIVE_KEY = /pass(word)?|secret|token|auth(orization)?|cookie|signature|jwt|api[-_]?key|razorpay_|^(to|email|phone)$/i;
 
 // Env var names whose VALUES must never appear in a log line. Kept explicit so a
 // new secret is a conscious addition. NEXT_PUBLIC_* are intentionally excluded
