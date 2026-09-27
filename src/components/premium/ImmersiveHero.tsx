@@ -65,9 +65,15 @@ export function ImmersiveHero() {
       justifyContent: "center",
     }}>
       
-      {/* The Liquid WebGL Background */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
-        <LiquidImage src="/awwwards_hero_bg.jpg" />
+      <div style={{ position: "absolute", inset: -5, zIndex: 1 }}>
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          src="/video.mp4" 
+          style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.05)" }} 
+        />
       </div>
 
       {/* The Multiply Mask */}
