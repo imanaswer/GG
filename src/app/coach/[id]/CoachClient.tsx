@@ -264,16 +264,17 @@ export default function CoachDetail({ params, initialCoach }: { params: Promise<
             </Reveal>
 
             <Reveal delay={0.1}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 24 }}>
                 <div style={{
-                  background: themeColor, color: "#000",
-                  padding: "8px 16px", borderRadius: 100, fontSize: 12, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase"
+                  background: themeColor, color: "#000", whiteSpace: "nowrap",
+                  padding: "8px 16px", borderRadius: 6, fontSize: 12, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase"
                 }}>
                   {coach.sport}
                 </div>
                 <div style={{
                   background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)",
-                  color: "white", padding: "8px 16px", borderRadius: 100, fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase"
+                  color: "white", padding: "8px 16px", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
+                  whiteSpace: "nowrap"
                 }}>
                   {coach.type}
                 </div>

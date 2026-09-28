@@ -418,7 +418,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                 <Reveal>
                   <div>
                     <h2 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Organizer</h2>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <Link href={`/profile/${game.organizerId}`} style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none", cursor: "pointer" }}>
                       <div style={{
                         width: 48, height: 48, borderRadius: "50%",
                         background: "#fff",
@@ -441,7 +441,7 @@ export default function GameDetail({ params }: { params: Promise<{ id: string }>
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </Reveal>
 

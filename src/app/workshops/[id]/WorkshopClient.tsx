@@ -175,9 +175,34 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
       <PremiumNav variant="solid" />
 
       <main style={{ background: "#050505", color: "#fff", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+        <style>{`
+          .workshop-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 64px;
+          }
+          @media (max-width: 1024px) {
+            .workshop-grid {
+              grid-template-columns: 1fr;
+              gap: 40px;
+            }
+          }
+          .instructor-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+          }
+          @media (max-width: 640px) {
+            .instructor-layout {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 16px;
+            }
+          }
+        `}</style>
         {/* Main Content Layout */}
         <div className="container-lg" style={{ paddingTop: 120, paddingBottom: 120 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 64 }} className="workshop-grid">
+          <div className="workshop-grid">
             
             {/* Left Column: Title & Content */}
             <div>
@@ -196,11 +221,11 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
               </Reveal>
 
               <Reveal delay={0.05}>
-                <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 100, background: "#fff", color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 6, background: "#fff", color: "#000", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                     {workshop.sport}
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 100, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 6, background: "rgba(255,255,255,0.1)", color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                     {sessionTypeBadge}
                   </span>
                 </div>
@@ -311,7 +336,7 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
                 <Reveal>
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 32 }}>
                     <h2 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>Instructor</h2>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 24 }}>
+                    <div className="instructor-layout">
                       <div style={{
                         width: 96, height: 96, borderRadius: 8,
                         background: workshop.instructor.imageUrl ? undefined : "#222",
@@ -329,8 +354,9 @@ export default function WorkshopDetail({ params, initialWorkshop }: { params: Pr
                         <h3 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8, fontFamily: "var(--font-dela)", textTransform: "uppercase" }}>{workshop.instructor.name}</h3>
                         {workshop.instructor.credentials && (
                           <span style={{
-                            fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 100,
-                            background: "rgba(255,255,255,0.1)", color: "#fff", marginBottom: 16, display: "inline-block", textTransform: "uppercase", letterSpacing: "0.05em"
+                            fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 6,
+                            background: "rgba(255,255,255,0.1)", color: "#fff", marginBottom: 16, display: "inline-block", textTransform: "uppercase", letterSpacing: "0.05em",
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%"
                           }}>{workshop.instructor.credentials}</span>
                         )}
                         {workshop.instructor.bio && (
